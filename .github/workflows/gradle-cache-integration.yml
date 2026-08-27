@@ -1,0 +1,81 @@
+name: Gradle cache asset integration
+concurrency:
+  group: cache-the-planet-main-writes
+  cancel-in-progress: false
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CACHE_REPOSITORY: Ludy87/cache-the-planet
+  GRADLE_USER_HOME: ${{ github.workspace }}/.cache/gradle
+
+jobs:
+  save-cache:
+    name: Build and save Gradle cache asset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Restore Gradle cache asset
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/settings.gradle', 'examples/gradle-cache/build.gradle') }}/v1
+          path: .cache/gradle
+          strict: false
+
+      - name: Build with Gradle
+        working-directory: examples/gradle-cache
+        run: gradle --no-daemon test
+
+      - name: Save Gradle cache asset
+        if: success()
+        uses: ./save
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/settings.gradle', 'examples/gradle-cache/build.gradle') }}/v1
+          path: .cache/gradle
+          strict: true
+
+  restore-cache:
+    name: Restore Gradle cache asset in a fresh job
+    needs: save-cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Restore Gradle cache asset
+        id: cache
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/settings.gradle', 'examples/gradle-cache/build.gradle') }}/v1
+          path: .cache/gradle
+          strict: true
+
+      - name: Assert exact asset cache hit
+        shell: bash
+        run: |
+          test "${{ steps.cache.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/settings.gradle', 'examples/gradle-cache/build.gradle') }}/v1"
+
+      - name: Build offline with restored Gradle cache
+        working-directory: examples/gradle-cache
+        run: gradle --offline --no-daemon test
