@@ -423,7 +423,7 @@ Beim Restore wird:
 3. das Tar-Archiv auf absolute und `..`-Pfade geprüft,
 4. erst danach extrahiert.
 
-Fork-Pull-Requests speichern standardmäßig nichts. Für besonders sensible Projekte sollten zusätzlich getrennte `trusted`- und `untrusted`-Namespaces eingesetzt werden.
+Fork-Pull-Requests speichern standardmäßig nichts. Für besonders sensible Projekte sollten zusätzlich getrennte `trusted`- und `untrusted`-Namespaces eingesetzt werden. Vor dem Packen verweigert die Action außerdem Symlinks, Pfade außerhalb des Workspace, typische Credential-Dateinamen sowie erkannte Private-Key-/Token-Muster in kleinen Textdateien. Diese Prüfung ist Defense-in-Depth und ersetzt keine engen Cache-Pfade oder `exclude`-Regeln.
 
 Für interne Pull Requests kann ein eigener, automatisch löschbarer PR-Cache aktiviert werden:
 

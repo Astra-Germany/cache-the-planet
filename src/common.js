@@ -79,6 +79,33 @@ function entries() {
   return input('path').split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
 }
 
+// Cache inputs are treated as untrusted. Refuse obvious credentials before tar
+// ever sees them, and refuse symlinks so an apparently harmless cache path
+// cannot unexpectedly include data outside the workspace.
+const sensitiveName = /(^|[-_.])(env|npmrc|pypirc|netrc|git-credentials|credentials?|secret|secrets|token|tokens|password|passwd)([-_.]|$)|^id_(rsa|dsa|ecdsa|ed25519)$|\.(pem|key|p12|pfx)$/i;
+const sensitiveDirectory = /(^|[\\/])(?:\.ssh|\.aws|\.docker|\.kube)(?:[\\/]|$)/i;
+const sensitiveContent = /(BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY|gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|npm_[A-Za-z0-9]+|AKIA[0-9A-Z]{16}|(?:password|passwd|secret|api[_-]?key)\s*[:=])/i;
+
+function securityScan(root) {
+  const walk = (file) => {
+    const stat = fs.lstatSync(file);
+    if (stat.isSymbolicLink()) throw new Error(`cache path contains a symlink: ${path.relative(process.cwd(), file)}`);
+    const relative = path.relative(root, file);
+    if (sensitiveDirectory.test(relative) || sensitiveName.test(path.basename(file))) {
+      throw new Error(`cache path contains a sensitive-looking file: ${path.relative(process.cwd(), file)}`);
+    }
+    if (stat.isDirectory()) {
+      for (const child of fs.readdirSync(file)) walk(path.join(file, child));
+    } else if (stat.isFile() && stat.size <= 1024 * 1024) {
+      const content = fs.readFileSync(file, 'utf8');
+      if (sensitiveContent.test(content)) {
+        throw new Error(`cache path contains credential-like content: ${path.relative(process.cwd(), file)}`);
+      }
+    }
+  };
+  walk(root);
+}
+
 async function makeArchive() {
   if (!have('tar') || !have('zstd')) throw new Error('tar and zstd are required on the runner');
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cac-'));
@@ -87,7 +114,14 @@ async function makeArchive() {
   const paths = [];
   for (const value of entries()) {
     const absolute = path.resolve(workspace, value);
-    if (fs.existsSync(absolute)) paths.push(path.relative(workspace, absolute) || '.');
+    const relative = path.relative(workspace, absolute);
+    if (path.isAbsolute(relative) || relative === '..' || relative.startsWith(`..${path.sep}`)) {
+      throw new Error(`cache path must be inside the workspace: ${value}`);
+    }
+    if (fs.existsSync(absolute)) {
+      securityScan(absolute);
+      paths.push(relative || '.');
+    }
     else log(`cache path missing: ${value}`);
   }
   if (!paths.length) throw new Error('no cache paths exist');
@@ -223,6 +257,6 @@ function extract(file) {
 }
 
 module.exports = {
-  input, token, log, fail, gh, upload, entries, makeArchive, digest,
+  input, token, log, fail, gh, upload, entries, securityScan, makeArchive, digest,
   release, assets, object, refs, setRef, download, extract,
 };
