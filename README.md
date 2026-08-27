@@ -485,7 +485,7 @@ Tests unter Ubuntu:
 bash tests/run.sh
 ```
 
-Die Tests prüfen JavaScript-Syntax, deterministische Archive und stellen sicher, dass kein `actions/cache`, `cache: npm` oder `setup-uv`-`enable-cache: true` aktiviert ist. API-Tests sollten gegen ein eigenes Test-Cache-Repository mit einem kurzlebigen Token ausgeführt werden.
+Die Tests prüfen JavaScript-Syntax, deterministische Archive und stellen sicher, dass kein `actions/cache`, `cache: npm`, `setup-uv`-`enable-cache: true` oder `setup-qemu`-`cache-image: true` aktiviert ist. API-Tests sollten gegen ein eigenes Test-Cache-Repository mit einem kurzlebigen Token ausgeführt werden.
 
 ## Troubleshooting
 
