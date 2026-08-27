@@ -85,6 +85,7 @@ function entries() {
 const sensitiveName = /^(?:\.env(?:\..*)?|\.npmrc|\.pypirc|\.netrc|\.git-credentials|credentials?(?:[._-].*)?|id_(?:rsa|dsa|ecdsa|ed25519))$/i;
 const sensitiveKeywordName = /(^|[-_.])(secret|secrets|token|tokens|password|passwd)([-_.]|$)|\.(pem|key|p12|pfx)$/i;
 const sourceFileName = /\.(?:py|js|mjs|cjs|ts|tsx|java|go|rs|c|cc|cpp|h|hpp|rb|php|cs|swift|kt|kts|scala|sh)$/i;
+const binaryFileName = /\.(?:7z|aar|bin|class|dll|dylib|exe|gz|iso|jar|jpeg|jpg|so|tar|tgz|war|webp|zip|zst)$/i;
 const sensitiveDirectory = /(^|[\\/])(?:\.ssh|\.aws|\.docker|\.kube)(?:[\\/]|$)/i;
 const sensitiveContent = /(BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY|gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|npm_[A-Za-z0-9]+|AKIA[0-9A-Z]{16}|(?:password|passwd|secret|api[_-]?key)\s*[:=]\s*(?:"[^"\r\n]{8,}"|'[^'\r\n]{8,}'|[A-Za-z0-9_+/=.-]{20,}))/i;
 
@@ -100,9 +101,10 @@ function securityScan(root) {
     }
     if (stat.isDirectory()) {
       for (const child of fs.readdirSync(file)) walk(path.join(file, child));
-    } else if (stat.isFile() && stat.size <= 1024 * 1024) {
-      const content = fs.readFileSync(file, 'utf8');
-      if (sensitiveContent.test(content)) {
+    } else if (stat.isFile() && stat.size <= 1024 * 1024 && !binaryFileName.test(file)) {
+      const content = fs.readFileSync(file);
+      if (content.includes(0)) return;
+      if (sensitiveContent.test(content.toString('utf8'))) {
         throw new Error(`cache path contains credential-like content: ${path.relative(process.cwd(), file)}`);
       }
     }
