@@ -10,7 +10,6 @@ permissions:
 
 env:
   CACHE_REPOSITORY: Ludy87/cache-the-planet
-  CACHE_KEY: trusted/Ludy87/cache-the-planet/example-uv/linux-amd64/uv/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
 
 jobs:
   save-cache:
@@ -29,7 +28,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ env.CACHE_KEY }}
+          key: trusted/Ludy87/cache-the-planet/example-uv/linux-amd64/uv/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
           path: .cache/uv
           strict: false
 
@@ -41,7 +40,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ env.CACHE_KEY }}
+          key: trusted/Ludy87/cache-the-planet/example-uv/linux-amd64/uv/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
           path: .cache/uv
           strict: true
 
@@ -63,7 +62,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ env.CACHE_KEY }}
+          key: trusted/Ludy87/cache-the-planet/example-uv/linux-amd64/uv/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
           path: .cache/uv
           strict: true
 
@@ -71,7 +70,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "${CACHE_KEY}"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/Ludy87/cache-the-planet/example-uv/linux-amd64/uv/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1"
           test -d .cache/uv
 
       - name: Verify uv can use restored cache
