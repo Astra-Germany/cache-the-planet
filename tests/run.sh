@@ -20,6 +20,8 @@ try {
   fs.rmSync(secret);
   fs.writeFileSync(path.join(root, 'env.py'), 'password = None\n');
   securityScan(root);
+  fs.writeFileSync(path.join(root, 'tokens.py'), 'TOKENS = []\n');
+  securityScan(root);
   fs.mkdirSync(path.join(root, '.ssh'));
   fs.writeFileSync(path.join(root, '.ssh', 'config'), 'Host example\n');
   rejected = false;
