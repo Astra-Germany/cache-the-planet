@@ -26,8 +26,8 @@
       "updated_at": "2026-08-27T21:01:53.864Z"
     },
     "trusted/Ludy87/cache-the-planet/example-uv/linux-amd64/uv/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v1": {
-      "object": "sha256:d95550e90f7b362b2f5fece46e574644d9e36184b21968cf9c75ef0ea750b394",
-      "updated_at": "2026-08-27T20:50:31.363Z"
+      "object": "sha256:b7385198ce03732923bfb3e250dd905402ba95c00953540c08716576b40f451c",
+      "updated_at": "2026-08-27T21:03:00.129Z"
     },
     "untrusted/Ludy87/spdf-cache/pr-3/buildx/Linux-X64/unoserver-29d77e8616958338e05f79029438754cbab0f86a4f01738c5422a170a44ce289/v1": {
       "object": "sha256:8cf2fc3ff5bc3f64732d96dd613bee9d7bc926db725d597d4db9e45ebd5d5110",
