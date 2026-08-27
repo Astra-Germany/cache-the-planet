@@ -1,10 +1,18 @@
 name: Test
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_run:
+    workflows: [Build action distribution]
+    types: [completed]
 jobs:
   unit:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || github.ref }}
       - uses: actions/setup-node@v5
         with: {node-version: 24}
       - run: npm install
