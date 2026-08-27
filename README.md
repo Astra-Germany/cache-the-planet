@@ -485,7 +485,7 @@ Tests unter Ubuntu:
 bash tests/run.sh
 ```
 
-Die Tests prüfen JavaScript-Syntax, deterministische Archive und stellen sicher, dass kein `actions/cache` beziehungsweise `cache: npm` aktiviert ist. API-Tests sollten gegen ein eigenes Test-Cache-Repository mit einem kurzlebigen Token ausgeführt werden.
+Die Tests prüfen JavaScript-Syntax, deterministische Archive und stellen sicher, dass kein `actions/cache`, `cache: npm` oder `setup-uv`-`enable-cache: true` aktiviert ist. API-Tests sollten gegen ein eigenes Test-Cache-Repository mit einem kurzlebigen Token ausgeführt werden.
 
 ## Troubleshooting
 
@@ -537,6 +537,9 @@ References werden mit der Contents-SHA gelesen und bei Konflikten bis zu fünfma
 - Ein ausführbares Docker-Beispiel befindet sich unter [examples/docker-cache](examples/docker-cache).
 - Der End-to-End-Testworkflow ist [.github/workflows/docker-cache-integration.yml](.github/workflows/docker-cache-integration.yml).
 - Der Node/npm-Asset-Test ist [.github/workflows/node-cache-integration.yml](.github/workflows/node-cache-integration.yml).
+- Der uv-Asset-Test ist [.github/workflows/uv-cache-integration.yml](.github/workflows/uv-cache-integration.yml). Er verwendet `astral-sh/setup-uv` ausschließlich zur Installation und deaktiviert dessen nativen Cache.
+- Der Task-Asset-Test ist [.github/workflows/task-cache-integration.yml](.github/workflows/task-cache-integration.yml). `go-task/setup-task` selbst besitzt keinen nativen Cache; getestet wird der von `task` erzeugte Build-Cache.
+- Der Java/Maven-Asset-Test ist [.github/workflows/java-cache-integration.yml](.github/workflows/java-cache-integration.yml). `actions/setup-java` wird ohne `cache`-Input verwendet; das Maven-Repository wird nach `.cache/m2` umgeleitet und als Release Asset gespeichert.
 - [Architektur](docs/architecture.md)
 - [Security](docs/security.md)
 - [Protokoll v1](docs/protocol.md)

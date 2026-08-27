@@ -5,7 +5,7 @@ node --check dist/common.js
 node --check dist/restore.js
 node --check dist/save.js
 node --check dist/gc.js
-if rg -n -i 'actions/cache|cache:[[:space:]]*npm' .github; then
+if rg -n -i 'actions/cache|cache:[[:space:]]*npm|enable-cache:[[:space:]]*true' .github; then
   echo 'GitHub Actions native cache is disabled but a cache configuration was found'
   exit 1
 fi

@@ -1,0 +1,73 @@
+name: Task cache asset integration
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CACHE_REPOSITORY: Ludy87/cache-the-planet
+  CACHE_KEY: trusted/Ludy87/cache-the-planet/example-task/linux-amd64/task/v1
+
+jobs:
+  save-cache:
+    name: Run task and save asset cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: go-task/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Restore task build cache asset
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: examples/task-cache/.cache/task
+          strict: false
+
+      - name: Run task build
+        run: task --dir examples/task-cache build
+
+      - name: Save task build cache asset
+        uses: ./save
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: examples/task-cache/.cache/task
+          strict: true
+
+  restore-cache:
+    name: Restore task cache asset in a fresh job
+    needs: save-cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: go-task/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Restore task build cache asset
+        id: cache
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: examples/task-cache/.cache/task
+          strict: true
+
+      - name: Assert exact asset cache hit
+        shell: bash
+        run: |
+          test "${{ steps.cache.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache.outputs.matched-key }}" = "${CACHE_KEY}"
+
+      - name: Verify restored task cache
+        run: task --dir examples/task-cache verify

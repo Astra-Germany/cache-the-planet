@@ -1,0 +1,75 @@
+name: Java cache asset integration
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CACHE_REPOSITORY: Ludy87/cache-the-planet
+  CACHE_KEY: trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/${{ hashFiles('examples/java-cache/pom.xml') }}/v1
+
+jobs:
+  save-cache:
+    name: Build and save Maven cache asset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Restore Maven cache asset
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: .cache/m2
+          strict: false
+
+      - name: Build with Maven
+        run: mvn -B -Dmaven.repo.local="$PWD/.cache/m2" package --file examples/java-cache/pom.xml
+
+      - name: Save Maven cache asset
+        uses: ./save
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: .cache/m2
+          strict: true
+
+  restore-cache:
+    name: Restore Maven cache asset in a fresh job
+    needs: save-cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Restore Maven cache asset
+        id: cache
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: .cache/m2
+          strict: true
+
+      - name: Assert exact asset cache hit
+        shell: bash
+        run: |
+          test "${{ steps.cache.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache.outputs.matched-key }}" = "${CACHE_KEY}"
+
+      - name: Build offline with restored Maven cache
+        run: mvn -B -o -Dmaven.repo.local="$PWD/.cache/m2" package --file examples/java-cache/pom.xml
