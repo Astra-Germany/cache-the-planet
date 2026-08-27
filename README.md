@@ -99,6 +99,7 @@ Die Struktur muss erhalten bleiben:
 cache-the-planet/
 ├── action.yml              # Restore-Action
 ├── save/action.yml         # Save-Action
+├── src/                    # Wartbarer Quellcode
 ├── dist/
 │   ├── common.js
 │   ├── restore.js
@@ -109,6 +110,15 @@ cache-the-planet/
 ├── docs/
 └── .github/workflows/
 ```
+
+GitHub Actions führt die Dateien aus `dist/` aus. Der wartbare Quellcode liegt in `src/`; Änderungen sollten dort vorgenommen werden. Mit `esbuild` wird `src/` automatisch gebündelt und für die Action minifiziert:
+
+```bash
+npm install
+npm run build
+```
+
+Der Workflow `build-dist.yml` baut `dist/` bei Änderungen an `src/` automatisch und committed die generierten Dateien nach `main`. Der Testworkflow prüft zusätzlich, dass `dist/` mit dem Source-Code übereinstimmt. Deshalb müssen Änderungen an der Action nicht mehr direkt in `dist/` gepflegt werden.
 
 Veröffentliche anschließend einen unveränderlichen Release-Tag, zum Beispiel `v1`:
 
