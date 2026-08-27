@@ -20,7 +20,7 @@ try {
   fs.rmSync(secret);
   fs.writeFileSync(path.join(root, 'env.py'), 'password = None\n');
   securityScan(root);
-  fs.writeFileSync(path.join(root, 'tokens.py'), 'TOKENS = []\n');
+  fs.writeFileSync(path.join(root, 'tokens.py'), 'secret = "package-example-value"\n');
   securityScan(root);
   fs.writeFileSync(path.join(root, 'dependency.jar'), Buffer.from('password = "binary-package-data"\0'));
   securityScan(root);
