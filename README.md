@@ -536,6 +536,7 @@ References werden mit der Contents-SHA gelesen und bei Konflikten bis zu fünfma
 
 - Ein ausführbares Docker-Beispiel befindet sich unter [examples/docker-cache](examples/docker-cache).
 - Der End-to-End-Testworkflow ist [.github/workflows/docker-cache-integration.yml](.github/workflows/docker-cache-integration.yml).
+- Der Node/npm-Asset-Test ist [.github/workflows/node-cache-integration.yml](.github/workflows/node-cache-integration.yml).
 - [Architektur](docs/architecture.md)
 - [Security](docs/security.md)
 - [Protokoll v1](docs/protocol.md)
