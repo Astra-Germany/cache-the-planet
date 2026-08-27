@@ -10,7 +10,6 @@ permissions:
 
 env:
   CACHE_REPOSITORY: Ludy87/cache-the-planet
-  CACHE_KEY: trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/${{ hashFiles('examples/java-cache/pom.xml') }}/v1
 
 jobs:
   save-cache:
@@ -28,7 +27,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ env.CACHE_KEY }}
+          key: trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/${{ hashFiles('examples/java-cache/pom.xml') }}/v1
           path: .cache/m2
           strict: false
 
@@ -40,7 +39,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ env.CACHE_KEY }}
+          key: trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/${{ hashFiles('examples/java-cache/pom.xml') }}/v1
           path: .cache/m2
           strict: true
 
@@ -61,7 +60,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ env.CACHE_KEY }}
+          key: trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/${{ hashFiles('examples/java-cache/pom.xml') }}/v1
           path: .cache/m2
           strict: true
 
@@ -69,7 +68,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "${CACHE_KEY}"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/${{ hashFiles('examples/java-cache/pom.xml') }}/v1"
 
       - name: Build offline with restored Maven cache
         run: mvn -B -o -Dmaven.repo.local="$PWD/.cache/m2" package --file examples/java-cache/pom.xml
