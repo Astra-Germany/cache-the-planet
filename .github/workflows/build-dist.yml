@@ -1,4 +1,7 @@
 name: Build action distribution
+concurrency:
+  group: build-action-distribution
+  cancel-in-progress: true
 on:
   push:
     branches: [main]
@@ -36,10 +39,26 @@ jobs:
           path: .cache/npm
           strict: false
       - name: Commit generated dist
+        shell: bash
         run: |
-          if git diff --quiet -- dist; then echo "dist is already up to date"; exit 0; fi
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dist package-lock.json
-          git commit -m "chore: build action dist"
-          git push
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            npm run build
+            if git diff --quiet -- dist package-lock.json; then
+              echo "dist is already up to date"
+              exit 0
+            fi
+            git add dist package-lock.json
+            git commit -m "chore: build action dist"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push conflicted; retrying build (attempt $((attempt + 1)))"
+            git reset --hard origin/main
+          done
+          echo "Unable to push generated dist after 3 attempts"
+          exit 1
