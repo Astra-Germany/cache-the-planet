@@ -20,6 +20,12 @@ try {
   fs.rmSync(secret);
   fs.writeFileSync(path.join(root, 'env.py'), 'password = None\n');
   securityScan(root);
+  fs.mkdirSync(path.join(root, '.ssh'));
+  fs.writeFileSync(path.join(root, '.ssh', 'config'), 'Host example\n');
+  rejected = false;
+  try { securityScan(root); } catch { rejected = true; }
+  if (!rejected) throw new Error('.ssh directory was not rejected');
+  fs.rmSync(path.join(root, '.ssh'), { recursive: true, force: true });
   fs.writeFileSync(path.join(root, 'config.txt'), 'DATABASE_PASSWORD=should-not-be-cached\n');
   rejected = false;
   try { securityScan(root); } catch { rejected = true; }
