@@ -102,7 +102,20 @@ function makeArchive() {
     input: tar.stdout, stdio: ['pipe', 'inherit', 'inherit'],
   });
   if (zstd.status) throw new Error('zstd failed');
+  validateArchive(output);
   return { file: output, dir: directory };
+}
+
+function validateArchive(file) {
+  const tarFile = path.join(path.dirname(file), 'validation.tar');
+  const decompression = cp.spawnSync('zstd', ['-q', '-d', '-f', file, '-o', tarFile], {
+    stdio: ['ignore', 'inherit', 'inherit'],
+  });
+  if (decompression.status) throw new Error('created zstd archive cannot be decompressed');
+  const listing = cp.spawnSync('tar', ['-tf', tarFile], { encoding: 'utf8' });
+  if (listing.status) {
+    throw new Error(`created tar archive is invalid: ${listing.stderr || 'tar listing failed'}`);
+  }
 }
 
 function digest(file) {

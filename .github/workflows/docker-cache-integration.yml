@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Restore Docker cache
         uses: ./
@@ -26,7 +26,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v1
           path: examples/docker-cache/.cache/docker-buildx
-          strict: true
+          # Ein beschädigtes oder fehlendes altes Objekt darf den Reparaturlauf nicht blockieren.
+          strict: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -62,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Restore Docker cache
         id: cache
