@@ -22,6 +22,8 @@ try {
   securityScan(root);
   fs.writeFileSync(path.join(root, 'tokens.py'), 'TOKENS = []\n');
   securityScan(root);
+  fs.writeFileSync(path.join(root, 'dependency.jar'), Buffer.from('password = "binary-package-data"\0'));
+  securityScan(root);
   fs.mkdirSync(path.join(root, '.ssh'));
   fs.writeFileSync(path.join(root, '.ssh', 'config'), 'Host example\n');
   rejected = false;
