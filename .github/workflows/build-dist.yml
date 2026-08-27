@@ -51,7 +51,7 @@ jobs:
               echo "dist is already up to date"
               exit 0
             fi
-            git add dist package-lock.json
+            git add -f dist package-lock.json
             git commit -m "chore: build action dist"
             if git push origin HEAD:main; then
               exit 0
