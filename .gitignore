@@ -55,6 +55,5 @@ coverage/
 test-results/
 
 # Keep the GitHub Action distribution and dependency lockfile tracked.
-!dist/
-!dist/**
 !package-lock.json
+
