@@ -7,7 +7,19 @@
     },
     "trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v2": {
       "object": "sha256:261d211bda4708252ec0c3768ac004b40f8bc2ead52135afc315d8bbd0807156",
-      "updated_at": "2026-08-27T14:40:54.337Z"
+      "updated_at": "2026-08-27T14:55:48.170Z"
+    },
+    "trusted/Ludy87/cache-the-planet/example-node/linux-amd64/npm/v1": {
+      "object": "sha256:8eb18880dd5169f07202c43631e74007807bf2c246ada0f82a9dbfaae2d6c718",
+      "updated_at": "2026-08-27T14:55:42.608Z"
+    },
+    "trusted/Ludy87/cache-the-planet/example-task/linux-amd64/task/v1": {
+      "object": "sha256:042c75bca0b9f92761d15f06a7a4e6a51820005ef6a6d40b74b126050bcc3730",
+      "updated_at": "2026-08-27T14:55:44.633Z"
+    },
+    "trusted/Ludy87/cache-the-planet/node-build/linux-amd64/npm/6f75dfaa4e7a314a45b0b084fab9a2cf79a2583a929bfcdc58f07ad80e65dd8c/v1": {
+      "object": "sha256:db313c0a2595e0b68139864c170cedcfbae7e005f8084a0a3d9e8da5c9b4a509",
+      "updated_at": "2026-08-27T14:55:46.420Z"
     }
   }
 }
