@@ -1,0 +1,92 @@
+name: uv Python cache asset integration
+concurrency:
+  group: cache-the-planet-main-writes
+  cancel-in-progress: false
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CACHE_REPOSITORY: Ludy87/cache-the-planet
+  UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
+  UV_PYTHON_INSTALL_DIR: ${{ github.workspace }}/.cache/uv-python
+
+jobs:
+  save-cache:
+    name: Install and save uv Python asset cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: false
+
+      - name: Restore uv and Python asset cache
+        id: cache
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: trusted/Ludy87/cache-the-planet/example-uv-python/linux-amd64/uv-python/3.13/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
+          path: |
+            .cache/uv
+            .cache/uv-python
+          strict: false
+
+      - name: Install managed Python
+        run: uv python install 3.13
+
+      - name: Create environment and populate uv cache
+        run: |
+          uv venv --python 3.13 .venv
+          uv pip install --python .venv/bin/python -r examples/uv-cache/requirements.txt
+
+      - name: Save uv and Python asset cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: ./save
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: trusted/Ludy87/cache-the-planet/example-uv-python/linux-amd64/uv-python/3.13/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
+          path: |
+            .cache/uv
+            .cache/uv-python
+          strict: true
+
+  restore-cache:
+    name: Restore uv Python asset cache in a fresh job
+    needs: save-cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: false
+
+      - name: Restore uv and Python asset cache
+        id: cache
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: trusted/Ludy87/cache-the-planet/example-uv-python/linux-amd64/uv-python/3.13/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
+          path: |
+            .cache/uv
+            .cache/uv-python
+          strict: true
+
+      - name: Assert exact asset cache hit
+        run: |
+          test "${{ steps.cache.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/Ludy87/cache-the-planet/example-uv-python/linux-amd64/uv-python/3.13/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1"
+
+      - name: Verify managed Python and uv cache offline
+        run: |
+          uv python find 3.13
+          uv venv --python 3.13 .venv
+          uv pip install --python .venv/bin/python --offline -r examples/uv-cache/requirements.txt

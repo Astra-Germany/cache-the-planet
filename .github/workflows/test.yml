@@ -9,6 +9,7 @@ on:
       - Docker cache integration
       - Node cache asset integration
       - uv cache asset integration
+      - uv Python cache asset integration
       - Task cache asset integration
       - Java cache asset integration
       - Gradle cache asset integration
