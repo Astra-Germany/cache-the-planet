@@ -58,10 +58,10 @@ const c = require('./common');
     if (process.env.GITHUB_OUTPUT) {
       fs.appendFileSync(
         process.env.GITHUB_OUTPUT,
-        `content-hash=${hash}\ncache-size=${fs.statSync(archive.file).size}\n`,
+        `content-hash=${hash}\nasset-name=${assetName}\ncache-size=${fs.statSync(archive.file).size}\n`,
       );
     }
-    console.log(`Cache saved: ${key} -> ${hash}`);
+    console.log(`Cache saved: key=${key}; asset=${assetName}; content-hash=${hash}`);
   } catch (error) {
     c.fail(error);
   }
