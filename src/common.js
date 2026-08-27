@@ -83,7 +83,7 @@ function entries() {
 // ever sees them, and refuse symlinks so an apparently harmless cache path
 // cannot unexpectedly include data outside the workspace.
 const sensitiveName = /^(?:\.env(?:\..*)?|\.npmrc|\.pypirc|\.netrc|\.git-credentials|credentials?(?:[._-].*)?|id_(?:rsa|dsa|ecdsa|ed25519))$/i;
-const sensitiveKeywordName = /(^|[-_.])(secret|secrets|token|tokens|password|passwd)([-_.]|$)|\.(pem|key|p12|pfx)$/i;
+const sensitiveKeywordName = /(^|[-_.])(secret|secrets|token|tokens|password|passwd)([-_.]|$)|\.(key|p12|pfx)$/i;
 const sourceFileName = /\.(?:py|js|mjs|cjs|ts|tsx|java|go|rs|c|cc|cpp|h|hpp|rb|php|cs|swift|kt|kts|scala|sh)$/i;
 const binaryFileName = /\.(?:7z|aar|bin|class|dll|dylib|exe|gz|iso|jar|jpeg|jpg|so|tar|tgz|war|webp|zip|zst)$/i;
 const sensitiveDirectory = /(^|[\\/])(?:\.ssh|\.aws|\.docker|\.kube)(?:[\\/]|$)/i;
