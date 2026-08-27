@@ -1,4 +1,9 @@
 {
   "schema_version": 1,
-  "references": {}
+  "references": {
+    "trusted/Ludy87/cache-the-planet/node-build/linux-amd64/npm/6f75dfaa4e7a314a45b0b084fab9a2cf79a2583a929bfcdc58f07ad80e65dd8c/v1": {
+      "object": "sha256:ca275fe29eb7ace18eba6570fc47619a22a260068f3830e96f951612901f4fc6",
+      "updated_at": "2026-08-27T22:40:45.678Z"
+    }
+  }
 }
