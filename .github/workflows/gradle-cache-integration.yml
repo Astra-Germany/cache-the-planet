@@ -31,7 +31,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/settings.gradle', 'examples/gradle-cache/build.gradle') }}/v1
+          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1
           path: .cache/gradle
           strict: false
 
@@ -45,7 +45,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/settings.gradle', 'examples/gradle-cache/build.gradle') }}/v1
+          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1
           path: .cache/gradle
           strict: true
 
@@ -66,7 +66,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/settings.gradle', 'examples/gradle-cache/build.gradle') }}/v1
+          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1
           path: .cache/gradle
           strict: true
 
@@ -74,7 +74,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/settings.gradle', 'examples/gradle-cache/build.gradle') }}/v1"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1"
 
       - name: Build offline with restored Gradle cache
         working-directory: examples/gradle-cache
