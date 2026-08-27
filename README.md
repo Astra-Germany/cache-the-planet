@@ -120,6 +120,8 @@ npm run build
 
 Der Workflow `build-dist.yml` baut `dist/` bei Änderungen an `src/` automatisch und committed die generierten Dateien nach `main`. Der Testworkflow prüft zusätzlich, dass `dist/` mit dem Source-Code übereinstimmt. Deshalb müssen Änderungen an der Action nicht mehr direkt in `dist/` gepflegt werden.
 
+Der automatisch erzeugte Commit `chore: build action dist` wird mit `GITHUB_TOKEN` gepusht. GitHub startet für solche Pushes absichtlich keine weiteren `push`-Workflows. Der Testworkflow reagiert deshalb zusätzlich auf das erfolgreiche Ende von `Build action distribution` über `workflow_run`.
+
 Veröffentliche anschließend einen unveränderlichen Release-Tag, zum Beispiel `v1`:
 
 ```bash
