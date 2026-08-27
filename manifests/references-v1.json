@@ -12,6 +12,10 @@
     "trusted/Ludy87/cache-the-planet/example-node/linux-amd64/npm/v1": {
       "object": "sha256:8eb18880dd5169f07202c43631e74007807bf2c246ada0f82a9dbfaae2d6c718",
       "updated_at": "2026-08-27T14:55:42.608Z"
+    },
+    "trusted/Ludy87/cache-the-planet/example-task/linux-amd64/task/v1": {
+      "object": "sha256:042c75bca0b9f92761d15f06a7a4e6a51820005ef6a6d40b74b126050bcc3730",
+      "updated_at": "2026-08-27T14:55:44.633Z"
     }
   }
 }
