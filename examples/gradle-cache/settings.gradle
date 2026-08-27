@@ -1,0 +1,8 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'cache-the-planet-gradle-example'

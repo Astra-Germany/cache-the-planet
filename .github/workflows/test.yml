@@ -11,6 +11,7 @@ on:
       - uv cache asset integration
       - Task cache asset integration
       - Java cache asset integration
+      - Gradle cache asset integration
     types: [completed]
 jobs:
   unit:
