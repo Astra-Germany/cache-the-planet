@@ -1,0 +1,80 @@
+name: Node cache asset integration
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CACHE_REPOSITORY: Ludy87/cache-the-planet
+  CACHE_KEY: trusted/Ludy87/cache-the-planet/example-node/linux-amd64/npm/v1
+
+jobs:
+  save-cache:
+    name: Install and save npm cache asset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Configure npm cache directory
+        run: npm config set cache "$PWD/.cache/npm" --global
+
+      - name: Restore npm cache asset
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: .cache/npm
+          strict: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Save npm cache asset
+        uses: ./save
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: .cache/npm
+          strict: true
+
+  restore-cache:
+    name: Restore npm cache asset in a fresh job
+    needs: save-cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Configure npm cache directory
+        run: npm config set cache "$PWD/.cache/npm" --global
+
+      - name: Restore npm cache asset
+        id: cache
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: .cache/npm
+          strict: true
+
+      - name: Assert exact asset cache hit
+        shell: bash
+        run: |
+          test "${{ steps.cache.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache.outputs.matched-key }}" = "${CACHE_KEY}"
+          test -d .cache/npm
+
+      - name: Verify npm can use restored cache
+        run: npm ci --prefer-offline

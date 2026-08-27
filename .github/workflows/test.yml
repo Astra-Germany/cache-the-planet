@@ -6,6 +6,7 @@ on:
     workflows:
       - Build action distribution
       - Docker cache integration
+      - Node cache asset integration
     types: [completed]
 jobs:
   unit:
