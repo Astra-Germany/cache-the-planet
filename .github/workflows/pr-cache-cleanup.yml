@@ -1,0 +1,22 @@
+name: Delete closed pull request cache
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: {node-version: 24}
+      - run: node dist/pr-cleanup.js
+        env:
+          CACHE_REPOSITORY: Ludy87/cache-the-planet
+          PR_REPOSITORY: ${{ github.event.repository.full_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

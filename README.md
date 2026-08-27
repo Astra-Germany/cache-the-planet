@@ -425,6 +425,22 @@ Beim Restore wird:
 
 Fork-Pull-Requests speichern standardmäßig nichts. Für besonders sensible Projekte sollten zusätzlich getrennte `trusted`- und `untrusted`-Namespaces eingesetzt werden.
 
+Für interne Pull Requests kann ein eigener, automatisch löschbarer PR-Cache aktiviert werden:
+
+```yaml
+- name: Save PR cache
+  if: success() && github.event_name == 'pull_request'
+  uses: Ludy87/cache-the-planet/save@v1
+  with:
+    repository: Ludy87/cache-the-planet
+    token: ${{ secrets.CACHE_APP_TOKEN }}
+    allow-pr-cache: true
+    key: untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/linux-amd64/v1
+    path: .cache/build
+```
+
+Der Key muss mit `untrusted/<repository>/pr-<number>/` beginnen. Beim Event `pull_request: closed` entfernt [pr-cache-cleanup.yml](.github/workflows/pr-cache-cleanup.yml) die PR-References und die dadurch nicht mehr referenzierten Release Assets. Für Fork-Pull-Requests bleibt das Speichern deaktiviert, weil dort keine Schreib-Secrets an untrusted Code gegeben werden sollten.
+
 ## Garbage Collection
 
 Ein Objekt darf entfernt werden, wenn:
