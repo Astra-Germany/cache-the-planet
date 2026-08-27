@@ -32,6 +32,20 @@ const c = require('./common');
     if (untrustedKey && !isPullRequest) {
       throw new Error('untrusted cache keys may only be saved from pull requests');
     }
+    const current = await c.refs(repository);
+    const existingReference = current.json.references[key];
+    if (existingReference?.object) {
+      const existingAssetName = existingReference.object.startsWith('sha256:')
+        ? `${existingReference.object.slice(7)}.tar.zst` : '';
+      c.log(`cache already exists for key=${key}; asset=${existingAssetName}`);
+      if (process.env.GITHUB_OUTPUT) {
+        fs.appendFileSync(
+          process.env.GITHUB_OUTPUT,
+          `content-hash=${existingReference.object}\nasset-name=${existingAssetName}\n`,
+        );
+      }
+      return;
+    }
     const archive = await c.makeArchive();
     const hash = c.digest(archive.file);
     const assetName = `${hash.slice(7)}.tar.zst`;
