@@ -295,17 +295,19 @@ function markdownCell(value) {
 
 function referencesMarkdown(references, repository = '') {
   const rows = Object.entries(references || {})
-    .sort(([left], [right]) => left.localeCompare(right))
+    .sort(([leftKey, left], [rightKey, right]) => {
+      const dateOrder = String(right?.updated_at || '').localeCompare(String(left?.updated_at || ''));
+      return dateOrder || leftKey.localeCompare(rightKey);
+    })
     .map(([key, reference]) => {
       const object = reference?.object || '';
-      const asset = object.startsWith('sha256:') ? `${object.slice(7)}.tar.zst` : '';
-      return `| ${markdownCell(key)} | ${markdownCell(object)} | ${markdownCell(reference?.updated_at || '')} |`;
+      return `| ${markdownCell(reference?.updated_at || '')} | ${markdownCell(key)} | ${markdownCell(object)} |`;
     });
   return [
     '<!-- cache-the-planet: references-v1.json -->',
     `This table is generated automatically from [\`manifests/references-v1.json\`](https://github.com/${repository}/blob/main/manifests/references-v1.json).`,
     '',
-    '| Cache key | Object | Updated |',
+    '| Updated | Cache key | Object |',
     '| --- | --- | --- |',
     ...rows,
     '',

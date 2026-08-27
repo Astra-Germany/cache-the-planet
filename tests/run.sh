@@ -72,7 +72,7 @@ try {
       updated_at: '2026-08-27T00:00:00.000Z',
     },
   });
-  if (!releaseTable.includes('| trusted/example/cache\\|key | sha256:abc123 | abc123.tar.zst |')) {
+  if (!releaseTable.includes('| 2026-08-27T00:00:00.000Z | trusted/example/cache\\|key | sha256:abc123 |')) {
     throw new Error('release reference table was not generated correctly');
   }
   console.log('security scan test passed');
