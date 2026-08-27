@@ -9,7 +9,7 @@ node <<'NODE'
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { securityScan } = require('../src/common');
+const { securityScan } = require('./src/common');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cache-security-'));
 try {
   const secret = path.join(root, '.env');
