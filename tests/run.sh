@@ -11,6 +11,7 @@ const os = require('os');
 const path = require('path');
 const { securityScan: sourceSecurityScan } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
+const { encryptFile, decryptFile } = require('./src/common');
 const securityScan = (directory) => {
   sourceSecurityScan(directory);
   distSecurityScan(directory);
@@ -45,6 +46,15 @@ try {
   rejected = false;
   try { securityScan(root); } catch { rejected = true; }
   if (!rejected) throw new Error('private key was not rejected');
+  process.env['INPUT_ENCRYPTION-KEY'] = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+  const encryptedFile = path.join(root, 'archive.bin');
+  fs.writeFileSync(encryptedFile, 'cache payload');
+  encryptFile(encryptedFile);
+  const decryptedFile = decryptFile(encryptedFile);
+  if (fs.readFileSync(decryptedFile, 'utf8') !== 'cache payload') {
+    throw new Error('encrypted cache round-trip failed');
+  }
+  console.log('encryption test passed');
   fs.mkdirSync(path.join(root, '.ssh'));
   fs.writeFileSync(path.join(root, '.ssh', 'config'), 'Host example\n');
   rejected = false;
