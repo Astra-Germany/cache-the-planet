@@ -79,7 +79,7 @@ function entries() {
   return input('path').split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
 }
 
-function makeArchive() {
+async function makeArchive() {
   if (!have('tar') || !have('zstd')) throw new Error('tar and zstd are required on the runner');
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cac-'));
   const output = path.join(directory, 'object.tar.zst');
@@ -93,15 +93,24 @@ function makeArchive() {
   if (!paths.length) throw new Error('no cache paths exist');
   const excludes = input('exclude').split(/\r?\n/).map((value) => value.trim())
     .filter(Boolean).flatMap((value) => ['--exclude', value]);
-  const tar = cp.spawnSync('tar', [
+  const tar = cp.spawn('tar', [
     '--sort=name', '--mtime=UTC 1970-01-01', '--owner=0', '--group=0',
     '--numeric-owner', '--format=gnu', '-cf', '-', ...excludes, '-C', workspace, ...paths,
   ], { stdio: ['ignore', 'pipe', 'inherit'] });
-  if (tar.status) throw new Error('tar failed');
-  const zstd = cp.spawnSync('zstd', ['-q', `-${input('compression-level', '3')}`, '-o', output], {
-    input: tar.stdout, stdio: ['pipe', 'inherit', 'inherit'],
+  const zstd = cp.spawn('zstd', ['-q', `-${input('compression-level', '3')}`, '-o', output], {
+    stdio: ['pipe', 'inherit', 'inherit'],
   });
-  if (zstd.status) throw new Error('zstd failed');
+  tar.stdout.pipe(zstd.stdin);
+  await Promise.all([
+    new Promise((resolve, reject) => {
+      tar.once('error', reject);
+      tar.once('close', (code) => code === 0 ? resolve() : reject(new Error('tar failed')));
+    }),
+    new Promise((resolve, reject) => {
+      zstd.once('error', reject);
+      zstd.once('close', (code) => code === 0 ? resolve() : reject(new Error('zstd failed')));
+    }),
+  ]);
   validateArchive(output);
   return { file: output, dir: directory };
 }
