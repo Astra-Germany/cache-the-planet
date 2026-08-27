@@ -7,7 +7,7 @@
     },
     "trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v2": {
       "object": "sha256:261d211bda4708252ec0c3768ac004b40f8bc2ead52135afc315d8bbd0807156",
-      "updated_at": "2026-08-27T19:30:14.583Z"
+      "updated_at": "2026-08-27T19:41:48.323Z"
     },
     "trusted/Ludy87/cache-the-planet/example-node/linux-amd64/npm/v1": {
       "object": "sha256:dd37ff0cd0cb274cc43fa47e2e868dc1c6f2b3de103ea343843b3bcfc1dd87ed",
@@ -23,7 +23,7 @@
     },
     "trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/bebe0d6eac024116aec3e8995a6d24974063faa8fb30d39da9ffa8c80ca78c33/v1": {
       "object": "sha256:3a82f5584ee6a25b238b6b212801b2abc3cb8f3d20fd8d9d21ba02aee7821148",
-      "updated_at": "2026-08-27T19:32:51.260Z"
+      "updated_at": "2026-08-27T19:41:08.577Z"
     },
     "trusted/Ludy87/cache-the-planet/example-uv/linux-amd64/uv/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v1": {
       "object": "sha256:291ef7fdafb8cf269994db3413d3ba469fbd09d2c9ce36c2ddca068eaee02f58",
