@@ -299,14 +299,14 @@ function referencesMarkdown(references, repository = '') {
     .map(([key, reference]) => {
       const object = reference?.object || '';
       const asset = object.startsWith('sha256:') ? `${object.slice(7)}.tar.zst` : '';
-      return `| ${markdownCell(key)} | ${markdownCell(object)} | ${markdownCell(asset)} | ${markdownCell(reference?.updated_at || '')} |`;
+      return `| ${markdownCell(key)} | ${markdownCell(object)} | ${markdownCell(reference?.updated_at || '')} |`;
     });
   return [
     '<!-- cache-the-planet: references-v1.json -->',
     `This table is generated automatically from [\`manifests/references-v1.json\`](https://github.com/${repository}/blob/main/manifests/references-v1.json).`,
     '',
-    '| Cache key | Object | Release asset | Updated |',
-    '| --- | --- | --- | --- |',
+    '| Cache key | Object | Updated |',
+    '| --- | --- | --- |',
     ...rows,
     '',
     `Total references: **${rows.length}**`,
