@@ -1,4 +1,7 @@
 name: Docker cache integration
+concurrency:
+  group: cache-the-planet-main-writes
+  cancel-in-progress: false
 
 on:
   push:

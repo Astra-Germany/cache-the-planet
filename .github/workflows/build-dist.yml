@@ -1,7 +1,7 @@
 name: Build action distribution
 concurrency:
-  group: build-action-distribution
-  cancel-in-progress: true
+  group: cache-the-planet-main-writes
+  cancel-in-progress: false
 on:
   push:
     branches: [main]
