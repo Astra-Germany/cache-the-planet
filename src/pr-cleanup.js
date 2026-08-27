@@ -21,6 +21,7 @@ const c = require('./common');
           ...(current.sha ? { sha: current.sha } : {}), branch: 'main',
         }),
       });
+      await c.updateReleaseDescription(repository);
     }
     const live = new Set(Object.values(current.json.references).map((reference) => reference.object));
     const assets = (await c.assets(repository)).assets;
