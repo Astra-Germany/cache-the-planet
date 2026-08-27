@@ -60,7 +60,7 @@ try {
   fs.rmSync(root, { recursive: true, force: true });
 }
 NODE
-if rg -n -i 'actions/cache|cache:[[:space:]]*npm|enable-cache:[[:space:]]*true|cache-image:[[:space:]]*true' .github; then
+if grep -RniE 'actions/cache|cache:[[:space:]]*npm|enable-cache:[[:space:]]*true|cache-image:[[:space:]]*true' .github; then
   echo 'GitHub Actions native cache is disabled but a cache configuration was found'
   exit 1
 fi
