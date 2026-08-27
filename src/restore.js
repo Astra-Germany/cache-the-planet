@@ -33,6 +33,8 @@ function setOutput(name, value) {
 
     if (!found) {
       setOutput('cache-hit', 'false');
+      setOutput('matched-key', '');
+      console.log(`Cache miss: no cache found for key: ${key}`);
       return;
     }
 

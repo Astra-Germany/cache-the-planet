@@ -1,5 +1,24 @@
 # Security
 
+## Token für das Cache-Repository
+
+Bei einem separaten Cache-Repository benötigt der Workflow ein Token mit minimalen Schreibrechten auf dieses Repository. Ein Fine-grained PAT wird im Benutzerkonto erstellt, aber als Secret im Anwendungs-Repository gespeichert, zum Beispiel:
+
+```text
+Secret-Name: CACHE_APP_TOKEN
+Repository: spdf-cache → Settings → Secrets and variables → Actions
+PAT-Zugriff: Ludy87/cache-the-planet
+PAT-Rechte: Contents/Code Read and write, Metadata Read-only
+```
+
+Im Workflow:
+
+```yaml
+token: ${{ secrets.CACHE_APP_TOKEN }}
+```
+
+Kein dauerhaft gültiges Token ohne Ablaufdatum und kein Fallback auf `github.token` verwenden. Fork-Pull-Requests dürfen keine Schreib-Secrets erhalten; der Save-Schritt bleibt für sie deaktiviert.
+
 Cache data is untrusted input. Before an archive is created, the action rejects:
 
 - symlinks;

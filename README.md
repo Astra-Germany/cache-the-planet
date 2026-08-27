@@ -234,6 +234,51 @@ Metadata: Read-only
 
 Im Anwendungs-Repository braucht die Action selbst keine Schreibrechte. Der Workflow muss nur das Secret lesen dürfen.
 
+## Fine-grained PAT einrichten
+
+Für ein einfaches persönliches Setup kann ein Fine-grained Personal Access Token (PAT) verwendet werden. Der PAT wird im Benutzerkonto erstellt, erhält aber ausschließlich Zugriff auf das Cache-Repository.
+
+### 1. PAT erstellen
+
+Öffne:
+
+```text
+GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token
+```
+
+Empfohlene Einstellungen:
+
+```text
+Token name: cache-the-planet
+Expiration: 90 Tage oder kürzer
+Repository access: Only select repositories
+Repository: Ludy87/cache-the-planet
+Metadata: Read-only
+Contents/Code: Read and write
+```
+
+Kein Ablaufdatum sollte nur in Ausnahmefällen verwendet werden. Nach der Erstellung kann der Token-Wert nur einmal kopiert werden. Bei Verlust muss ein neuer Token erstellt werden.
+
+### 2. PAT als Secret speichern
+
+Der PAT wird als Secret im Repository gespeichert, in dessen Workflow der Cache verwendet wird, zum Beispiel `spdf-cache`:
+
+```text
+spdf-cache → Settings → Secrets and variables → Actions → New repository secret
+Name: CACHE_APP_TOKEN
+Secret: <der kopierte PAT-Wert>
+```
+
+Der Secret-Name ist unabhängig vom Namen des PAT. Im Workflow wird er so verwendet:
+
+```yaml
+token: ${{ secrets.CACHE_APP_TOKEN }}
+```
+
+Der PAT selbst muss Zugriff auf `Ludy87/cache-the-planet` haben. Ein `github.token` aus `spdf-cache` reicht für ein separates Cache-Repository normalerweise nicht aus. Verwende keinen Fallback auf `github.token`, weil dadurch bei Pull Requests ein irreführender `403 Resource not accessible by integration` entstehen kann.
+
+Fork-Pull-Requests erhalten aus Sicherheitsgründen normalerweise keine Repository-Secrets. Der Save-Schritt muss dort deaktiviert bleiben. Ein PAT darf niemals in YAML-Dateien, Logs, Cache-Dateien oder den Quellcode geschrieben werden.
+
 ## GitHub-App einrichten
 
 ### 1. App erstellen
