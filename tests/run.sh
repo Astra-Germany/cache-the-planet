@@ -18,7 +18,9 @@ try {
   try { securityScan(root); } catch { rejected = true; }
   if (!rejected) throw new Error('sensitive filename/content was not rejected');
   fs.rmSync(secret);
-  fs.writeFileSync(path.join(root, 'config.txt'), '-----BEGIN PRIVATE KEY-----\n');
+  fs.writeFileSync(path.join(root, 'env.py'), 'password = None\n');
+  securityScan(root);
+  fs.writeFileSync(path.join(root, 'config.txt'), 'DATABASE_PASSWORD=should-not-be-cached\n');
   rejected = false;
   try { securityScan(root); } catch { rejected = true; }
   if (!rejected) throw new Error('private-key content was not rejected');

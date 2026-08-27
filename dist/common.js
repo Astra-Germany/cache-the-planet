@@ -82,16 +82,19 @@ function entries() {
 // Cache inputs are treated as untrusted. Refuse obvious credentials before tar
 // ever sees them, and refuse symlinks so an apparently harmless cache path
 // cannot unexpectedly include data outside the workspace.
-const sensitiveName = /(^|[-_.])(env|npmrc|pypirc|netrc|git-credentials|credentials?|secret|secrets|token|tokens|password|passwd)([-_.]|$)|^id_(rsa|dsa|ecdsa|ed25519)$|\.(pem|key|p12|pfx)$/i;
+const sensitiveName = /^(?:\.env(?:\..*)?|\.npmrc|\.pypirc|\.netrc|\.git-credentials|credentials?(?:[._-].*)?|id_(?:rsa|dsa|ecdsa|ed25519))$/i;
+const sensitiveKeywordName = /(^|[-_.])(secret|secrets|token|tokens|password|passwd)([-_.]|$)|\.(pem|key|p12|pfx)$/i;
 const sensitiveDirectory = /(^|[\\/])(?:\.ssh|\.aws|\.docker|\.kube)(?:[\\/]|$)/i;
-const sensitiveContent = /(BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY|gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|npm_[A-Za-z0-9]+|AKIA[0-9A-Z]{16}|(?:password|passwd|secret|api[_-]?key)\s*[:=])/i;
+const sensitiveContent = /(BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY|gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|npm_[A-Za-z0-9]+|AKIA[0-9A-Z]{16}|(?:password|passwd|secret|api[_-]?key)\s*[:=]\s*["']?[A-Za-z0-9_./+=-]{8,})/i;
 
 function securityScan(root) {
   const walk = (file) => {
     const stat = fs.lstatSync(file);
     if (stat.isSymbolicLink()) throw new Error(`cache path contains a symlink: ${path.relative(process.cwd(), file)}`);
     const relative = path.relative(root, file);
-    if (sensitiveDirectory.test(relative) || sensitiveName.test(path.basename(file))) {
+    if (sensitiveDirectory.test(relative)
+      || sensitiveName.test(path.basename(file))
+      || sensitiveKeywordName.test(path.basename(file))) {
       throw new Error(`cache path contains a sensitive-looking file: ${path.relative(process.cwd(), file)}`);
     }
     if (stat.isDirectory()) {
