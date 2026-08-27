@@ -1,6 +1,6 @@
 name: Build action distribution
 concurrency:
-  group: cache-the-planet-main-writes
+  group: build-action-distribution
   cancel-in-progress: false
 on:
   push:
@@ -44,7 +44,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
             git fetch origin main
             git rebase origin/main
             npm run build
@@ -60,5 +60,5 @@ jobs:
             echo "Push conflicted; retrying build (attempt $((attempt + 1)))"
             git reset --hard origin/main
           done
-          echo "Unable to push generated dist after 3 attempts"
+          echo "Unable to push generated dist after 10 attempts"
           exit 1
