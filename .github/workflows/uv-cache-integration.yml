@@ -23,6 +23,9 @@ jobs:
           enable-cache: false
           cache-local-path: .cache/uv
 
+      - name: Create virtual environment
+        run: uv venv .venv
+
       - name: Restore uv cache asset
         uses: ./
         with:
@@ -33,7 +36,7 @@ jobs:
           strict: false
 
       - name: Populate uv cache
-        run: uv pip install --system -r examples/uv-cache/requirements.txt
+        run: uv pip install --python .venv/bin/python -r examples/uv-cache/requirements.txt
 
       - name: Save uv cache asset
         uses: ./save
@@ -56,6 +59,9 @@ jobs:
           enable-cache: false
           cache-local-path: .cache/uv
 
+      - name: Create virtual environment
+        run: uv venv .venv
+
       - name: Restore uv cache asset
         id: cache
         uses: ./
@@ -74,4 +80,4 @@ jobs:
           test -d .cache/uv
 
       - name: Verify uv can use restored cache
-        run: uv pip install --system --offline -r examples/uv-cache/requirements.txt
+        run: uv pip install --python .venv/bin/python --offline -r examples/uv-cache/requirements.txt
