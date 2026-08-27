@@ -37,6 +37,12 @@ try {
   fs.writeFileSync(path.join(root, 'example-1.0.dist-info', 'METADATA'), 'Requires-Dist: password-parser\n');
   fs.writeFileSync(path.join(root, 'example-1.0.dist-info', 'RECORD'), 'npm_token_file,sha256=example\n');
   securityScan(root);
+  fs.mkdirSync(path.join(root, '_cacache', 'index-v5', 'b7', 'e8'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, '_cacache', 'index-v5', 'b7', 'e8', 'index-entry'),
+    'make-fetch-happen:request-cache:https://registry.npmjs.org/example\n',
+  );
+  securityScan(root);
   fs.writeFileSync(path.join(root, 'target.txt'), 'internal target\n');
   fs.symlinkSync('target.txt', path.join(root, 'internal-link'));
   securityScan(root);
