@@ -404,6 +404,7 @@ Branch- und Default-Branch-Fallback werden durch die Reihenfolge der Prefixe mod
 | `path` | ja | Eine oder mehrere Dateien/Verzeichnisse, jeweils eine Zeile |
 | `compression-level` | nein | zstd-Level, Standard `3` |
 | `token` | nein | Token; alternativ `GITHUB_TOKEN` |
+| `use-default-token` | nein | Verwendet bei leerem `token` automatisch `GITHUB_TOKEN`/`ACTIONS_RUNTIME_TOKEN`, Standard `true` |
 | `strict` | nein | `true` bricht bei Cache-Fehlern ab, Standard `false` |
 
 ### Save-Inputs
@@ -413,6 +414,7 @@ Zusätzlich zu `repository`, `key`, `path`, `compression-level`, `token` und `st
 | Input | Beschreibung |
 |---|---|
 | `exclude` | Ausschlussmuster, jeweils eine Zeile; zum Beispiel `**/.env` |
+| `use-default-token` | Deaktiviert mit `false` den automatischen Token-Fallback |
 
 ### Outputs
 
