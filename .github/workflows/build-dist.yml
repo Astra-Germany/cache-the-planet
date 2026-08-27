@@ -28,7 +28,6 @@ jobs:
           path: .cache/npm
           strict: false
       - run: npm install
-      - run: npm run build
       - name: Save npm cache asset
         if: success()
         uses: ./save
