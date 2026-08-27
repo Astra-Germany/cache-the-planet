@@ -172,6 +172,10 @@
     "trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/9575614c8cc9da04ebbbcbf722c9e01c822c54b1bc3a69e67340317adeacb427/v1": {
       "object": "sha256:104e4bbdc78bd7fcf5f47377438cd10a928f208891acc580038521360360f67c",
       "updated_at": "2026-08-27T21:42:16.024Z"
+    },
+    "untrusted/Ludy87/spdf-cache/pr-6/gradle/Linux-X64/878c2c40e187f29e52e33aadcbb8c43f9d71ba68997800fe4645514dddacc319/v1": {
+      "object": "sha256:9be04dca624a791bcb191e5c879b682406a37547a87af6d46440609c88a242f9",
+      "updated_at": "2026-08-27T21:43:49.715Z"
     }
   }
 }
