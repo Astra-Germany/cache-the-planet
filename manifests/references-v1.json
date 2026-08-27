@@ -28,6 +28,10 @@
     "trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v2": {
       "object": "sha256:54689212445611f76bdb3325946b791793db3a734a3ebc8375a5c2005d5db8d1",
       "updated_at": "2026-08-27T22:47:35.142Z"
+    },
+    "untrusted/Ludy87/spdf-cache/pr-6/gradle/Linux-X64/8649c7b8f503e0e7b1cb3945e3262b06bd08d5b26092d182d2ec066e9f9d4e58/v1": {
+      "object": "sha256:1b04c61ef3d7e1c4b1cc758f3be3da5d4136733bb63f0ee0f0012e0e065641cc",
+      "updated_at": "2026-08-27T22:52:32.488Z"
     }
   }
 }
