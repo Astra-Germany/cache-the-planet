@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "description": "Content-addressed GitHub Actions cache",
+  "allowScripts": {
+    "esbuild": true
+  },
   "scripts": {
     "build": "esbuild ./src/restore.js --bundle --platform=node --target=node24 --minify --outfile=./dist/restore.js && esbuild ./src/save.js --bundle --platform=node --target=node24 --minify --outfile=./dist/save.js && esbuild ./src/gc.js --bundle --platform=node --target=node24 --minify --outfile=./dist/gc.js && esbuild ./src/common.js --platform=node --target=node24 --minify --outfile=./dist/common.js",
     "build:check": "npm run build && git diff --exit-code -- dist",
