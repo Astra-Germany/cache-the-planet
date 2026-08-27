@@ -1,0 +1,78 @@
+name: uv cache asset integration
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CACHE_REPOSITORY: Ludy87/cache-the-planet
+  CACHE_KEY: trusted/Ludy87/cache-the-planet/example-uv/linux-amd64/uv/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
+
+jobs:
+  save-cache:
+    name: Install and save uv cache asset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up uv without native GitHub cache
+        uses: astral-sh/setup-uv@v9
+        with:
+          enable-cache: false
+          cache-local-path: .cache/uv
+
+      - name: Restore uv cache asset
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: .cache/uv
+          strict: false
+
+      - name: Populate uv cache
+        run: uv pip install --system -r examples/uv-cache/requirements.txt
+
+      - name: Save uv cache asset
+        uses: ./save
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: .cache/uv
+          strict: true
+
+  restore-cache:
+    name: Restore uv cache asset in a fresh job
+    needs: save-cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up uv without native GitHub cache
+        uses: astral-sh/setup-uv@v9
+        with:
+          enable-cache: false
+          cache-local-path: .cache/uv
+
+      - name: Restore uv cache asset
+        id: cache
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          key: ${{ env.CACHE_KEY }}
+          path: .cache/uv
+          strict: true
+
+      - name: Assert exact asset cache hit
+        shell: bash
+        run: |
+          test "${{ steps.cache.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache.outputs.matched-key }}" = "${CACHE_KEY}"
+          test -d .cache/uv
+
+      - name: Verify uv can use restored cache
+        run: uv pip install --system --offline -r examples/uv-cache/requirements.txt
