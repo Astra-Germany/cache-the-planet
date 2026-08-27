@@ -3,6 +3,8 @@ const c = require('./common');
 
 (async () => {
   try {
+    const repository = c.input('repository');
+    const key = c.input('key');
     const isPullRequest = process.env.GITHUB_REF?.includes('/pull/');
     if (isPullRequest && String(c.input('allow-pr-cache')).toLowerCase() !== 'true') {
       c.log('untrusted pull request: save skipped');
@@ -17,8 +19,19 @@ const c = require('./common');
       }
     }
 
-    const repository = c.input('repository');
-    const key = c.input('key');
+    const trustedKey = key.startsWith('trusted/');
+    const untrustedKey = key.startsWith('untrusted/');
+    const trustedRef = process.env.GITHUB_REF === 'refs/heads/main'
+      || process.env.GITHUB_REF_TYPE === 'tag';
+    if (!trustedKey && !untrustedKey) {
+      throw new Error('cache key must start with trusted/ or untrusted/');
+    }
+    if (trustedKey && !trustedRef) {
+      throw new Error('trusted cache keys may only be saved from main or tags');
+    }
+    if (untrustedKey && !isPullRequest) {
+      throw new Error('untrusted cache keys may only be saved from pull requests');
+    }
     const archive = await c.makeArchive();
     const hash = c.digest(archive.file);
     const assetName = `${hash.slice(7)}.tar.zst`;

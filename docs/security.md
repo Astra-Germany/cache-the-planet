@@ -1,5 +1,12 @@
 # Security
 
-Cache data is untrusted input. Do not cache `.env`, SSH keys, API keys, npm/pip/Docker credentials, GitHub tokens, or `credentials*`; use `exclude` and review paths. Downloads are verified by SHA-256 and archives reject traversal paths.
+Cache data is untrusted input. Before an archive is created, the action rejects:
 
-Fork pull requests never write references. Use separate `trusted/` and `untrusted/` key namespaces if untrusted caches are needed. A cache hit is not proof of provenance; builds must not execute arbitrary cached binaries without their own trust controls.
+- symlinks;
+- paths outside `GITHUB_WORKSPACE`;
+- sensitive-looking names or directories such as `.env*`, `.npmrc`, `.netrc`, `.ssh`, `.aws`, `.docker`, `.kube`, `credentials*`, `*secret*`, `*token*`, `*password*`, SSH private keys and `*.pem`/`*.key`/`*.p12`/`*.pfx`;
+- common private-key and credential patterns in regular files up to 1 MiB.
+
+This is a defense-in-depth check, not a secret scanner. Keep cache paths narrow, use `exclude`, and never put a workspace containing production credentials into a cache path. Downloads are verified by SHA-256 and archives reject traversal paths.
+
+Trusted references can only be written from `main` or a tag. Pull-request references must use `untrusted/<repository>/pr-<number>/...`; they are removed when the PR closes. Fork pull requests cannot save unless the workflow explicitly and safely provides the required permission/token. A cache hit is not proof of provenance; builds must not execute arbitrary cached binaries without their own trust controls.
