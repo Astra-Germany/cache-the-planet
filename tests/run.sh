@@ -10,6 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { securityScan: sourceSecurityScan } = require('./src/common');
+const { referencesMarkdown } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
 const securityScan = (directory) => {
@@ -65,6 +66,15 @@ try {
   rejected = false;
   try { securityScan(root); } catch { rejected = true; }
   if (!rejected) throw new Error('private-key content was not rejected');
+  const releaseTable = referencesMarkdown({
+    'trusted/example/cache|key': {
+      object: 'sha256:abc123',
+      updated_at: '2026-08-27T00:00:00.000Z',
+    },
+  });
+  if (!releaseTable.includes('| trusted/example/cache\\|key | sha256:abc123 | abc123.tar.zst |')) {
+    throw new Error('release reference table was not generated correctly');
+  }
   console.log('security scan test passed');
 } finally {
   fs.rmSync(root, { recursive: true, force: true });

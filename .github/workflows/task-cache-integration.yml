@@ -35,7 +35,7 @@ jobs:
           strict: false
 
       - name: Run task build
-        run: task --dir examples/task-cache build
+        run: task --taskfile examples/task-cache/Taskfile.yml build
 
       - name: Save task build cache asset
         uses: ./save
@@ -73,4 +73,4 @@ jobs:
           test "${{ steps.cache.outputs.matched-key }}" = "${CACHE_KEY}"
 
       - name: Verify restored task cache
-        run: task --dir examples/task-cache verify
+        run: task --taskfile examples/task-cache/Taskfile.yml verify

@@ -55,6 +55,7 @@ const c = require('./common');
     }
 
     await c.setRef(repository, key, hash);
+    await c.updateReleaseDescription(repository);
     if (process.env.GITHUB_OUTPUT) {
       fs.appendFileSync(
         process.env.GITHUB_OUTPUT,

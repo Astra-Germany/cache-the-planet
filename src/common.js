@@ -289,6 +289,40 @@ async function setRef(repository, key, hash) {
   throw new Error('reference update conflicted after retries');
 }
 
+function markdownCell(value) {
+  return String(value ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+}
+
+function referencesMarkdown(references, repository = '') {
+  const rows = Object.entries(references || {})
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, reference]) => {
+      const object = reference?.object || '';
+      const asset = object.startsWith('sha256:') ? `${object.slice(7)}.tar.zst` : '';
+      return `| ${markdownCell(key)} | ${markdownCell(object)} | ${markdownCell(asset)} | ${markdownCell(reference?.updated_at || '')} |`;
+    });
+  return [
+    '<!-- cache-the-planet: references-v1.json -->',
+    `This table is generated automatically from [\`manifests/references-v1.json\`](https://github.com/${repository}/blob/main/manifests/references-v1.json).`,
+    '',
+    '| Cache key | Object | Release asset | Updated |',
+    '| --- | --- | --- | --- |',
+    ...rows,
+    '',
+    `Total references: **${rows.length}**`,
+  ].join('\n');
+}
+
+async function updateReleaseDescription(repository) {
+  const current = await refs(repository);
+  const cacheRelease = await release(repository);
+  await gh(`/repos/${repository}/releases/${cacheRelease.id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ body: referencesMarkdown(current.json.references, repository) }),
+  });
+}
+
 async function download(repository, hash) {
   const asset = await object(repository, hash);
   if (!asset) throw new Error(`object ${hash} not found`);
@@ -326,5 +360,6 @@ function extract(file) {
 module.exports = {
   input, token, log, fail, gh, upload, entries, securityScan, makeArchive, digest,
   encryptFile, decryptFile,
-  release, assets, object, refs, setRef, download, extract,
+  release, assets, object, refs, setRef, referencesMarkdown, updateReleaseDescription,
+  download, extract,
 };
