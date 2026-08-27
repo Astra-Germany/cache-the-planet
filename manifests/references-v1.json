@@ -4,6 +4,10 @@
     "trusted/Ludy87/cache-the-planet/example-uv/linux-amd64/uv/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v1": {
       "object": "sha256:ba605fb1f48d37732840b640a385381ceb6b66eb818fa8a8e988fb232bae0f5e",
       "updated_at": "2026-08-27T22:42:22.686Z"
+    },
+    "trusted/Ludy87/cache-the-planet/node-build/linux-amd64/npm/6f75dfaa4e7a314a45b0b084fab9a2cf79a2583a929bfcdc58f07ad80e65dd8c/v1": {
+      "object": "sha256:cd0cf401fc03ec01487d2175eb412e0d9e39c2220bdcb29fdd2c736f341d4366",
+      "updated_at": "2026-08-27T22:42:23.932Z"
     }
   }
 }
