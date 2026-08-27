@@ -1,13 +1,4 @@
 {
   "schema_version": 1,
-  "references": {
-    "trusted/Ludy87/cache-the-planet/node-build/linux-amd64/npm/6f75dfaa4e7a314a45b0b084fab9a2cf79a2583a929bfcdc58f07ad80e65dd8c/v1": {
-      "object": "sha256:ca275fe29eb7ace18eba6570fc47619a22a260068f3830e96f951612901f4fc6",
-      "updated_at": "2026-08-27T22:40:45.678Z"
-    },
-    "trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/bebe0d6eac024116aec3e8995a6d24974063faa8fb30d39da9ffa8c80ca78c33/v1": {
-      "object": "sha256:2c20a15e9225f702a8d666e8e2b39c46a31c048d5a73bd6843d671a15563c98a",
-      "updated_at": "2026-08-27T22:40:51.809Z"
-    }
-  }
+  "references": {}
 }
