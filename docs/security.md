@@ -17,6 +17,14 @@ Im Workflow:
 token: ${{ secrets.CACHE_APP_TOKEN }}
 ```
 
+Wenn `token` nicht angegeben wird, verwendet die Action standardmäßig `GITHUB_TOKEN` beziehungsweise `ACTIONS_RUNTIME_TOKEN`. Dieser Fallback kann deaktiviert werden:
+
+```yaml
+use-default-token: false
+```
+
+Ein explizit gesetzter `token` hat immer Vorrang. Wird der Fallback deaktiviert und kein Token gesetzt, schlagen API-Zugriffe wegen fehlender Authentifizierung fehl.
+
 Kein dauerhaft gültiges Token ohne Ablaufdatum und kein Fallback auf `github.token` verwenden. Fork-Pull-Requests dürfen keine Schreib-Secrets erhalten; der Save-Schritt bleibt für sie deaktiviert.
 
 ## Optionale Cache-Verschlüsselung
