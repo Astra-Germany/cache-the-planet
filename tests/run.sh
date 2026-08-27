@@ -30,6 +30,10 @@ try {
   fs.mkdirSync(path.join(root, 'example-1.0.dist-info'));
   fs.writeFileSync(path.join(root, 'example-1.0.dist-info', 'METADATA'), 'Requires-Dist: password-parser\n');
   securityScan(root);
+  fs.writeFileSync(path.join(root, 'target.txt'), 'internal target\n');
+  fs.symlinkSync('target.txt', path.join(root, 'internal-link'));
+  securityScan(root);
+  fs.rmSync(path.join(root, 'internal-link'));
   fs.writeFileSync(path.join(root, 'dependency.jar'), Buffer.from('password = "binary-package-data"\0'));
   securityScan(root);
   fs.writeFileSync(path.join(root, 'cacert.pem'), '-----BEGIN CERTIFICATE-----\npublic-ca-certificate\n');

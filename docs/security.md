@@ -21,7 +21,7 @@ Kein dauerhaft gültiges Token ohne Ablaufdatum und kein Fallback auf `github.to
 
 Cache data is untrusted input. Before an archive is created, the action rejects:
 
-- symlinks;
+- external symlinks; relative symlinks whose targets remain inside the cache path are allowed and dereferenced into the archive;
 - paths outside `GITHUB_WORKSPACE`;
 - sensitive-looking names or directories such as `.env*` (but not normal source files like `env.py` or `tokens.py`), `.npmrc`, `.netrc`, `.ssh`, `.aws`, `.docker`, `.kube`, `credentials*`, `*secret*`, `*token*`, `*password*`, SSH private keys and `*.key`/`*.p12`/`*.pfx`. Public CA certificates such as `cacert.pem` are allowed; PEM private keys are rejected by their content.
 - common private-key and known-token patterns in text files up to 1 MiB, plus generic credential assignments in non-source/non-package-metadata text files. Python package metadata such as `*.dist-info/METADATA`, `RECORD` and `WHEEL` is allowed because dependency names and descriptions can contain credential-related words. Known binary/archive formats such as JAR, ZIP, WAR and AAR are not decoded as text, preventing false positives from binary package data. Normal package source code is not rejected merely because it contains variables such as `password`, `secret` or `api_key`.

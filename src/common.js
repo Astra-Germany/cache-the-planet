@@ -94,7 +94,15 @@ const credentialAssignment = /(?:password|passwd|secret|api[_-]?key)\s*[:=]\s*(?
 function securityScan(root) {
   const walk = (file) => {
     const stat = fs.lstatSync(file);
-    if (stat.isSymbolicLink()) throw new Error(`cache path contains a symlink: ${path.relative(process.cwd(), file)}`);
+    if (stat.isSymbolicLink()) {
+      const target = path.resolve(path.dirname(file), fs.readlinkSync(file));
+      const targetRelative = path.relative(root, target);
+      if (path.isAbsolute(targetRelative) || targetRelative === '..'
+        || targetRelative.startsWith(`..${path.sep}`)) {
+        throw new Error(`cache path contains an external symlink: ${path.relative(process.cwd(), file)}`);
+      }
+      return;
+    }
     const relative = path.relative(root, file);
     if (sensitiveDirectory.test(relative)
       || sensitiveName.test(path.basename(file))
@@ -140,7 +148,7 @@ async function makeArchive() {
     .filter(Boolean).flatMap((value) => ['--exclude', value]);
   const tar = cp.spawn('tar', [
     '--sort=name', '--mtime=UTC 1970-01-01', '--owner=0', '--group=0',
-    '--numeric-owner', '--format=gnu', '-cf', '-', ...excludes, '-C', workspace, ...paths,
+    '--numeric-owner', '--dereference', '--format=gnu', '-cf', '-', ...excludes, '-C', workspace, ...paths,
   ], { stdio: ['ignore', 'pipe', 'inherit'] });
   const zstd = cp.spawn('zstd', ['-q', `-${input('compression-level', '3')}`, '-o', output], {
     stdio: ['pipe', 'inherit', 'inherit'],
