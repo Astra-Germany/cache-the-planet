@@ -1,4 +1,5 @@
 # Node.js dependencies and local tooling
+.git/
 node_modules/
 .npm/
 npm-debug.log*
@@ -19,6 +20,8 @@ validation.tar
 examples/**/.cache/
 docker-cache/
 buildkit-cache/
+**/.gradle/
+**/build/
 
 # Runtime output and temporary files
 *.log
