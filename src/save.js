@@ -10,7 +10,7 @@ const c = require('./common');
 
     const repository = c.input('repository');
     const key = c.input('key');
-    const archive = c.makeArchive();
+    const archive = await c.makeArchive();
     const hash = c.digest(archive.file);
     const assetName = `${hash.slice(7)}.tar.zst`;
     const existing = await c.object(repository, hash);
