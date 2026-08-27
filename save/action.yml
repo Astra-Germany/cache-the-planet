@@ -6,7 +6,6 @@ inputs:
   path: {description: Newline separated files or directories to cache, required: true}
   compression-level: {description: zstd compression level, required: false, default: '3'}
   token: {description: GitHub token or App installation token, required: false}
-  use-default-token: {description: Use GITHUB_TOKEN or ACTIONS_RUNTIME_TOKEN when token is omitted, required: false, default: 'true'}
   encryption-key: {description: Optional AES-256 encryption key or passphrase for cache contents, required: false, default: ''}
   exclude: {description: Newline separated exclusions, required: false, default: ''}
   strict: {description: Fail on cache errors, required: false, default: 'false'}

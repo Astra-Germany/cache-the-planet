@@ -13,10 +13,7 @@ function input(name, defaultValue = '') {
 }
 
 function token() {
-  const configured = input('token');
-  if (configured) return configured;
-  if (String(input('use-default-token', 'true')).toLowerCase() !== 'true') return '';
-  return process.env.GITHUB_TOKEN || process.env.ACTIONS_RUNTIME_TOKEN;
+  return input('token') || process.env.GITHUB_TOKEN || process.env.ACTIONS_RUNTIME_TOKEN;
 }
 
 function log(message) {
