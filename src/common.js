@@ -130,7 +130,7 @@ function decryptFile(file) {
 const sensitiveName = /^(?:\.env(?:\..*)?|\.npmrc|\.pypirc|\.netrc|\.git-credentials|credentials?(?:[._-].*)?|id_(?:rsa|dsa|ecdsa|ed25519))$/i;
 const sensitiveKeywordName = /(^|[-_.])(secret|secrets|token|tokens|password|passwd)([-_.]|$)|\.(key|p12|pfx)$/i;
 const sourceFileName = /\.(?:py|js|mjs|cjs|ts|tsx|java|go|rs|c|cc|cpp|h|hpp|rb|php|cs|swift|kt|kts|scala|sh)$/i;
-const binaryFileName = /\.(?:7z|aar|bin|class|dll|dylib|exe|gz|iso|jar|jpeg|jpg|so|tar|tgz|war|webp|zip|zst)$/i;
+const binaryFileName = /\.(?:7z|aar|bin|class|dll|dylib|exe|gz|iso|jar|jpeg|jpg|pyc|so|tar|tgz|war|webp|zip|zst)$/i;
 const packageMetadataPath = /(?:^|[\\/])[^\\/]+\.(?:dist-info|egg-info)(?:[\\/]|$)/i;
 const sensitiveDirectory = /(^|[\\/])(?:\.ssh|\.aws|\.docker|\.kube)(?:[\\/]|$)/i;
 const privateKeyContent = /BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/i;
@@ -152,7 +152,9 @@ function securityScan(root) {
     const relative = path.relative(root, file);
     if (sensitiveDirectory.test(relative)
       || sensitiveName.test(path.basename(file))
-      || (sensitiveKeywordName.test(path.basename(file)) && !sourceFileName.test(path.basename(file)))) {
+      || (sensitiveKeywordName.test(path.basename(file))
+        && !sourceFileName.test(path.basename(file))
+        && !binaryFileName.test(path.basename(file)))) {
       throw new Error(`cache path contains a sensitive-looking file: ${path.relative(process.cwd(), file)}`);
     }
     if (stat.isDirectory()) {

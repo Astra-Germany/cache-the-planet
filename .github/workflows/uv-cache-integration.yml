@@ -20,6 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - name: Set up Python without native cache
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
       - name: Set up uv without native GitHub cache
         uses: astral-sh/setup-uv@v10.0.1
         with:
@@ -28,6 +32,9 @@ jobs:
 
       - name: Create virtual environment
         run: uv venv .venv
+
+      - name: Verify Python runtime
+        run: python --version
 
       - name: Restore uv cache asset
         id: cache
@@ -58,6 +65,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - name: Set up Python without native cache
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
       - name: Set up uv without native GitHub cache
         uses: astral-sh/setup-uv@v10.0.1
         with:
@@ -66,6 +77,9 @@ jobs:
 
       - name: Create virtual environment
         run: uv venv .venv
+
+      - name: Verify restored Python runtime
+        run: python --version
 
       - name: Restore uv cache asset
         id: cache
