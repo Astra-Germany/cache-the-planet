@@ -20,6 +20,7 @@ jobs:
       - name: Configure npm cache directory
         run: npm config set cache "$PWD/.cache/npm" --global
       - name: Restore npm cache asset
+        id: npm-cache
         uses: ./
         with:
           repository: Ludy87/cache-the-planet
@@ -29,7 +30,7 @@ jobs:
           strict: false
       - run: npm install
       - name: Save npm cache asset
-        if: success()
+        if: success() && steps.npm-cache.outputs.cache-hit != 'true'
         uses: ./save
         with:
           repository: Ludy87/cache-the-planet
