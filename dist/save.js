@@ -1,4 +1,55 @@
-var B=(e,t)=>()=>(t||e((t={exports:{}}).exports,t),t.exports);var U=B((R,z)=>{var p=require("fs"),u=require("path"),g=require("os"),O=require("crypto"),l=require("child_process"),v="2022-11-28";function f(e,t=""){let r=`INPUT_${e.replace(/ /g,"_").toUpperCase()}`;return process.env[r]??t}function w(){return f("token")||process.env.GITHUB_TOKEN||process.env.ACTIONS_RUNTIME_TOKEN}function $(e){console.log(`::notice::${e}`)}function k(e){if(String(f("strict")).toLowerCase()!=="true")return console.log(`::warning::cache ignored: ${e.message||e}`),!1;throw e}async function h(e,t={}){let r=await fetch(`https://api.github.com${e}`,{...t,headers:{Accept:"application/vnd.github+json","X-GitHub-Api-Version":v,Authorization:`Bearer ${w()}`,...t.headers||{}}}),n=await r.text(),s;try{s=JSON.parse(n)}catch{s=n}if(!r.ok){let o=new Error(`${r.status} ${s.message||n}`);throw o.status=r.status,o.headers=r.headers,o}return{body:s,headers:r.headers}}async function C(e,t,r,n){let s=p.readFileSync(t),o=await fetch(e,{method:"POST",headers:{Authorization:`Bearer ${w()}`,"Content-Type":n,"Content-Length":s.length,"X-GitHub-Api-Version":v},body:s});if(o.ok)return JSON.parse(await o.text());let c=new Error(`${o.status} ${await o.text()}`);throw c.status=o.status,c}function A(e,t){return l.execFileSync(e,t,{stdio:["ignore","pipe","pipe"]})}function y(e){try{return A(e,["--version"]),!0}catch{return!1}}function b(){return f("path").split(/\r?\n/).map(e=>e.trim()).filter(Boolean)}async function q(){if(!y("tar")||!y("zstd"))throw new Error("tar and zstd are required on the runner");let e=p.mkdtempSync(u.join(g.tmpdir(),"cac-")),t=u.join(e,"object.tar.zst"),r=process.env.GITHUB_WORKSPACE||process.cwd(),n=[];for(let a of b()){let d=u.resolve(r,a);p.existsSync(d)?n.push(u.relative(r,d)||"."):$(`cache path missing: ${a}`)}if(!n.length)throw new Error("no cache paths exist");let s=f("exclude").split(/\r?\n/).map(a=>a.trim()).filter(Boolean).flatMap(a=>["--exclude",a]),o=l.spawn("tar",["--sort=name","--mtime=UTC 1970-01-01","--owner=0","--group=0","--numeric-owner","--format=gnu","-cf","-",...s,"-C",r,...n],{stdio:["ignore","pipe","inherit"]}),c=l.spawn("zstd",["-q",`-${f("compression-level","3")}`,"-o",t],{stdio:["pipe","inherit","inherit"]});return o.stdout.pipe(c.stdin),await Promise.all([new Promise((a,d)=>{o.once("error",d),o.once("close",m=>m===0?a():d(new Error("tar failed")))}),new Promise((a,d)=>{c.once("error",d),c.once("close",m=>m===0?a():d(new Error("zstd failed")))})]),N(t),{file:t,dir:e}}function N(e){let t=u.join(u.dirname(e),"validation.tar");if(l.spawnSync("zstd",["-q","-d","-f",e,"-o",t],{stdio:["ignore","inherit","inherit"]}).status)throw new Error("created zstd archive cannot be decompressed");let n=l.spawnSync("tar",["-tf",t],{encoding:"utf8"});if(n.status)throw new Error(`created tar archive is invalid: ${n.stderr||"tar listing failed"}`)}function S(e){let t=O.createHash("sha256");return t.update(p.readFileSync(e)),`sha256:${t.digest("hex")}`}async function j(e){try{return(await h(`/repos/${e}/releases/tags/cache-v1`)).body}catch(t){if(t.status!==404)throw t;return(await h(`/repos/${e}/releases`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({tag_name:"cache-v1",name:"Cache objects (v1)",prerelease:!0})})).body}}async function E(e){let t=await j(e);return{release:t,assets:(await h(`/repos/${e}/releases/${t.id}/assets?per_page=100`)).body}}async function T(e,t){return(await E(e)).assets.find(n=>n.name===`${t.slice(7)}.tar.zst`)}async function I(e){let t=await h(`/repos/${e}/contents/manifests/references-v1.json`);return{json:JSON.parse(Buffer.from(t.body.content,"base64").toString()),sha:t.body.sha}}async function x(e){try{return await I(e)}catch(t){if(t.status!==404)throw t;return{json:{schema_version:1,references:{}},sha:null}}}async function P(e,t,r){for(let n=0;n<5;n+=1){let s=await x(e);s.json.references[t]={object:r,updated_at:new Date().toISOString()};try{await h(`/repos/${e}/contents/manifests/references-v1.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:`cache: update ${t}`,content:Buffer.from(`${JSON.stringify(s.json,null,2)}
-`).toString("base64"),...s.sha?{sha:s.sha}:{},branch:"main"})});return}catch(o){if(o.status!==409)throw o}}throw new Error("reference update conflicted after retries")}async function H(e,t){let r=await T(e,t);if(!r)throw new Error(`object ${t} not found`);let n=p.mkdtempSync(u.join(g.tmpdir(),"cad-")),s=u.join(n,r.name),o=await fetch(r.browser_download_url,{headers:{Authorization:`Bearer ${w()}`}});if(!o.ok)throw new Error(`download failed: ${o.status}`);if(p.writeFileSync(s,Buffer.from(await o.arrayBuffer())),S(s)!==t)throw new Error("integrity check failed: sha256 mismatch");return s}function F(e){let t=process.env.GITHUB_WORKSPACE||process.cwd(),r=u.join(u.dirname(e),"object.tar");if(l.spawnSync("zstd",["-q","-d","-f",e,"-o",r],{stdio:["ignore","inherit","inherit"]}).status)throw new Error("zstd decompression failed");let s=l.spawnSync("tar",["-tf",r],{encoding:"utf8"});if(s.status)throw new Error(`invalid tar archive: ${s.stderr||"tar listing failed"}`);for(let c of s.stdout.split(/\r?\n/).filter(Boolean))if(u.isAbsolute(c)||c.split("/").includes("..")||c.split("\\").includes(".."))throw new Error("unsafe archive path");if(l.spawnSync("tar",["--extract","--file",r,"--directory",t,"--no-same-owner","--no-same-permissions"],{stdio:["ignore","inherit","inherit"]}).status)throw new Error("tar extraction failed")}z.exports={input:f,token:w,log:$,fail:k,gh:h,upload:C,entries:b,makeArchive:q,digest:S,release:j,assets:E,object:T,refs:x,setRef:P,download:H,extract:F}});var _=require("fs"),i=U();(async()=>{try{if(process.env.GITHUB_REF?.includes("/pull/")){i.log("untrusted pull request: save skipped");return}let e=i.input("repository"),t=i.input("key"),r=await i.makeArchive(),n=i.digest(r.file),s=`${n.slice(7)}.tar.zst`;if(await i.object(e,n))i.log(`object already exists: ${n}`);else{let c=(await i.assets(e)).release;try{let a=c.upload_url.replace("{?name,label}",`?name=${encodeURIComponent(s)}`);await i.upload(a,r.file,s,"application/zstd"),i.log(`uploaded object ${n}`)}catch(a){if(a.status!==422)throw a;i.log(`deduplicated object ${n}`)}}await i.setRef(e,t,n),process.env.GITHUB_OUTPUT&&_.appendFileSync(process.env.GITHUB_OUTPUT,`content-hash=${n}
-cache-size=${_.statSync(r.file).size}
-`),console.log(`Cache saved: ${t} -> ${n}`)}catch(e){i.fail(e)}})();
+const fs = require('fs');
+const c = require('./common');
+
+(async () => {
+  try {
+    const isPullRequest = process.env.GITHUB_REF?.includes('/pull/');
+    if (isPullRequest && String(c.input('allow-pr-cache')).toLowerCase() !== 'true') {
+      c.log('untrusted pull request: save skipped');
+      return;
+    }
+    if (isPullRequest) {
+      const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+      const number = event.pull_request?.number;
+      const expectedPrefix = `untrusted/${process.env.GITHUB_REPOSITORY}/pr-${number}/`;
+      if (!number || !key.startsWith(expectedPrefix)) {
+        throw new Error(`PR cache key must start with ${expectedPrefix}`);
+      }
+    }
+
+    const repository = c.input('repository');
+    const key = c.input('key');
+    const archive = await c.makeArchive();
+    const hash = c.digest(archive.file);
+    const assetName = `${hash.slice(7)}.tar.zst`;
+    const existing = await c.object(repository, hash);
+
+    if (!existing) {
+      const release = (await c.assets(repository)).release;
+      try {
+        const uploadUrl = release.upload_url.replace(
+          '{?name,label}',
+          `?name=${encodeURIComponent(assetName)}`,
+        );
+        await c.upload(uploadUrl, archive.file, assetName, 'application/zstd');
+        c.log(`uploaded object ${hash}`);
+      } catch (error) {
+        if (error.status !== 422) throw error;
+        c.log(`deduplicated object ${hash}`);
+      }
+    } else {
+      c.log(`object already exists: ${hash}`);
+    }
+
+    await c.setRef(repository, key, hash);
+    if (process.env.GITHUB_OUTPUT) {
+      fs.appendFileSync(
+        process.env.GITHUB_OUTPUT,
+        `content-hash=${hash}\ncache-size=${fs.statSync(archive.file).size}\n`,
+      );
+    }
+    console.log(`Cache saved: ${key} -> ${hash}`);
+  } catch (error) {
+    c.fail(error);
+  }
+})();

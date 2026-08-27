@@ -8,6 +8,7 @@ inputs:
   token: {description: GitHub token or App installation token, required: false}
   exclude: {description: Newline separated exclusions, required: false, default: ''}
   strict: {description: Fail on cache errors, required: false, default: 'false'}
+  allow-pr-cache: {description: Allow saving an isolated untrusted cache for an internal pull request, required: false, default: 'false'}
 outputs:
   content-hash: {description: sha256 digest of the object}
   cache-size: {description: Compressed object size in bytes}

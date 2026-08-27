@@ -3,9 +3,18 @@ const c = require('./common');
 
 (async () => {
   try {
-    if (process.env.GITHUB_REF?.includes('/pull/')) {
+    const isPullRequest = process.env.GITHUB_REF?.includes('/pull/');
+    if (isPullRequest && String(c.input('allow-pr-cache')).toLowerCase() !== 'true') {
       c.log('untrusted pull request: save skipped');
       return;
+    }
+    if (isPullRequest) {
+      const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+      const number = event.pull_request?.number;
+      const expectedPrefix = `untrusted/${process.env.GITHUB_REPOSITORY}/pr-${number}/`;
+      if (!number || !key.startsWith(expectedPrefix)) {
+        throw new Error(`PR cache key must start with ${expectedPrefix}`);
+      }
     }
 
     const repository = c.input('repository');
