@@ -24,6 +24,12 @@ try {
   securityScan(root);
   fs.writeFileSync(path.join(root, 'dependency.jar'), Buffer.from('password = "binary-package-data"\0'));
   securityScan(root);
+  fs.writeFileSync(path.join(root, 'cacert.pem'), '-----BEGIN CERTIFICATE-----\npublic-ca-certificate\n');
+  securityScan(root);
+  fs.writeFileSync(path.join(root, 'private.key'), '-----BEGIN PRIVATE KEY-----\nsecret\n');
+  rejected = false;
+  try { securityScan(root); } catch { rejected = true; }
+  if (!rejected) throw new Error('private key was not rejected');
   fs.mkdirSync(path.join(root, '.ssh'));
   fs.writeFileSync(path.join(root, '.ssh', 'config'), 'Host example\n');
   rejected = false;
