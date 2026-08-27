@@ -2,8 +2,8 @@
   "schema_version": 1,
   "references": {
     "trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v1": {
-      "object": "sha256:ba754040eaeff975f233b46c04d8ff6c8c7fa6de3da298737fc7093c0b9d96b6",
-      "updated_at": "2026-08-27T14:05:44.386Z"
+      "object": "sha256:600edba189f2a51adaf51746d381618a490de4287618dd08676d884a9dd8bbdc",
+      "updated_at": "2026-08-27T14:22:51.673Z"
     }
   }
 }
