@@ -12,6 +12,54 @@
     "trusted/Ludy87/cache-the-planet/example-node/linux-amd64/npm/v1": {
       "object": "sha256:5df754d65b97194806fb08f3a03bf96e2eb085bf6cda9d26086397fa91994297",
       "updated_at": "2026-08-27T22:42:44.191Z"
+    },
+    "untrusted/Ludy87/spdf-cache/pr-6/buildx/Linux-X64/unoserver-29d77e8616958338e05f79029438754cbab0f86a4f01738c5422a170a44ce289/v1": {
+      "object": "sha256:cfd5c341c85ce6a8de189af07be8a4ba61792a4bb39667159a755facbb0dca62",
+      "updated_at": "2026-08-27T22:46:17.243Z"
+    },
+    "untrusted/Ludy87/spdf-cache/pr-6/gradle/Linux-X64/a45772a1e551418049516da9f778fcc44b480250368edb1db3e021ee1e9e2507/v1": {
+      "object": "sha256:685f437d53415a6a3046f6951b765e96b96b8629cf4ba2da3cb5432309d76089",
+      "updated_at": "2026-08-27T22:46:45.364Z"
+    },
+    "trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/afec9779a77d6665682411c7f64b5a46b2a55d1dcfe50611f1982385213b68b9/v1": {
+      "object": "sha256:1f951822afdd2d95c49018bcb37bfa9b40ad85b1aa4029f20cbcba6dfe12381e",
+      "updated_at": "2026-08-27T22:47:06.839Z"
+    },
+    "trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v2": {
+      "object": "sha256:54689212445611f76bdb3325946b791793db3a734a3ebc8375a5c2005d5db8d1",
+      "updated_at": "2026-08-27T22:47:35.142Z"
+    },
+    "untrusted/Ludy87/spdf-cache/pr-6/gradle/Linux-X64/8649c7b8f503e0e7b1cb3945e3262b06bd08d5b26092d182d2ec066e9f9d4e58/v1": {
+      "object": "sha256:1b04c61ef3d7e1c4b1cc758f3be3da5d4136733bb63f0ee0f0012e0e065641cc",
+      "updated_at": "2026-08-27T22:52:32.488Z"
+    },
+    "trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/0f81038ff3cb9cd435a4d498fe196de8e57f4778f04e992f0d0bc3fe1a663d16/v1": {
+      "object": "sha256:0cae076930d2669bb875256d81592eb31c7c3e65fc60d3b3076e8d440dc76db0",
+      "updated_at": "2026-08-27T22:52:55.626Z"
+    },
+    "untrusted/Ludy87/spdf-cache/pr-6/uv/Linux-X64/7c39dcf5c437c9cb9db16af688b173a19b83c709ed94c429f579e7fcabd0561b/v1": {
+      "object": "sha256:9aff7a8bf9cd63e5dba2f8f2888e33838181c54beac187e185857685966a860e",
+      "updated_at": "2026-08-27T22:55:27.531Z"
+    },
+    "trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/111e0b8658cc11b836cfceaae733f709d01374974fab5140c60fd66890108c10/v1": {
+      "object": "sha256:06c7b07ae0f3aa39195bdceec2fa10546d7f73af8f192a058752225f58c34526",
+      "updated_at": "2026-08-27T22:56:17.356Z"
+    },
+    "untrusted/Ludy87/spdf-cache/pr-6/gradle/Linux-X64/002a9584081382dcbb9179700a760a750144d85e97d92a255c1b866e798381e7/v1": {
+      "object": "sha256:fe0ca29b20e1bc1aa288a1f1b555e18debdd80cdae4adf9f210ae911c3fe086b",
+      "updated_at": "2026-08-27T22:58:00.966Z"
+    },
+    "untrusted/Ludy87/spdf-cache/pr-6/gradle/Linux-X64/9b1e1f6bcd0fe623501ef7c9748e4e7c2b4bc78ddbb4cdce09ad9e9bc34286cc/v1": {
+      "object": "sha256:ffedc4bb88b39e6fa91e04febdf1514dfbd8e7a827f69150da8f0dd321a02850",
+      "updated_at": "2026-08-27T23:13:37.914Z"
+    },
+    "trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/bebe0d6eac024116aec3e8995a6d24974063faa8fb30d39da9ffa8c80ca78c33/v1": {
+      "object": "sha256:349878cd1ef0d15f1a577f92ae04200664bda82b2fd7d63caf6dbbef969c8bd2",
+      "updated_at": "2026-08-27T23:14:23.842Z"
+    },
+    "untrusted/Ludy87/spdf-cache/pr-6/gradle/Linux-X64/d5333a9457743387217185a7d36d1aea47013ff0c756ce23774e9868fd671b66/v1": {
+      "object": "sha256:708c7a373fb44993d7a5485f9194d6c10bd0f643f63d8384f31a16835b84e8b9",
+      "updated_at": "2026-08-27T23:17:04.970Z"
     }
   }
 }
