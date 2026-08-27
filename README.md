@@ -223,6 +223,16 @@ Es gibt drei mögliche Token-Varianten:
 
 Das Token wird niemals in Cache-Dateien gespeichert. Es wird nur zur GitHub API und zur Release-Asset-API übertragen.
 
+### Optionale Verschlüsselung
+
+Release-Assets eines öffentlichen Cache-Repositories können heruntergeladen werden. Für zusätzlichen Schutz kann der Cache mit AES-256-GCM verschlüsselt werden:
+
+```yaml
+encryption-key: ${{ secrets.CACHE_ENCRYPTION_KEY }}
+```
+
+`CACHE_ENCRYPTION_KEY` muss bei Restore und Save identisch sein. Empfohlen wird ein zufälliger 64-stelliger Hex-Schlüssel (32 Bytes); eine Passphrase ist ebenfalls möglich. Der Schlüssel darf nur als Secret gespeichert und niemals an Fork-Pull-Requests weitergegeben werden. Ohne Schlüssel kann ein Asset gefunden und heruntergeladen, aber nicht restauriert werden. Die Verschlüsselung bleibt optional und erhält die Deduplizierung für identische Inhalte mit demselben Schlüssel.
+
 ### Benötigte Berechtigungen
 
 Die GitHub App benötigt im Cache-Repository minimal:

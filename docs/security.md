@@ -19,6 +19,16 @@ token: ${{ secrets.CACHE_APP_TOKEN }}
 
 Kein dauerhaft gültiges Token ohne Ablaufdatum und kein Fallback auf `github.token` verwenden. Fork-Pull-Requests dürfen keine Schreib-Secrets erhalten; der Save-Schritt bleibt für sie deaktiviert.
 
+## Optionale Cache-Verschlüsselung
+
+Mit `encryption-key` werden komprimierte Archive vor dem Upload mit AES-256-GCM verschlüsselt. Restore und Save müssen denselben Schlüssel verwenden:
+
+```yaml
+encryption-key: ${{ secrets.CACHE_ENCRYPTION_KEY }}
+```
+
+Empfohlen wird ein zufälliger 64-stelliger Hex-Schlüssel. Eine Passphrase ist ebenfalls möglich. Ohne Schlüssel oder mit einem falschen Schlüssel schlägt Restore kontrolliert fehl. Der Schlüssel darf nicht an Fork-Pull-Requests weitergegeben werden.
+
 Cache data is untrusted input. Before an archive is created, the action rejects:
 
 - external symlinks; relative symlinks whose targets remain inside the cache path are allowed and dereferenced into the archive;

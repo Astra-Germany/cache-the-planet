@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const cp = require('child_process');
 
 const apiVersion = '2022-11-28';
+const encryptionMagic = Buffer.from('CTPENC1\0');
 
 function input(name, defaultValue = '') {
   const variable = `INPUT_${name.replace(/ /g, '_').toUpperCase()}`;
@@ -77,6 +78,50 @@ function have(command) {
 
 function entries() {
   return input('path').split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
+}
+
+function encryptionKey() {
+  const value = input('encryption-key');
+  if (!value) return null;
+  if (/^[0-9a-f]{64}$/i.test(value)) return Buffer.from(value, 'hex');
+  return crypto.createHash('sha256').update(value, 'utf8').digest();
+}
+
+function encryptFile(file) {
+  const key = encryptionKey();
+  if (!key) return file;
+  const plaintext = fs.readFileSync(file);
+  // Deriving the nonce from the compressed content keeps identical encrypted
+  // caches deduplicable while remaining unique for different content.
+  const nonce = crypto.createHash('sha256').update(plaintext).digest().subarray(0, 12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, nonce);
+  const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  const encrypted = `${file}.enc`;
+  fs.writeFileSync(encrypted, Buffer.concat([encryptionMagic, nonce, cipher.getAuthTag(), ciphertext]));
+  fs.unlinkSync(file);
+  fs.renameSync(encrypted, file);
+  return file;
+}
+
+function decryptFile(file) {
+  const inputBuffer = fs.readFileSync(file);
+  if (!inputBuffer.subarray(0, encryptionMagic.length).equals(encryptionMagic)) return file;
+  const key = encryptionKey();
+  if (!key) throw new Error('encrypted cache requires the encryption-key input');
+  const offset = encryptionMagic.length;
+  const nonce = inputBuffer.subarray(offset, offset + 12);
+  const tag = inputBuffer.subarray(offset + 12, offset + 28);
+  const ciphertext = inputBuffer.subarray(offset + 28);
+  try {
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, nonce);
+    decipher.setAuthTag(tag);
+    const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+    const decrypted = `${file}.decrypted`;
+    fs.writeFileSync(decrypted, plaintext);
+    return decrypted;
+  } catch {
+    throw new Error('encrypted cache could not be decrypted; check encryption-key');
+  }
 }
 
 // Cache inputs are treated as untrusted. Refuse obvious credentials before tar
@@ -166,6 +211,7 @@ async function makeArchive() {
     }),
   ]);
   validateArchive(output);
+  encryptFile(output);
   return { file: output, dir: directory };
 }
 
@@ -257,8 +303,9 @@ async function download(repository, hash) {
 
 function extract(file) {
   const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
-  const tarFile = path.join(path.dirname(file), 'object.tar');
-  const decompression = cp.spawnSync('zstd', ['-q', '-d', '-f', file, '-o', tarFile], {
+  const decrypted = decryptFile(file);
+  const tarFile = path.join(path.dirname(decrypted), 'object.tar');
+  const decompression = cp.spawnSync('zstd', ['-q', '-d', '-f', decrypted, '-o', tarFile], {
     stdio: ['ignore', 'inherit', 'inherit'],
   });
   if (decompression.status) throw new Error('zstd decompression failed');
@@ -278,5 +325,6 @@ function extract(file) {
 
 module.exports = {
   input, token, log, fail, gh, upload, entries, securityScan, makeArchive, digest,
+  encryptFile, decryptFile,
   release, assets, object, refs, setRef, download, extract,
 };
