@@ -43,8 +43,9 @@ function setOutput(name, value) {
     setOutput('cache-hit', found[0] === key);
     setOutput('matched-key', found[0]);
     setOutput('content-hash', found[1].object);
+    setOutput('asset-name', `${found[1].object.slice(7)}.tar.zst`);
     setOutput('cache-size', fs.statSync(archive).size);
-    console.log(`Cache hit: ${found[0] === key}; matched key: ${found[0]}; object: ${found[1].object}`);
+    console.log(`Cache found: requested-key=${key}; matched-key=${found[0]}; asset=${found[1].object.slice(7)}.tar.zst; exact-hit=${found[0] === key}`);
   } catch (error) {
     c.fail(error);
   }

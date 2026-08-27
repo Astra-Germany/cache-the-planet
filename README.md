@@ -411,6 +411,7 @@ Zusätzlich zu `repository`, `key`, `path`, `compression-level`, `token` und `st
 | `cache-hit` | `true`, wenn der exakte Key restauriert wurde |
 | `matched-key` | Tatsächlich verwendeter Key |
 | `content-hash` | SHA-256 des komprimierten Objekts |
+| `asset-name` | Physischer Release-Asset-Name, zum Beispiel `da02a6ab...fe00.tar.zst` |
 | `cache-size` | Größe des komprimierten Archivs in Bytes |
 
 Beispiel:
@@ -420,6 +421,7 @@ Beispiel:
     echo "Exact hit: ${{ steps.cache.outputs.cache-hit }}"
     echo "Matched key: ${{ steps.cache.outputs.matched-key }}"
     echo "Object: ${{ steps.cache.outputs.content-hash }}"
+    echo "Asset: ${{ steps.cache.outputs.asset-name }}"
 ```
 
 ## Deterministische Archive
