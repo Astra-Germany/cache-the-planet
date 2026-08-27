@@ -1,0 +1,20 @@
+name: Garbage collection
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        { description: Dry run, required: false, default: true, type: boolean }
+  schedule: [{ cron: "0 3 * * *" }]
+jobs:
+  gc:
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: node dist/gc.js --dry-run
+        env:
+          CACHE_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry-run || 'true' }}

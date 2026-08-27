@@ -1,0 +1,20 @@
+name: Content-addressed GitHub cache
+description: Immutable, deduplicated cache objects stored as GitHub Release assets
+author: cache-the-planet
+inputs:
+  repository: {description: owner/name of cache repository, required: true}
+  key: {description: Exact logical cache key, required: true}
+  restore-keys: {description: Newline separated fallback prefixes, required: false, default: ''}
+  path: {description: Newline separated files or directories to cache, required: true}
+  compression-level: {description: zstd compression level, required: false, default: '3'}
+  token: {description: GitHub token or App installation token, required: false}
+  exclude: {description: Newline separated gitignore-style exclusions, required: false, default: ''}
+  strict: {description: Fail on cache errors, required: false, default: 'false'}
+outputs:
+  cache-hit: {description: true when an exact key was restored}
+  matched-key: {description: Reference key used for restore}
+  content-hash: {description: sha256 digest of the object}
+  cache-size: {description: Compressed object size in bytes}
+runs:
+  using: node24
+  main: dist/restore.js

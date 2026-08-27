@@ -1,0 +1,16 @@
+name: Content-addressed GitHub cache (save)
+description: Save an immutable content-addressed cache object
+inputs:
+  repository: {description: owner/name of cache repository, required: true}
+  key: {description: Logical cache key, required: true}
+  path: {description: Newline separated files or directories to cache, required: true}
+  compression-level: {description: zstd compression level, required: false, default: '3'}
+  token: {description: GitHub token or App installation token, required: false}
+  exclude: {description: Newline separated exclusions, required: false, default: ''}
+  strict: {description: Fail on cache errors, required: false, default: 'false'}
+outputs:
+  content-hash: {description: sha256 digest of the object}
+  cache-size: {description: Compressed object size in bytes}
+runs:
+  using: node24
+  main: ../dist/save.js
