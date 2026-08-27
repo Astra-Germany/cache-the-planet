@@ -30,6 +30,7 @@ jobs:
         run: uv venv .venv
 
       - name: Restore uv cache asset
+        id: cache
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
@@ -42,6 +43,7 @@ jobs:
         run: uv pip install --python .venv/bin/python -r examples/uv-cache/requirements.txt
 
       - name: Save uv cache asset
+        if: steps.cache.outputs.cache-hit != 'true'
         uses: ./save
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
