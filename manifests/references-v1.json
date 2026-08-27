@@ -184,6 +184,10 @@
     "trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/def06a217254a721b6af1dd0c870705825a7ec2bb52769bed3c7c6bfbf3faf42/v1": {
       "object": "sha256:ebdbc0543163825e1c8ccd1572f093c123c97f7c968dc5faf164785cfe05fe74",
       "updated_at": "2026-08-27T21:51:14.019Z"
+    },
+    "trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/9d1e882232f9bfae6c72330919ec626d5ce9dc10e0e48a616dccd43d3ac73ac6/v1": {
+      "object": "sha256:857f1051c939691ecaae40b56245f977b6d268e1e568d98c77ed6f074c947b40",
+      "updated_at": "2026-08-27T21:54:30.485Z"
     }
   }
 }
