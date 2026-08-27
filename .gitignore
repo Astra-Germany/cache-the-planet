@@ -57,3 +57,4 @@ test-results/
 # Keep the GitHub Action distribution and dependency lockfile tracked.
 !package-lock.json
 
+dist/
