@@ -27,6 +27,8 @@ try {
   securityScan(root);
   fs.writeFileSync(path.join(root, 'tokens.py'), 'secret = "package-example-value"\n');
   securityScan(root);
+  fs.writeFileSync(path.join(root, 'ImageFont.py'), '# Copyright (c) 1997-2003 by Secret Labs AB\n');
+  securityScan(root);
   fs.mkdirSync(path.join(root, 'example-1.0.dist-info'));
   fs.writeFileSync(path.join(root, 'example-1.0.dist-info', 'METADATA'), 'Requires-Dist: password-parser\n');
   securityScan(root);
