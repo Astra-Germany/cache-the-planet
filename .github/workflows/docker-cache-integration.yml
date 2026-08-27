@@ -24,7 +24,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v1
+          key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2
           path: examples/docker-cache/.cache/docker-buildx
           # Ein beschädigtes oder fehlendes altes Objekt darf den Reparaturlauf nicht blockieren.
           strict: false
@@ -53,7 +53,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v1
+          key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2
           path: examples/docker-cache/.cache/docker-buildx
           strict: true
 
@@ -71,7 +71,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v1
+          key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2
           path: examples/docker-cache/.cache/docker-buildx
           strict: true
 
@@ -79,7 +79,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v1"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2"
           test -d examples/docker-cache/.cache/docker-buildx
 
       - name: Set up Docker Buildx
