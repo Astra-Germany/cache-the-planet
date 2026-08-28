@@ -27,7 +27,7 @@ jobs:
           repository: Ludy87/cache-the-planet
           cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/node-build/linux-amd64/npm/${{ hashFiles('package-lock.json') }}/v1
+          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
           path: .cache/npm
           strict: false
       - run: npm install
@@ -38,7 +38,7 @@ jobs:
           repository: Ludy87/cache-the-planet
           cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/node-build/linux-amd64/npm/${{ hashFiles('package-lock.json') }}/v1
+          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
           path: .cache/npm
           strict: false
       - name: Commit generated dist
