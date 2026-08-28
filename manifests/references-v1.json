@@ -92,6 +92,10 @@
     "trusted/Ludy87/cache-the-planet/main/docker/Linux-X64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v2": {
       "object": "sha256:5df02f6694eeaa73f1d5b2bc6fad7e0ac79de12c7a6b6767c6217aed5d0bbca8",
       "updated_at": "2026-08-28T10:12:19.341Z"
+    },
+    "trusted/Ludy87/cache-the-planet/main/maven-java17/Linux-X64/bebe0d6eac024116aec3e8995a6d24974063faa8fb30d39da9ffa8c80ca78c33/v1": {
+      "object": "sha256:88d46d452f5b06491a752778317189e6a688f302f8c96e693ffed3bb90f2278d",
+      "updated_at": "2026-08-28T10:19:00.686Z"
     }
   }
 }
