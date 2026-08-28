@@ -1,6 +1,6 @@
 name: Delete closed pull request cache
 concurrency:
-  group: cache-the-planet-manifest-writes
+  group: pr-cache-cleanup-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 on:
@@ -10,6 +10,7 @@ on:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:
