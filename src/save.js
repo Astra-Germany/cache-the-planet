@@ -39,8 +39,7 @@ const c = require('./common');
       if (!existingAsset) {
         c.log(`orphaned cache reference detected for key=${key}; recreating asset`);
       } else {
-        const existingAssetName = existingReference.object.startsWith('sha256:')
-          ? `${existingReference.object.slice(7)}.tar.zst` : '';
+        const existingAssetName = existingAsset.name;
         c.log(`cache already exists for key=${key}; asset=${existingAssetName}`);
         if (process.env.GITHUB_OUTPUT) {
           fs.appendFileSync(
@@ -53,17 +52,17 @@ const c = require('./common');
     }
     const archive = await c.makeArchive();
     const hash = c.digest(archive.file);
-    const assetName = `${hash.slice(7)}.tar.zst`;
     const existing = await c.object(repository, hash);
+    const name = c.assetName(key, hash);
 
     if (!existing) {
       const release = (await c.assets(repository)).release;
       try {
         const uploadUrl = release.upload_url.replace(
           '{?name,label}',
-          `?name=${encodeURIComponent(assetName)}`,
+          `?name=${encodeURIComponent(name)}`,
         );
-        await c.upload(uploadUrl, archive.file, assetName, 'application/zstd');
+        await c.upload(uploadUrl, archive.file, name, 'application/zstd');
         c.log(`uploaded object ${hash}`);
       } catch (error) {
         if (error.status !== 422) throw error;
@@ -77,10 +76,10 @@ const c = require('./common');
     if (process.env.GITHUB_OUTPUT) {
       fs.appendFileSync(
         process.env.GITHUB_OUTPUT,
-        `content-hash=${hash}\nasset-name=${assetName}\ncache-size=${fs.statSync(archive.file).size}\n`,
+        `content-hash=${hash}\nasset-name=${existing?.name || name}\ncache-size=${fs.statSync(archive.file).size}\n`,
       );
     }
-    console.log(`Cache saved: key=${key}; asset=${assetName}; content-hash=${hash}`);
+    console.log(`Cache saved: key=${key}; asset=${existing?.name || name}; content-hash=${hash}`);
   } catch (error) {
     c.fail(error);
   }

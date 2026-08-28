@@ -13,7 +13,8 @@ const c = require('./common');
     const now = Date.now();
 
     for (const asset of allAssets.filter((item) => item.name.endsWith('.tar.zst'))) {
-      const hash = `sha256:${asset.name.slice(0, -8)}`;
+      const hash = c.hashFromAssetName(asset.name);
+      if (!hash) continue;
       const oldEnough = now - new Date(asset.created_at).getTime() > gracePeriod;
       if (!liveObjects.has(hash) && oldEnough) {
         console.log(`${dryRun ? 'would delete' : 'delete'} ${asset.name}`);

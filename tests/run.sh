@@ -9,8 +9,10 @@ node <<'NODE'
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const cp = require('child_process');
 const { securityScan: sourceSecurityScan } = require('./src/common');
-const { scopedKey, scopedRestorePrefix } = require('./src/common');
+const { scopedKey, scopedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName } = require('./src/common');
+const { inspectTar } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
 const securityScan = (directory) => {
@@ -107,6 +109,38 @@ try {
   process.env['INPUT_CACHE-NAME'] = 'npm';
   if (scopedRestorePrefix('npm/Linux-X64/') !== 'trusted/example/project/main/npm/Linux-X64/') {
     throw new Error('automatic restore prefix was not generated correctly');
+  }
+  process.env.GITHUB_EVENT_NAME = 'pull_request';
+  fs.writeFileSync(eventFile, JSON.stringify({ pull_request: { number: 7 } }));
+  let trustedRestoreRejected = false;
+  try { assertTrustedRestoreAllowed(['trusted/example/project/main/npm/Linux-X64/hash/v1']); } catch { trustedRestoreRejected = true; }
+  if (!trustedRestoreRejected) throw new Error('trusted restore prefix was not rejected by schema validation');
+  const limitDir = path.join(root, 'archive');
+  fs.mkdirSync(path.join(limitDir, '.venv'), { recursive: true });
+  rejected = false;
+  try { sourceSecurityScan(limitDir); } catch { rejected = true; }
+  if (!rejected) throw new Error('virtual environment archive entry was not rejected');
+  fs.rmSync(path.join(limitDir, '.venv'), { recursive: true, force: true });
+  fs.writeFileSync(path.join(limitDir, 'target.txt'), 'target');
+  fs.symlinkSync('target.txt', path.join(limitDir, 'link.txt'));
+  const unsafeTar = path.join(root, 'unsafe.tar');
+  cp.execFileSync('tar', ['-cf', unsafeTar, '-C', limitDir, 'target.txt', 'link.txt']);
+  rejected = false;
+  try { inspectTar(unsafeTar); } catch { rejected = true; }
+  if (!rejected) throw new Error('archive symlink was not rejected');
+  fs.rmSync(path.join(limitDir, 'link.txt'), { force: true });
+  fs.linkSync(path.join(limitDir, 'target.txt'), path.join(limitDir, 'hardlink.txt'));
+  cp.execFileSync('tar', ['-cf', unsafeTar, '-C', limitDir, 'target.txt', 'hardlink.txt']);
+  rejected = false;
+  try { inspectTar(unsafeTar); } catch { rejected = true; }
+  if (!rejected) throw new Error('archive hardlink was not rejected');
+  const namedAsset = assetName(
+    'untrusted/Ludy87/spdf-cache/pr-6/buildx/Linux-X64/unoserver/v1',
+    `sha256:${'a'.repeat(64)}`,
+  );
+  if (!namedAsset.startsWith('untrusted-Ludy87-spdf-cache-pr-6-buildx-Linux-X64-unoserver-v1--')
+    || hashFromAssetName(namedAsset) !== `sha256:${'a'.repeat(64)}`) {
+    throw new Error('descriptive asset name was not generated correctly');
   }
   console.log('security scan test passed');
 } finally {

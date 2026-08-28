@@ -16,6 +16,7 @@ function setOutput(name, value) {
       key,
       ...c.input('restore-keys').split(/\r?\n/).map(c.scopedRestorePrefix).filter(Boolean),
     ];
+    c.assertTrustedRestoreAllowed(candidates);
     let found = null;
 
     for (const prefix of candidates) {
