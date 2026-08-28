@@ -1,0 +1,85 @@
+name: Neue unterstützte Action / Cache-Einstellung
+description: Eine Drittanbieter-Action und ihre Cache-Konfiguration vorschlagen
+title: "support: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für den Vorschlag. Bitte beschreibe, wie die Action ohne den nativen GitHub-Actions-Cache mit `cache-the-planet` verwendet werden kann.
+
+  - type: input
+    id: action
+    attributes:
+      label: Action
+      description: Vollständige Action-Referenz, zum Beispiel actions/setup-node@v5
+      placeholder: actions/example-action@v1
+    validations:
+      required: true
+
+  - type: input
+    id: cache-name
+    attributes:
+      label: cache-name
+      description: Der gewünschte Cache-Name; nur Kleinbuchstaben, Zahlen und Bindestriche
+      placeholder: npm
+    validations:
+      required: true
+
+  - type: textarea
+    id: native-settings
+    attributes:
+      label: Native Cache-Einstellungen
+      description: Welche Cache-Inputs müssen deaktiviert oder angepasst werden?
+      placeholder: |
+        enable-cache: false
+        cache: nicht setzen
+        cache-image: false
+    validations:
+      required: true
+
+  - type: textarea
+    id: paths
+    attributes:
+      label: Cache-Pfade
+      description: Welche Verzeichnisse sollen als Release-Asset gespeichert werden? Keine .venv-Verzeichnisse.
+      placeholder: |
+        .cache/example
+    validations:
+      required: true
+
+  - type: textarea
+    id: key
+    attributes:
+      label: Key-Konfiguration
+      description: Logischer Key und verwendete Hash-Dateien
+      render: yaml
+      placeholder: |
+        cache-name: example
+        key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('lockfile')) }}
+    validations:
+      required: true
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Test-Workflow
+      description: Beispiel für Restore, Nutzung und Save in einem frischen Job
+      render: yaml
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checkliste
+      options:
+        - label: Der native GitHub-Actions-Cache ist deaktiviert.
+          required: true
+        - label: Der Vorschlag speichert keine .venv oder vergleichbare runnergebundene Umgebungen.
+          required: true
+        - label: Restore und Save wurden in getrennten Jobs getestet.
+          required: true
+        - label: Der Test verwendet einen sicheren Token und keine Secrets im Cache-Pfad.
+          required: true
