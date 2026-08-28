@@ -26,6 +26,7 @@ jobs:
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: docker
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2
           path: examples/docker-cache/.cache/docker-buildx
@@ -55,6 +56,7 @@ jobs:
         uses: ./save
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: docker
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2
           path: examples/docker-cache/.cache/docker-buildx
@@ -73,6 +75,7 @@ jobs:
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: docker
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2
           path: examples/docker-cache/.cache/docker-buildx

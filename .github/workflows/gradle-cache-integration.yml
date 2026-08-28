@@ -30,6 +30,7 @@ jobs:
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: gradle
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1
           path: .cache/gradle
@@ -44,6 +45,7 @@ jobs:
         uses: ./save
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: gradle
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1
           path: .cache/gradle
@@ -65,6 +67,7 @@ jobs:
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: gradle
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1
           path: .cache/gradle

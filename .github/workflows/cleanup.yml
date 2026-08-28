@@ -15,7 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with: { node-version: 24 }
+        with:
+          node-version: 24
+          package-manager-cache: false
       - run: node dist/gc.js --dry-run
         env:
           CACHE_REPOSITORY: ${{ github.repository }}

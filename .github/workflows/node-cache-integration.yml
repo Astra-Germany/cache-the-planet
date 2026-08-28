@@ -24,6 +24,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          package-manager-cache: false
 
       - name: Configure npm cache directory
         run: npm config set cache "$PWD/.cache/npm" --global
@@ -32,6 +33,7 @@ jobs:
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ env.CACHE_KEY }}
           path: .cache/npm
@@ -44,6 +46,7 @@ jobs:
         uses: ./save
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ env.CACHE_KEY }}
           path: .cache/npm
@@ -58,6 +61,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          package-manager-cache: false
 
       - name: Configure npm cache directory
         run: npm config set cache "$PWD/.cache/npm" --global
@@ -67,6 +71,7 @@ jobs:
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ env.CACHE_KEY }}
           path: .cache/npm

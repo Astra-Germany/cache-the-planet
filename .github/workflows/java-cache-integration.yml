@@ -29,6 +29,7 @@ jobs:
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: maven
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/${{ hashFiles('examples/java-cache/pom.xml') }}/v1
           path: .cache/m2
@@ -41,6 +42,7 @@ jobs:
         uses: ./save
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: maven
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/${{ hashFiles('examples/java-cache/pom.xml') }}/v1
           path: .cache/m2
@@ -62,6 +64,7 @@ jobs:
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: maven
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-java/linux-amd64/maven/${{ hashFiles('examples/java-cache/pom.xml') }}/v1
           path: .cache/m2
