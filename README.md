@@ -1,5 +1,7 @@
 # GitHub Actions Content Cache
 
+![Cache the Planet – secure content-addressed GitHub Actions cache](docs/assets/cache-the-planet-banner.png)
+
 Ein zentraler, content-addressed Cache für GitHub Actions. Dieses Repository `Ludy87/cache-the-planet` enthält sowohl die wiederverwendbare Action als auch den zentralen Cache-Speicher und kann von mehreren Anwendungs-Repositories verwendet werden.
 
 Die eigentlichen Cache-Dateien werden nicht in Git-Commits gespeichert. Stattdessen liegen sie als immutable GitHub-Release-Assets vor. Eine kleine Manifest-Datei verwaltet die veränderlichen logischen Cache-Keys.
