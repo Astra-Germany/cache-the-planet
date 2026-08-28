@@ -80,6 +80,10 @@
     "trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/6173199beb5ff48fb55ee3fcab20db350652e24b66d1ae5811f185d8a1af1a61/v1": {
       "object": "sha256:612f5b1c42e80cfc00087de5be1c1d8dcb1555d655f49f0525a4ca431c891f67",
       "updated_at": "2026-08-27T23:56:44.202Z"
+    },
+    "trusted/Ludy87/cache-the-planet/example-uv-python/linux-amd64/uv-python/3.13/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v1": {
+      "object": "sha256:3894dc3eb7bb75658e311c3d6a951e6417261cdeb581d83fabd812a71ebda648",
+      "updated_at": "2026-08-28T00:45:58.489Z"
     }
   }
 }
