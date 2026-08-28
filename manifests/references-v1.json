@@ -20,6 +20,14 @@
     "trusted/Ludy87/cache-the-planet/main/gradle-java17/Linux-X64/0b45fa5eb79158e3a1a70cbb424a4c7e68877213ca34b7150c330d3b511ee750/v1": {
       "object": "sha256:4bfaa3abb6e676cad027fb1a7440778e63512fa1fd5055ecaf1380f4703fa731",
       "updated_at": "2026-08-28T11:05:43.296Z"
+    },
+    "trusted/Ludy87/cache-the-planet/main/uv-python-3-13/Linux-X64/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v2": {
+      "object": "sha256:46b4891e7e74afb59fd8284e8b3f74b7d149fab9a26a8b66d110da430d8368b1",
+      "updated_at": "2026-08-28T11:17:00.629Z"
+    },
+    "trusted/Ludy87/cache-the-planet/main/gradle-java17/Linux-X64/0493c2b14e5dba1855bbfcfb40409f230236a7b1e322d2aee2952e659dcff3a8/v1": {
+      "object": "sha256:2d5cf060e45c2d2c2cb79e7cfb5a86c03d346dd55b0dd54952631f90827e58f5",
+      "updated_at": "2026-08-28T11:17:54.116Z"
     }
   }
 }
