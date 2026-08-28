@@ -30,6 +30,7 @@ jobs:
           key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
           path: .cache/npm
           strict: false
+        continue-on-error: true
       - run: npm install
       - name: Save npm cache asset
         if: success() && steps.npm-cache.outputs.cache-hit != 'true'
