@@ -10,7 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { securityScan: sourceSecurityScan } = require('./src/common');
-const { referencesMarkdown } = require('./src/common');
+const { referencesMarkdown, scopedKey } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
 const securityScan = (directory) => {
@@ -80,6 +80,26 @@ try {
       updated_at: '2026-08-27T00:00:00.000Z',
     },
   });
+  process.env.GITHUB_REPOSITORY = 'example/project';
+  process.env.GITHUB_EVENT_NAME = 'pull_request';
+  const eventFile = path.join(root, 'event.json');
+  fs.writeFileSync(eventFile, JSON.stringify({ pull_request: { number: 7 } }));
+  process.env.GITHUB_EVENT_PATH = eventFile;
+  if (scopedKey('npm/Linux-X64/hash/v1') !== 'untrusted/example/project/pr-7/npm/Linux-X64/hash/v1') {
+    throw new Error('automatic PR cache key was not generated correctly');
+  }
+  process.env.GITHUB_EVENT_NAME = 'push';
+  fs.writeFileSync(eventFile, JSON.stringify({ repository: { default_branch: 'main' } }));
+  if (scopedKey('npm/Linux-X64/hash/v1') !== 'trusted/example/project/main/npm/Linux-X64/hash/v1') {
+    throw new Error('automatic trusted cache key was not generated correctly');
+  }
+  process.env['INPUT_CACHE-NAME'] = 'npm';
+  if (scopedKey('Linux-X64/hash/v1') !== 'trusted/example/project/main/npm/Linux-X64/hash/v1') {
+    throw new Error('automatic cache namespace was not generated correctly');
+  }
+  let invalidKeyRejected = false;
+  try { scopedKey('trusted/example/project/npm/Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
+  if (!invalidKeyRejected) throw new Error('invalid trusted cache key was accepted');
   if (!releaseTable.includes('| 2026-08-27T00:00:00.000Z | trusted/example/cache\\|key | sha256:abc123 |')) {
     throw new Error('release reference table was not generated correctly');
   }

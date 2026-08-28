@@ -3,7 +3,8 @@ description: Immutable, deduplicated cache objects stored as GitHub Release asse
 author: cache-the-planet
 inputs:
   repository: {description: owner/name of cache repository, required: true}
-  key: {description: Exact logical cache key, required: true}
+  key: {description: Logical cache key; trusted/untrusted repository and PR scope are added automatically when omitted, required: true}
+  cache-name: {description: Cache namespace such as npm, uv, gradle, or docker, required: true}
   restore-keys: {description: Newline separated fallback prefixes, required: false, default: ''}
   path: {description: Newline separated files or directories to cache, required: true}
   compression-level: {description: zstd compression level, required: false, default: '3'}

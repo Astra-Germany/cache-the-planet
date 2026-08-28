@@ -10,11 +10,11 @@ function setOutput(name, value) {
 (async () => {
   try {
     const repository = c.input('repository');
-    const key = c.input('key');
+    const key = c.scopedKey(c.input('key'));
     const manifest = await c.refs(repository);
     const candidates = [
       key,
-      ...c.input('restore-keys').split(/\r?\n/).map((x) => x.trim()).filter(Boolean),
+      ...c.input('restore-keys').split(/\r?\n/).map((x) => x.trim()).filter(Boolean).map(c.scopedKey),
     ];
     let found = null;
 

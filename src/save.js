@@ -4,7 +4,7 @@ const c = require('./common');
 (async () => {
   try {
     const repository = c.input('repository');
-    const key = c.input('key');
+    const key = c.scopedKey(c.input('key'));
     const isPullRequest = process.env.GITHUB_REF?.includes('/pull/');
     if (isPullRequest && String(c.input('allow-pr-cache')).toLowerCase() !== 'true') {
       c.log('untrusted pull request: save skipped');
