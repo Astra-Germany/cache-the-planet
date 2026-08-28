@@ -53,11 +53,11 @@ jobs:
             git fetch origin main
             git rebase origin/main
             npm run build
-            if git diff --quiet -- dist package-lock.json; then
+            git add -f dist package-lock.json
+            if git diff --cached --quiet; then
               echo "dist is already up to date"
               exit 0
             fi
-            git add -f dist package-lock.json
             git commit -m "chore: build action dist"
             if git push origin HEAD:main; then
               exit 0
