@@ -35,16 +35,21 @@ const c = require('./common');
     const current = await c.refs(repository);
     const existingReference = current.json.references[key];
     if (existingReference?.object) {
-      const existingAssetName = existingReference.object.startsWith('sha256:')
-        ? `${existingReference.object.slice(7)}.tar.zst` : '';
-      c.log(`cache already exists for key=${key}; asset=${existingAssetName}`);
-      if (process.env.GITHUB_OUTPUT) {
-        fs.appendFileSync(
-          process.env.GITHUB_OUTPUT,
-          `content-hash=${existingReference.object}\nasset-name=${existingAssetName}\n`,
-        );
+      const existingAsset = await c.object(repository, existingReference.object);
+      if (!existingAsset) {
+        c.log(`orphaned cache reference detected for key=${key}; recreating asset`);
+      } else {
+        const existingAssetName = existingReference.object.startsWith('sha256:')
+          ? `${existingReference.object.slice(7)}.tar.zst` : '';
+        c.log(`cache already exists for key=${key}; asset=${existingAssetName}`);
+        if (process.env.GITHUB_OUTPUT) {
+          fs.appendFileSync(
+            process.env.GITHUB_OUTPUT,
+            `content-hash=${existingReference.object}\nasset-name=${existingAssetName}\n`,
+          );
+        }
+        return;
       }
-      return;
     }
     const archive = await c.makeArchive();
     const hash = c.digest(archive.file);
@@ -69,7 +74,6 @@ const c = require('./common');
     }
 
     await c.setRef(repository, key, hash);
-    await c.updateReleaseDescription(repository);
     if (process.env.GITHUB_OUTPUT) {
       fs.appendFileSync(
         process.env.GITHUB_OUTPUT,

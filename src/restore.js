@@ -14,7 +14,7 @@ function setOutput(name, value) {
     const manifest = await c.refs(repository);
     const candidates = [
       key,
-      ...c.input('restore-keys').split(/\r?\n/).map((x) => x.trim()).filter(Boolean).map(c.scopedKey),
+      ...c.input('restore-keys').split(/\r?\n/).map(c.scopedRestorePrefix).filter(Boolean),
     ];
     let found = null;
 
@@ -35,6 +35,13 @@ function setOutput(name, value) {
       setOutput('cache-hit', 'false');
       setOutput('matched-key', '');
       console.log(`Cache miss: no cache found for key: ${key}`);
+      return;
+    }
+
+    if (!(await c.object(repository, found[1].object))) {
+      setOutput('cache-hit', 'false');
+      setOutput('matched-key', '');
+      console.log(`Cache miss: manifest reference has no release asset: key=${found[0]}; object=${found[1].object}`);
       return;
     }
 

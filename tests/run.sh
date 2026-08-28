@@ -10,7 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { securityScan: sourceSecurityScan } = require('./src/common');
-const { referencesMarkdown, scopedKey } = require('./src/common');
+const { scopedKey, scopedRestorePrefix } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
 const securityScan = (directory) => {
@@ -70,17 +70,18 @@ try {
   try { securityScan(root); } catch { rejected = true; }
   if (!rejected) throw new Error('.ssh directory was not rejected');
   fs.rmSync(path.join(root, '.ssh'), { recursive: true, force: true });
+  fs.mkdirSync(path.join(root, '.venv', 'bin'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.venv', 'bin', 'python'), 'runner-specific interpreter');
+  rejected = false;
+  try { securityScan(root); } catch { rejected = true; }
+  if (!rejected) throw new Error('.venv directory was not rejected');
+  fs.rmSync(path.join(root, '.venv'), { recursive: true, force: true });
   fs.writeFileSync(path.join(root, 'config.txt'), 'DATABASE_PASSWORD=should-not-be-cached\n');
   rejected = false;
   try { securityScan(root); } catch { rejected = true; }
   if (!rejected) throw new Error('private-key content was not rejected');
-  const releaseTable = referencesMarkdown({
-    'trusted/example/cache|key': {
-      object: 'sha256:abc123',
-      updated_at: '2026-08-27T00:00:00.000Z',
-    },
-  });
   process.env.GITHUB_REPOSITORY = 'example/project';
+  process.env['INPUT_CACHE-NAME'] = 'npm';
   process.env.GITHUB_EVENT_NAME = 'pull_request';
   const eventFile = path.join(root, 'event.json');
   fs.writeFileSync(eventFile, JSON.stringify({ pull_request: { number: 7 } }));
@@ -93,15 +94,19 @@ try {
   if (scopedKey('npm/Linux-X64/hash/v1') !== 'trusted/example/project/main/npm/Linux-X64/hash/v1') {
     throw new Error('automatic trusted cache key was not generated correctly');
   }
-  process.env['INPUT_CACHE-NAME'] = 'npm';
   if (scopedKey('Linux-X64/hash/v1') !== 'trusted/example/project/main/npm/Linux-X64/hash/v1') {
     throw new Error('automatic cache namespace was not generated correctly');
   }
   let invalidKeyRejected = false;
   try { scopedKey('trusted/example/project/npm/Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
   if (!invalidKeyRejected) throw new Error('invalid trusted cache key was accepted');
-  if (!releaseTable.includes('| 2026-08-27T00:00:00.000Z | trusted/example/cache\\|key | sha256:abc123 |')) {
-    throw new Error('release reference table was not generated correctly');
+  process.env['INPUT_CACHE-NAME'] = 'NPM_CACHE';
+  invalidKeyRejected = false;
+  try { scopedKey('Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
+  if (!invalidKeyRejected) throw new Error('invalid cache-name was accepted');
+  process.env['INPUT_CACHE-NAME'] = 'npm';
+  if (scopedRestorePrefix('npm/Linux-X64/') !== 'trusted/example/project/main/npm/Linux-X64/') {
+    throw new Error('automatic restore prefix was not generated correctly');
   }
   console.log('security scan test passed');
 } finally {
