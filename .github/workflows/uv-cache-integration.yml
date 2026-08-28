@@ -90,7 +90,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-uv/linux-amd64/uv/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
+          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('examples/uv-cache/requirements.txt')) }}
           path: .cache/uv
           strict: true
 
