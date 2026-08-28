@@ -52,6 +52,10 @@
     "trusted/Ludy87/cache-the-planet/main/npm/Linux-X64/60957c477d7e654c6e5e6f0b555e265cd8c64d68afb74ac347a3cea4698ffb92/v1": {
       "object": "sha256:292eab9307f17bb92e8a1cbe4416b4f0341ab2367a6557f005a5822df2c74869",
       "updated_at": "2026-08-28T12:52:57.568Z"
+    },
+    "trusted/Ludy87/cache-the-planet/main/gradle-java17/Linux-X64/145927415784c2f80cf060a93ed4017c67e1f82980b17c26881e3ccdf7233d37/v1": {
+      "object": "sha256:385ed37a5f548d09753ddf1bd2eb123d8238be3d57ef89cb403f40276f449cc4",
+      "updated_at": "2026-08-28T12:53:24.333Z"
     }
   }
 }
