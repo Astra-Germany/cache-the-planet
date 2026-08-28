@@ -80,12 +80,16 @@ function refName() {
 
 function pullRequestNumber() {
   const eventPath = process.env.GITHUB_EVENT_PATH;
-  if (!eventPath) return null;
-  try {
-    return JSON.parse(fs.readFileSync(eventPath, 'utf8')).pull_request?.number || null;
-  } catch {
-    return null;
+  if (eventPath) {
+    try {
+      const number = JSON.parse(fs.readFileSync(eventPath, 'utf8')).pull_request?.number;
+      if (Number.isInteger(number) && number > 0) return number;
+    } catch {
+      // Fall through to the ref-based fallback below.
+    }
   }
+  const match = (process.env.GITHUB_REF || '').match(/^refs\/pull\/([1-9]\d*)\/merge$/);
+  return match ? Number(match[1]) : null;
 }
 
 function scopedKey(key) {

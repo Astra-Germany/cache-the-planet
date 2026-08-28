@@ -88,6 +88,7 @@ try {
   process.env.GITHUB_REPOSITORY = 'example/project';
   process.env['INPUT_CACHE-NAME'] = 'npm';
   process.env.GITHUB_EVENT_NAME = 'pull_request';
+  process.env.GITHUB_REF = 'refs/pull/7/merge';
   const eventFile = path.join(root, 'event.json');
   fs.writeFileSync(eventFile, JSON.stringify({ pull_request: { number: 7 } }));
   process.env.GITHUB_EVENT_PATH = eventFile;
@@ -95,6 +96,7 @@ try {
     throw new Error('automatic PR cache key was not generated correctly');
   }
   process.env.GITHUB_EVENT_NAME = 'push';
+  delete process.env.GITHUB_REF;
   fs.writeFileSync(eventFile, JSON.stringify({ repository: { default_branch: 'main' } }));
   if (scopedKey('npm/Linux-X64/hash/v1') !== 'trusted/example/project/main/npm/Linux-X64/hash/v1') {
     throw new Error('automatic trusted cache key was not generated correctly');
