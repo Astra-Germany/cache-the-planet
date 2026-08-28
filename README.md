@@ -498,6 +498,15 @@ Für interne Pull Requests kann ein eigener, automatisch löschbarer PR-Cache ak
 
 Der Key muss mit `untrusted/<repository>/pr-<number>/` beginnen. Beim Event `pull_request: closed` entfernt [pr-cache-cleanup.yml](.github/workflows/pr-cache-cleanup.yml) die PR-References und die dadurch nicht mehr referenzierten Release Assets. Für Fork-Pull-Requests bleibt das Speichern deaktiviert, weil dort keine Schreib-Secrets an untrusted Code gegeben werden sollten.
 
+Alternativ kann `key` nur den logischen Teil enthalten, zum Beispiel `npm/Linux-X64/<hash>/v1`. Die Action ergänzt automatisch `untrusted/<repository>/pr-<number>/` bei Pull Requests bzw. `trusted/<repository>/<default-branch>/` bei Pushes und Tags. Vollständige `trusted/...`- oder `untrusted/...`-Keys bleiben kompatibel.
+
+Der Cache-Typ kann auch separat mit `cache-name` angegeben werden. Dann enthält `key` nur noch Plattform, Hash und Version:
+
+```yaml
+cache-name: npm
+key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+```
+
 ## Garbage Collection
 
 Ein Objekt darf entfernt werden, wenn:

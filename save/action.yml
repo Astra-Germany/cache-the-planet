@@ -2,7 +2,8 @@ name: Content-addressed GitHub cache (save)
 description: Save an immutable content-addressed cache object
 inputs:
   repository: {description: owner/name of cache repository, required: true}
-  key: {description: Logical cache key, required: true}
+  key: {description: Logical cache key; trusted/untrusted repository and PR scope are added automatically when omitted, required: true}
+  cache-name: {description: Cache namespace such as npm, uv, gradle, or docker, required: true}
   path: {description: Newline separated files or directories to cache, required: true}
   compression-level: {description: zstd compression level, required: false, default: '3'}
   token: {description: GitHub token or App installation token, required: false}

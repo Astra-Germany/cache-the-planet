@@ -16,6 +16,76 @@ function token() {
   return input('token') || process.env.GITHUB_TOKEN || process.env.ACTIONS_RUNTIME_TOKEN;
 }
 
+function eventName() {
+  return process.env.GITHUB_EVENT_NAME || '';
+}
+
+function repository() {
+  return process.env.GITHUB_REPOSITORY || '';
+}
+
+function defaultBranch() {
+  if (process.env.GITHUB_DEFAULT_BRANCH) return process.env.GITHUB_DEFAULT_BRANCH;
+  const eventPath = process.env.GITHUB_EVENT_PATH;
+  if (eventPath) {
+    try {
+      return JSON.parse(fs.readFileSync(eventPath, 'utf8')).repository?.default_branch || '';
+    } catch {
+      return '';
+    }
+  }
+  return '';
+}
+
+function headRef() {
+  return process.env.GITHUB_HEAD_REF || '';
+}
+
+function baseRef() {
+  return process.env.GITHUB_BASE_REF || '';
+}
+
+function isCompleteCacheKey(key) {
+  return /^(?:trusted\/[^/]+\/[^/]+\/[^/]+|untrusted\/[^/]+\/[^/]+\/pr-[1-9]\d*)\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1$/.test(key);
+}
+
+function refName() {
+  return process.env.GITHUB_REF_NAME || '';
+}
+
+function pullRequestNumber() {
+  const eventPath = process.env.GITHUB_EVENT_PATH;
+  if (!eventPath) return null;
+  try {
+    return JSON.parse(fs.readFileSync(eventPath, 'utf8')).pull_request?.number || null;
+  } catch {
+    return null;
+  }
+}
+
+function scopedKey(key) {
+  if (!key) return key;
+  if (key.startsWith('trusted/') || key.startsWith('untrusted/')) {
+    if (!isCompleteCacheKey(key)) {
+      throw new Error('cache key does not match the trusted/untrusted schema');
+    }
+    return key;
+  }
+  const cacheName = input('cache-name').trim().replace(/^\/+|\/+$/g, '');
+  const logicalKey = cacheName && !key.startsWith(`${cacheName}/`)
+    ? `${cacheName}/${key}` : key;
+  const sourceRepository = repository();
+  if (eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/')) {
+    const number = pullRequestNumber();
+    if (!sourceRepository || !number) throw new Error('repository and pull request number are required for an automatic PR cache key');
+    return `untrusted/${sourceRepository}/pr-${number}/${logicalKey}`;
+  }
+  if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic cache key');
+  const branch = defaultBranch();
+  if (!branch) throw new Error('repository default branch is required for an automatic trusted cache key');
+  return `trusted/${sourceRepository}/${branch}/${logicalKey}`;
+}
+
 function log(message) {
   console.log(`::notice::${message}`);
 }
@@ -365,7 +435,10 @@ function extract(file) {
 }
 
 module.exports = {
-  input, token, log, fail, gh, upload, entries, securityScan, makeArchive, digest,
+  input, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, scopedKey,
+  log, fail, gh,
+  upload, entries, refName,
+  securityScan, makeArchive, digest,
   encryptFile, decryptFile,
   release, assets, object, refs, setRef, referencesMarkdown, updateReleaseDescription,
   download, extract,
