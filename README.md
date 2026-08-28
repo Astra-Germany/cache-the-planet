@@ -181,7 +181,7 @@ jobs:
             ${{ github.repository }}/linux/amd64/python/3.13/
           path: |
             ~/.cache/pip
-            .venv
+            .cache/uv
           token: ${{ secrets.CACHE_APP_TOKEN }}
 
       - name: Build
@@ -195,7 +195,7 @@ jobs:
           key: ${{ github.repository }}/linux/amd64/python/3.13/${{ github.ref_name }}/${{ hashFiles('uv.lock') }}/v1
           path: |
             ~/.cache/pip
-            .venv
+            .cache/uv
           token: ${{ secrets.CACHE_APP_TOKEN }}
           exclude: |
             **/.env

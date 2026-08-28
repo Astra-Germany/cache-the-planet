@@ -49,6 +49,27 @@ function isCompleteCacheKey(key) {
   return /^(?:trusted\/[^/]+\/[^/]+\/[^/]+|untrusted\/[^/]+\/[^/]+\/pr-[1-9]\d*)\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1$/.test(key);
 }
 
+function cacheName() {
+  const value = input('cache-name').trim();
+  if (!/^[a-z][a-z0-9-]{0,31}$/.test(value)) {
+    throw new Error('cache-name is required and must contain only lowercase letters, numbers, or hyphens');
+  }
+  return value;
+}
+
+function validateRestorePrefix(key) {
+  const parts = key.replace(/\/$/, '').split('/');
+  const validPart = (part) => /^[A-Za-z0-9._-]+$/.test(part) && part !== '..' && part !== '.';
+  const validNamespace = parts[0] === 'trusted'
+    ? parts.length >= 5 && validPart(parts[1]) && validPart(parts[2]) && validPart(parts[3])
+    : parts[0] === 'untrusted'
+      && parts.length >= 5 && validPart(parts[1]) && validPart(parts[2]) && /^pr-[1-9]\d*$/.test(parts[3]);
+  if (!validNamespace || parts.some((part) => !validPart(part))) {
+    throw new Error('restore-keys contains a value outside the trusted/untrusted schema');
+  }
+  return key;
+}
+
 function refName() {
   return process.env.GITHUB_REF_NAME || '';
 }
@@ -65,15 +86,14 @@ function pullRequestNumber() {
 
 function scopedKey(key) {
   if (!key) return key;
+  const name = cacheName();
   if (key.startsWith('trusted/') || key.startsWith('untrusted/')) {
     if (!isCompleteCacheKey(key)) {
       throw new Error('cache key does not match the trusted/untrusted schema');
     }
     return key;
   }
-  const cacheName = input('cache-name').trim().replace(/^\/+|\/+$/g, '');
-  const logicalKey = cacheName && !key.startsWith(`${cacheName}/`)
-    ? `${cacheName}/${key}` : key;
+  const logicalKey = key.startsWith(`${name}/`) ? key : `${name}/${key}`;
   const sourceRepository = repository();
   if (eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/')) {
     const number = pullRequestNumber();
@@ -83,6 +103,27 @@ function scopedKey(key) {
   if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic cache key');
   const branch = defaultBranch();
   if (!branch) throw new Error('repository default branch is required for an automatic trusted cache key');
+  return `trusted/${sourceRepository}/${branch}/${logicalKey}`;
+}
+
+function scopedRestorePrefix(prefix) {
+  const value = prefix.trim();
+  if (!value) return value;
+  if (value.startsWith('trusted/') || value.startsWith('untrusted/')) return validateRestorePrefix(value);
+  const name = cacheName();
+  const logicalKey = value.startsWith(`${name}/`) ? value : `${name}/${value}`;
+  if (!logicalKey.split('/').every((part) => /^[A-Za-z0-9._-]+$/.test(part))) {
+    throw new Error('restore-keys contains invalid path components');
+  }
+  const sourceRepository = repository();
+  if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic restore key');
+  if (eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/')) {
+    const number = pullRequestNumber();
+    if (!number) throw new Error('pull request number is required for an automatic restore key');
+    return `untrusted/${sourceRepository}/pr-${number}/${logicalKey}`;
+  }
+  const branch = defaultBranch();
+  if (!branch) throw new Error('repository default branch is required for an automatic restore key');
   return `trusted/${sourceRepository}/${branch}/${logicalKey}`;
 }
 
@@ -204,6 +245,7 @@ const binaryFileName = /\.(?:7z|aar|bin|class|dll|dylib|exe|gz|iso|jar|jpeg|jpg|
 const packageMetadataPath = /(?:^|[\\/])[^\\/]+\.(?:dist-info|egg-info)(?:[\\/]|$)/i;
 const npmIndexPath = /(?:^|[\\/])_cacache[\\/]index-v\d+(?:[\\/]|$)/i;
 const sensitiveDirectory = /(^|[\\/])(?:\.ssh|\.aws|\.docker|\.kube)(?:[\\/]|$)/i;
+const virtualEnvironmentPath = /(^|[\\/])\.venv(?:[\\/]|$)/i;
 const privateKeyContent = /BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/i;
 const knownTokenContent = /(gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|npm_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16})/i;
 const credentialAssignment = /(?:password|passwd|secret|api[_-]?key)\s*[:=]\s*(?:"[^"\r\n]{8,}"|'[^'\r\n]{8,}'|[A-Za-z0-9_+/=.-]{20,})/i;
@@ -221,6 +263,9 @@ function securityScan(root) {
       return;
     }
     const relative = path.relative(root, file);
+    if (virtualEnvironmentPath.test(relative) || path.basename(file) === '.venv') {
+      throw new Error(`cache path must not contain a virtual environment: ${path.relative(process.cwd(), file)}`);
+    }
     if (sensitiveDirectory.test(relative)
       || sensitiveName.test(path.basename(file))
       || (sensitiveKeywordName.test(path.basename(file))
@@ -259,6 +304,9 @@ async function makeArchive() {
       throw new Error(`cache path must be inside the workspace: ${value}`);
     }
     if (fs.existsSync(absolute)) {
+      if (virtualEnvironmentPath.test(relative) || path.basename(absolute) === '.venv') {
+        throw new Error(`cache path must not contain a virtual environment: ${value}`);
+      }
       securityScan(absolute);
       paths.push(relative || '.');
     }
@@ -364,42 +412,6 @@ async function setRef(repository, key, hash) {
   throw new Error('reference update conflicted after retries');
 }
 
-function markdownCell(value) {
-  return String(value ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
-}
-
-function referencesMarkdown(references, repository = '') {
-  const rows = Object.entries(references || {})
-    .sort(([leftKey, left], [rightKey, right]) => {
-      const dateOrder = String(right?.updated_at || '').localeCompare(String(left?.updated_at || ''));
-      return dateOrder || leftKey.localeCompare(rightKey);
-    })
-    .map(([key, reference]) => {
-      const object = reference?.object || '';
-      return `| ${markdownCell(reference?.updated_at || '')} | ${markdownCell(key)} | ${markdownCell(object)} |`;
-    });
-  return [
-    '<!-- cache-the-planet: references-v1.json -->',
-    `This table is generated automatically from [\`manifests/references-v1.json\`](https://github.com/${repository}/blob/main/manifests/references-v1.json).`,
-    '',
-    '| Updated | Cache key | Object |',
-    '| --- | --- | --- |',
-    ...rows,
-    '',
-    `Total references: **${rows.length}**`,
-  ].join('\n');
-}
-
-async function updateReleaseDescription(repository) {
-  const current = await refs(repository);
-  const cacheRelease = await release(repository);
-  await gh(`/repos/${repository}/releases/${cacheRelease.id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ body: referencesMarkdown(current.json.references, repository) }),
-  });
-}
-
 async function download(repository, hash) {
   const asset = await object(repository, hash);
   if (!asset) throw new Error(`object ${hash} not found`);
@@ -435,11 +447,12 @@ function extract(file) {
 }
 
 module.exports = {
-  input, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, scopedKey,
+  input, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName,
+  scopedKey, scopedRestorePrefix,
   log, fail, gh,
   upload, entries, refName,
   securityScan, makeArchive, digest,
   encryptFile, decryptFile,
-  release, assets, object, refs, setRef, referencesMarkdown, updateReleaseDescription,
+  release, assets, object, refs, setRef,
   download, extract,
 };
