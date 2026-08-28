@@ -2,23 +2,56 @@ name: Content-addressed GitHub cache
 description: Immutable, deduplicated cache objects stored as GitHub Release assets
 author: cache-the-planet
 inputs:
-  repository: {description: owner/name of cache repository, required: true}
-  key: {description: Logical cache key; trusted/untrusted repository and PR scope are added automatically when omitted, required: true}
-  cache-name: {description: Cache namespace such as npm, uv, gradle, or docker, required: true}
-  restore-keys: {description: Newline separated fallback prefixes, required: false, default: ''}
-  path: {description: Newline separated files or directories to cache, required: true}
-  compression-level: {description: zstd compression level, required: false, default: '3'}
-  token: {description: GitHub token or App installation token, required: false}
-  encryption-key: {description: Optional AES-256 encryption key or passphrase for cache contents, required: false, default: ''}
-  exclude: {description: Newline separated gitignore-style exclusions, required: false, default: ''}
-  strict: {description: Fail on cache errors, required: false, default: 'false'}
-  allow-pr-cache: {description: Allow saving an isolated untrusted cache for a pull request, required: false, default: 'true'}
+  repository:
+    description: "owner/name of cache repository"
+    required: true
+  key:
+    description: "Logical cache key; trusted/untrusted repository and PR scope are added automatically when omitted"
+    required: true
+  cache-name:
+    description: "Cache namespace such as npm, uv, gradle, or docker"
+    required: true
+  restore-keys:
+    description: "Newline separated fallback prefixes"
+    required: false
+    default: ""
+  path:
+    description: "Newline separated files or directories to cache"
+    required: true
+  compression-level:
+    description: "zstd compression level"
+    required: false
+    default: "3"
+  token:
+    description: "GitHub token or App installation token"
+    required: false
+  encryption-key:
+    description: "Optional AES-256 encryption key or passphrase for cache contents"
+    required: false
+    default: ""
+  exclude:
+    description: "Newline separated gitignore-style exclusions"
+    required: false
+    default: ""
+  strict:
+    description: "Fail on cache errors"
+    required: false
+    default: "false"
+  allow-pr-cache:
+    description: "Allow saving an isolated untrusted cache for a pull request"
+    required: false
+    default: "true"
 outputs:
-  cache-hit: {description: true when an exact key was restored}
-  matched-key: {description: Reference key used for restore}
-  content-hash: {description: sha256 digest of the object}
-  asset-name: {description: Release asset filename for the cached object}
-  cache-size: {description: Compressed object size in bytes}
+  cache-hit:
+    description: "true when an exact key was restored"
+  matched-key:
+    description: "Reference key used for restore"
+  content-hash:
+    description: "sha256 digest of the object"
+  asset-name:
+    description: "Release asset filename for the cached object"
+  cache-size:
+    description: "Compressed object size in bytes"
 runs:
   using: node24
   main: dist/restore.js
