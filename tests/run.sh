@@ -134,6 +134,9 @@ try {
   rejected = false;
   try { inspectTar(unsafeTar); } catch { rejected = true; }
   if (!rejected) throw new Error('archive hardlink was not rejected');
+  const flattenedTar = path.join(root, 'flattened.tar');
+  cp.execFileSync('tar', ['--hard-dereference', '-cf', flattenedTar, '-C', limitDir, 'target.txt', 'hardlink.txt']);
+  inspectTar(flattenedTar);
   const namedAsset = assetName(
     'untrusted/Ludy87/spdf-cache/pr-6/buildx/Linux-X64/unoserver/v1',
     `sha256:${'a'.repeat(64)}`,
