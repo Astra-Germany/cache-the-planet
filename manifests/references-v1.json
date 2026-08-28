@@ -104,6 +104,10 @@
     "trusted/Ludy87/cache-the-planet/main/uv-python-3-13/Linux-X64/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v1": {
       "object": "sha256:96b351c86aad47d82c9670669fd5d729d076e1fd3b3dc72f362144e10b2b83a2",
       "updated_at": "2026-08-28T10:25:27.061Z"
+    },
+    "trusted/Ludy87/cache-the-planet/main/task/Linux-X64/v1": {
+      "object": "sha256:0d066a6cc12d610125470357e8e1f528db67131f5df62e2cec1dad5af248e1df",
+      "updated_at": "2026-08-28T10:26:37.484Z"
     }
   }
 }
