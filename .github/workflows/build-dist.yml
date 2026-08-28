@@ -42,6 +42,7 @@ jobs:
           key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
           path: .cache/npm
           strict: false
+        continue-on-error: true
       - name: Commit generated dist
         shell: bash
         run: |
