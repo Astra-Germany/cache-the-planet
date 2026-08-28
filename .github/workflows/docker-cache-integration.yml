@@ -28,7 +28,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2
+          key: ${{ format('{0}-{1}/{2}/v2', runner.os, runner.arch, hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt')) }}
           path: examples/docker-cache/.cache/docker-buildx
           # Ein beschädigtes oder fehlendes altes Objekt darf den Reparaturlauf nicht blockieren.
           strict: false
@@ -58,7 +58,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2
+          key: ${{ format('{0}-{1}/{2}/v2', runner.os, runner.arch, hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt')) }}
           path: examples/docker-cache/.cache/docker-buildx
           strict: true
 
@@ -77,7 +77,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-docker/linux-amd64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2
+          key: ${{ format('{0}-{1}/{2}/v2', runner.os, runner.arch, hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt')) }}
           path: examples/docker-cache/.cache/docker-buildx
           strict: true
 
