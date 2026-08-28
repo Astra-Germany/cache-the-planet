@@ -6,6 +6,10 @@ const cp = require('child_process');
 
 const apiVersion = '2022-11-28';
 const encryptionMagic = Buffer.from('CTPENC1\0');
+const maxCompressedBytes = Number(process.env.CACHE_MAX_COMPRESSED_BYTES || 2 * 1024 ** 3);
+const maxTarBytes = Number(process.env.CACHE_MAX_TAR_BYTES || 8 * 1024 ** 3);
+const maxArchiveEntries = Number(process.env.CACHE_MAX_ENTRIES || 200000);
+const maxArchivePathLength = 4096;
 
 function input(name, defaultValue = '') {
   const variable = `INPUT_${name.replace(/ /g, '_').toUpperCase()}`;
@@ -125,6 +129,13 @@ function scopedRestorePrefix(prefix) {
   const branch = defaultBranch();
   if (!branch) throw new Error('repository default branch is required for an automatic restore key');
   return `trusted/${sourceRepository}/${branch}/${logicalKey}`;
+}
+
+function assertTrustedRestoreAllowed(keys) {
+  const isPullRequest = eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/');
+  if (isPullRequest && keys.some((key) => key.startsWith('trusted/'))) {
+    throw new Error('pull requests may not restore trusted cache keys');
+  }
 }
 
 function log(message) {
@@ -340,14 +351,35 @@ async function makeArchive() {
 
 function validateArchive(file) {
   const tarFile = path.join(path.dirname(file), 'validation.tar');
+  if (fs.statSync(file).size > maxCompressedBytes) {
+    throw new Error('cache archive exceeds the compressed size limit');
+  }
   const decompression = cp.spawnSync('zstd', ['-q', '-d', '-f', file, '-o', tarFile], {
     stdio: ['ignore', 'inherit', 'inherit'],
   });
   if (decompression.status) throw new Error('created zstd archive cannot be decompressed');
+  inspectTar(tarFile);
+}
+
+function inspectTar(tarFile) {
+  const tarSize = fs.statSync(tarFile).size;
+  if (tarSize > maxTarBytes) throw new Error('cache archive exceeds the uncompressed size limit');
   const listing = cp.spawnSync('tar', ['-tf', tarFile], { encoding: 'utf8' });
   if (listing.status) {
     throw new Error(`created tar archive is invalid: ${listing.stderr || 'tar listing failed'}`);
   }
+  const names = listing.stdout.split(/\r?\n/).filter(Boolean);
+  if (names.length > maxArchiveEntries) throw new Error('cache archive contains too many entries');
+  if (names.some((name) => name.length > maxArchivePathLength)) {
+    throw new Error('cache archive contains an excessively long path');
+  }
+  const details = cp.spawnSync('tar', ['-tvf', tarFile], { encoding: 'utf8' });
+  if (details.status) throw new Error(`cache archive metadata is invalid: ${details.stderr || 'tar listing failed'}`);
+  for (const line of details.stdout.split(/\r?\n/).filter(Boolean)) {
+    const type = line[0];
+    if (type !== '-' && type !== 'd') throw new Error('cache archive contains a symlink, hardlink, or special file');
+  }
+  return names;
 }
 
 function digest(file) {
@@ -377,7 +409,18 @@ async function assets(repository) {
 
 async function object(repository, hash) {
   const result = await assets(repository);
-  return result.assets.find((asset) => asset.name === `${hash.slice(7)}.tar.zst`);
+  return result.assets.find((asset) => asset.name === `${hash.slice(7)}.tar.zst`
+    || asset.name.endsWith(`--${hash.slice(7)}.tar.zst`));
+}
+
+function assetName(key, hash) {
+  const slug = key.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120);
+  return `${slug}--${hash.slice(7)}.tar.zst`;
+}
+
+function hashFromAssetName(name) {
+  const match = name.match(/(?:^|--)([a-f0-9]{64})\.tar\.zst$/i);
+  return match ? `sha256:${match[1]}` : null;
 }
 
 async function manifest(repository) {
@@ -419,22 +462,28 @@ async function download(repository, hash) {
   const file = path.join(directory, asset.name);
   const response = await fetch(asset.browser_download_url, { headers: { Authorization: `Bearer ${token()}` } });
   if (!response.ok) throw new Error(`download failed: ${response.status}`);
-  fs.writeFileSync(file, Buffer.from(await response.arrayBuffer()));
+  const contentLength = Number(response.headers.get('content-length') || 0);
+  if (contentLength > maxCompressedBytes) throw new Error('cache archive exceeds the compressed size limit');
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length > maxCompressedBytes) throw new Error('cache archive exceeds the compressed size limit');
+  fs.writeFileSync(file, bytes);
   if (digest(file) !== hash) throw new Error('integrity check failed: sha256 mismatch');
   return file;
 }
 
 function extract(file) {
   const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+  if (fs.statSync(file).size > maxCompressedBytes) {
+    throw new Error('cache archive exceeds the compressed size limit');
+  }
   const decrypted = decryptFile(file);
   const tarFile = path.join(path.dirname(decrypted), 'object.tar');
   const decompression = cp.spawnSync('zstd', ['-q', '-d', '-f', decrypted, '-o', tarFile], {
     stdio: ['ignore', 'inherit', 'inherit'],
   });
   if (decompression.status) throw new Error('zstd decompression failed');
-  const listing = cp.spawnSync('tar', ['-tf', tarFile], { encoding: 'utf8' });
-  if (listing.status) throw new Error(`invalid tar archive: ${listing.stderr || 'tar listing failed'}`);
-  for (const name of listing.stdout.split(/\r?\n/).filter(Boolean)) {
+  const names = inspectTar(tarFile);
+  for (const name of names) {
     if (path.isAbsolute(name) || name.split('/').includes('..') || name.split('\\').includes('..')) {
       throw new Error('unsafe archive path');
     }
@@ -448,10 +497,10 @@ function extract(file) {
 
 module.exports = {
   input, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName,
-  scopedKey, scopedRestorePrefix,
+  scopedKey, scopedRestorePrefix, assertTrustedRestoreAllowed,
   log, fail, gh,
   upload, entries, refName,
-  securityScan, makeArchive, digest,
+  securityScan, makeArchive, inspectTar, digest, assetName, hashFromAssetName,
   encryptFile, decryptFile,
   release, assets, object, refs, setRef,
   download, extract,
