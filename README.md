@@ -124,6 +124,8 @@ Der Workflow `build-dist.yml` baut `dist/` bei Änderungen an `src/` automatisch
 
 Der automatisch erzeugte Commit `chore: build action dist` wird mit `GITHUB_TOKEN` gepusht. GitHub startet für solche Pushes absichtlich keine weiteren `push`-Workflows. Der Testworkflow reagiert deshalb zusätzlich auf das erfolgreiche Ende von `Build action distribution` über `workflow_run`.
 
+Die Action-Versionierung erfolgt separat über [Release Please](.github/workflows/release-please.yml). Commits nach Conventional Commits (`feat:`, `fix:`, `perf:` oder ein Breaking Change mit `!`) erzeugen eine Release-PR. Nach deren Merge veröffentlicht Release Please ein normales `vX.Y.Z`-GitHub-Release und aktualisiert `package.json`, `package-lock.json` und `CHANGELOG.md`. Dependabot-Updates für GitHub Actions (`chore(deps):`) werden dabei bewusst nicht als Release-Kategorie verarbeitet und lösen allein keinen Release aus. Das Cache-Release `cache-v1` und seine Assets werden davon nicht verändert.
+
 Dasselbe gilt für automatisch erzeugte Commits wie `cache: update ...`: Sie entstehen innerhalb des Docker-Cache-Workflows und starten wegen `GITHUB_TOKEN` keinen neuen `push`-Lauf. Der Testworkflow reagiert deshalb auch auf das erfolgreiche Ende von `Docker cache integration`. Soll ein direkter `push`-Workflow auf den Manifest-Commit ausgelöst werden, muss für den Schreibvorgang ein GitHub-App-Installation-Token oder Fine-grained PAT verwendet werden. Die Workflows dieses Repositorys aktivieren bewusst kein `cache: npm` und keine `actions/cache`; Cache-Daten werden ausschließlich über die eigenen Release-Assets gespeichert.
 
 Veröffentliche anschließend einen unveränderlichen Release-Tag, zum Beispiel `v1`:
