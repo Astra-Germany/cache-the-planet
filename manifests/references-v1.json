@@ -12,6 +12,14 @@
     "trusted/Ludy87/cache-the-planet/main/docker/Linux-X64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v2": {
       "object": "sha256:994b2f5eee0e6a93ce04aee1223f70bc0f10769ccb0bbe8ceee617390c730d27",
       "updated_at": "2026-08-28T10:42:20.882Z"
+    },
+    "trusted/Ludy87/cache-the-planet/main/maven-java17/Linux-X64/bebe0d6eac024116aec3e8995a6d24974063faa8fb30d39da9ffa8c80ca78c33/v1": {
+      "object": "sha256:32137bf34aba58979de0d747ea17c3f536437de103f53499504a4f90e7fc8257",
+      "updated_at": "2026-08-28T11:04:52.953Z"
+    },
+    "trusted/Ludy87/cache-the-planet/main/gradle-java17/Linux-X64/0b45fa5eb79158e3a1a70cbb424a4c7e68877213ca34b7150c330d3b511ee750/v1": {
+      "object": "sha256:4bfaa3abb6e676cad027fb1a7440778e63512fa1fd5055ecaf1380f4703fa731",
+      "updated_at": "2026-08-28T11:05:43.296Z"
     }
   }
 }
