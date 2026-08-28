@@ -678,3 +678,4 @@ References werden mit der Contents-SHA gelesen und bei Konflikten bis zu fünfma
 - [Architektur](docs/architecture.md)
 - [Security](docs/security.md)
 - [Protokoll v1](docs/protocol.md)
+- [Third-Party Notices](THIRD-PARTY-NOTICES.md)

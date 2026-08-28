@@ -3,6 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "description": "Content-addressed GitHub Actions cache",
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
   "allowScripts": {
     "esbuild": true
   },
@@ -11,5 +15,5 @@
     "build:check": "npm run build && git diff --exit-code -- dist",
     "test": "node --check src/common.js && node --check src/restore.js && node --check src/save.js && node --check src/gc.js"
   },
-  "devDependencies": {"esbuild": "^0.25.0"}
+  "devDependencies": {"esbuild": "^0.28.2"}
 }
