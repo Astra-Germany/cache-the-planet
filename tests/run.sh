@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 command -v node >/dev/null
+if [[ ! -f dist/common.js || ! -f dist/restore.js || ! -f dist/save.js || ! -f dist/gc.js ]]; then
+  npm run build
+fi
 node --check dist/common.js
 node --check dist/restore.js
 node --check dist/save.js
