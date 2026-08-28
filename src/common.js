@@ -116,7 +116,8 @@ function scopedRestorePrefix(prefix) {
   if (value.startsWith('trusted/') || value.startsWith('untrusted/')) return validateRestorePrefix(value);
   const name = cacheName();
   const logicalKey = value.startsWith(`${name}/`) ? value : `${name}/${value}`;
-  if (!logicalKey.split('/').every((part) => /^[A-Za-z0-9._-]+$/.test(part))) {
+  const logicalParts = logicalKey.replace(/\/$/, '').split('/');
+  if (!logicalParts.length || logicalParts.some((part) => !/^[A-Za-z0-9._-]+$/.test(part))) {
     throw new Error('restore-keys contains invalid path components');
   }
   const sourceRepository = repository();
