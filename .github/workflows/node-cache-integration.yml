@@ -13,7 +13,6 @@ permissions:
 
 env:
   CACHE_REPOSITORY: Ludy87/cache-the-planet
-  CACHE_KEY: trusted/Ludy87/cache-the-planet/example-node/linux-amd64/npm/v1
 
 jobs:
   save-cache:
@@ -35,7 +34,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ env.CACHE_KEY }}
+          key: ${{ format('npm/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
           path: .cache/npm
           strict: false
 
@@ -48,7 +47,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ env.CACHE_KEY }}
+          key: ${{ format('npm/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
           path: .cache/npm
           strict: true
 
@@ -73,7 +72,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ env.CACHE_KEY }}
+          key: ${{ format('npm/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
           path: .cache/npm
           strict: true
 
@@ -81,7 +80,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "${CACHE_KEY}"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/npm/${{ runner.os }}-${{ runner.arch }}/${{ hashFiles('package-lock.json') }}/v1"
           test -d .cache/npm
 
       - name: Verify npm can use restored cache
