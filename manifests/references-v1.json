@@ -8,6 +8,10 @@
     "trusted/Ludy87/cache-the-planet/main/npm/Linux-X64/6f75dfaa4e7a314a45b0b084fab9a2cf79a2583a929bfcdc58f07ad80e65dd8c/v1": {
       "object": "sha256:6299b5d5ac0a4600daf217b399984176cb241e3cd39e54ca6f0a64edc2f7da8f",
       "updated_at": "2026-08-28T10:41:44.925Z"
+    },
+    "trusted/Ludy87/cache-the-planet/main/docker/Linux-X64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v2": {
+      "object": "sha256:994b2f5eee0e6a93ce04aee1223f70bc0f10769ccb0bbe8ceee617390c730d27",
+      "updated_at": "2026-08-28T10:42:20.882Z"
     }
   }
 }
