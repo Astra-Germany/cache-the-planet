@@ -21,18 +21,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
+          cache-jdk: false
 
       - name: Restore Gradle cache asset
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
-          cache-name: gradle
+          cache-name: gradle-java17
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1
+          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java')) }}
           path: .cache/gradle
           strict: false
 
@@ -45,9 +46,9 @@ jobs:
         uses: ./save
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
-          cache-name: gradle
+          cache-name: gradle-java17
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1
+          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java')) }}
           path: .cache/gradle
           strict: true
 
@@ -57,19 +58,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
+          cache-jdk: false
 
       - name: Restore Gradle cache asset
         id: cache
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
-          cache-name: gradle
+          cache-name: gradle-java17
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1
+          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java')) }}
           path: .cache/gradle
           strict: true
 
@@ -77,7 +79,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/Ludy87/cache-the-planet/example-gradle/linux-amd64/gradle/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/gradle-java17/${{ runner.os }}-${{ runner.arch }}/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1"
 
       - name: Build offline with restored Gradle cache
         working-directory: examples/gradle-cache

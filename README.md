@@ -568,7 +568,7 @@ gehört zum Asset-Key der Content-Addressed-Cache-Action.
 | `astral-sh/setup-uv` | `uv` | `enable-cache: false`, `cache-local-path: .cache/uv` | `.cache/uv` |
 | `astral-sh/setup-uv` mit uv-managed Python | `uv-python` | `enable-cache: false`, `UV_CACHE_DIR` und `UV_PYTHON_INSTALL_DIR` setzen | `.cache/uv`, `.cache/uv-python` |
 | `go-task/setup-task` | `task` | keine Cache-Einstellung vorhanden | Taskfile-Build-Ausgabe, z. B. `.cache/task` |
-| `actions/setup-java` | `maven` / `gradle` | `cache` nicht setzen | `.cache/m2` / `.cache/gradle` |
+| `actions/setup-java` | `maven-java17` / `gradle-java17` | `cache` nicht setzen und `cache-jdk: false`; Java-Version im `cache-name` berücksichtigen | `.cache/m2` / `.cache/gradle` |
 | `actions/setup-python` | `pip` | `cache` nicht setzen | z. B. `.cache/pip` |
 | `docker/setup-qemu-action` | — | `cache-image: false` | — |
 | `docker/setup-buildx-action` | `docker` | keine native Actions-Cache-Konfiguration | — |
