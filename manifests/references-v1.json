@@ -88,6 +88,10 @@
     "untrusted/Ludy87/spdf-cache/pr-6/buildx-unoserver/Linux-X64/29d77e8616958338e05f79029438754cbab0f86a4f01738c5422a170a44ce289/v1": {
       "object": "sha256:6d8fbd7c5c5a201a9445cc5aa271b04f9cc2b98c1f7fbbd0065ac72358a44afd",
       "updated_at": "2026-08-28T01:09:17.106Z"
+    },
+    "trusted/Ludy87/cache-the-planet/main/docker/Linux-X64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v2": {
+      "object": "sha256:5df02f6694eeaa73f1d5b2bc6fad7e0ac79de12c7a6b6767c6217aed5d0bbca8",
+      "updated_at": "2026-08-28T10:12:19.341Z"
     }
   }
 }
