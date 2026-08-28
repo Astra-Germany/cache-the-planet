@@ -1,4 +1,9 @@
 {
   "schema_version": 1,
-  "references": {}
+  "references": {
+    "trusted/Ludy87/cache-the-planet/main/uv/Linux-X64/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v1": {
+      "object": "sha256:6a97fa791e944bdf3541094e6a1353153241a42f8248b0eccf8f78526f36e540",
+      "updated_at": "2026-08-28T10:41:43.926Z"
+    }
+  }
 }
