@@ -174,11 +174,10 @@ jobs:
         uses: Ludy87/cache-the-planet@v1
         with:
           repository: Ludy87/cache-the-planet
-          key: ${{ github.repository }}/linux/amd64/python/3.13/${{ github.ref_name }}/${{ hashFiles('uv.lock') }}/v1
+          cache-name: python
+          key: ${{ format('python/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('uv.lock')) }}
           restore-keys: |
-            ${{ github.repository }}/linux/amd64/python/3.13/${{ github.ref_name }}/
-            ${{ github.repository }}/linux/amd64/python/3.13/main/
-            ${{ github.repository }}/linux/amd64/python/3.13/
+            python/${{ runner.os }}-${{ runner.arch }}/
           path: |
             ~/.cache/pip
             .cache/uv
@@ -192,7 +191,8 @@ jobs:
         uses: Ludy87/cache-the-planet/save@v1
         with:
           repository: Ludy87/cache-the-planet
-          key: ${{ github.repository }}/linux/amd64/python/3.13/${{ github.ref_name }}/${{ hashFiles('uv.lock') }}/v1
+          cache-name: python
+          key: ${{ format('python/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('uv.lock')) }}
           path: |
             ~/.cache/pip
             .cache/uv
@@ -339,8 +339,9 @@ Verwende die offizielle Action zum Erzeugen eines kurzlebigen Installation Token
   uses: Ludy87/cache-the-planet@v1
   with:
     repository: Ludy87/cache-the-planet
+    cache-name: npm
     token: ${{ steps.cache-token.outputs.token }}
-    key: ${{ github.repository }}/linux/amd64/node/${{ hashFiles('package-lock.json') }}/v1
+    key: ${{ format('npm/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
     path: ~/.npm
 ```
 
@@ -348,38 +349,38 @@ Installation Tokens sind kurzlebig und sollten nicht als dauerhafte Secrets gesp
 
 ## Cache-Keys entwerfen
 
-Ein Key ist eine logische Adresse, nicht der Content-Hash. Empfohlenes Format:
+Ein Key ist eine logische Adresse, nicht der Content-Hash. Der Workflow gibt
+normalerweise nur den logischen Teil an; `cache-name` ist eine Pflichtangabe.
+Die Action ergänzt Namespace, Repository und PR-/Default-Branch automatisch.
+
+Trusted-Format:
 
 ```text
-<owner>/<repository>/<os>/<architecture>/<runtime>/<runtime-version>/<branch>/<dependency-hash>/<cache-version>
+trusted/<owner>/<repository>/<default-branch>/<cache-name>/<os>-<architecture>/<dependency-hash>/v1
 ```
 
-Beispiel:
+Untrusted-Format für Pull Requests:
 
 ```text
-my-org/my-project/linux/amd64/python/3.13/main/a81f207/v2
+untrusted/<owner>/<repository>/pr-123/<cache-name>/<os>-<architecture>/<dependency-hash>/v1
+```
+
+Beispiel für den Workflow-Key:
+
+```yaml
+cache-name: npm
+key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
 ```
 
 Sinnvolle Bestandteile:
 
+- `trusted` und `untrusted`: trennt vertrauenswürdige und PR-Caches.
 - `owner/repository`: verhindert Cross-Project-Kollisionen.
+- Default-Branch oder PR-Nummer: trennt stabile und untrusted Inhalte.
+- `cache-name`: zum Beispiel `npm`, `uv`, `gradle` oder `docker`.
 - `os` und `architecture`: verhindert inkompatible Artefakte.
-- Runtime und Runtime-Version: zum Beispiel `python/3.13` oder `node/22`.
-- Branch oder Trust-Namespace: trennt `main`, Release-Branches und PRs.
 - Lockfile-, Dockerfile- oder Compiler-Hash: invalidiert den Cache bei Toolchain-Änderungen.
-- Cache-Version: manuelle globale Invalidierung, zum Beispiel `v2`.
-
-Für untrusted Pull Requests sollten Keys zusätzlich so aussehen:
-
-```text
-untrusted/pr-123/my-org/my-project/linux/amd64/v1
-```
-
-Trusted Branches verwenden dagegen:
-
-```text
-trusted/main/my-org/my-project/linux/amd64/v1
-```
+- Cache-Version: manuelle globale Invalidierung, zum Beispiel `v2` statt `v1`.
 
 ### Restore-Key-Reihenfolge
 
@@ -399,7 +400,8 @@ Branch- und Default-Branch-Fallback werden durch die Reihenfolge der Prefixe mod
 | Input | Pflicht | Beschreibung |
 |---|---:|---|
 | `repository` | ja | Cache-Repository im Format `owner/name` |
-| `key` | ja | Exakter logischer Cache-Key |
+| `cache-name` | ja | Cache-Kategorie, zum Beispiel `npm`, `uv` oder `gradle` |
+| `key` | ja | Logischer Key ohne automatisch ergänzten Namespace |
 | `restore-keys` | nein | Mehrere Prefixe, jeweils eine Zeile |
 | `path` | ja | Eine oder mehrere Dateien/Verzeichnisse, jeweils eine Zeile |
 | `compression-level` | nein | zstd-Level, Standard `3` |
@@ -408,7 +410,7 @@ Branch- und Default-Branch-Fallback werden durch die Reihenfolge der Prefixe mod
 
 ### Save-Inputs
 
-Zusätzlich zu `repository`, `key`, `path`, `compression-level`, `token` und `strict`:
+Zusätzlich zu `repository`, `cache-name`, `key`, `path`, `compression-level`, `token` und `strict`:
 
 | Input | Beschreibung |
 |---|---|
@@ -421,7 +423,7 @@ Zusätzlich zu `repository`, `key`, `path`, `compression-level`, `token` und `st
 | `cache-hit` | `true`, wenn der exakte Key restauriert wurde |
 | `matched-key` | Tatsächlich verwendeter Key |
 | `content-hash` | SHA-256 des komprimierten Objekts |
-| `asset-name` | Physischer Release-Asset-Name, zum Beispiel `da02a6ab...fe00.tar.zst` |
+| `asset-name` | Lesbarer physischer Release-Asset-Name mit enthaltenem Content-Hash |
 | `cache-size` | Größe des komprimierten Archivs in Bytes |
 
 Beispiel:
@@ -490,9 +492,10 @@ Für interne Pull Requests kann ein eigener, automatisch löschbarer PR-Cache ak
   uses: Ludy87/cache-the-planet/save@v1
   with:
     repository: Ludy87/cache-the-planet
+    cache-name: build
     token: ${{ secrets.CACHE_APP_TOKEN }}
     allow-pr-cache: true
-    key: untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/linux-amd64/v1
+    key: ${{ format('build/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
     path: .cache/build
 ```
 
@@ -552,6 +555,53 @@ uses: Ludy87/cache-the-planet/save@v1
 Bei inkompatiblen Protokolländerungen wird ein neuer Namespace wie `cache-v2` und eine neue Major-Version wie `@v2` verwendet. V1-Clients können alte V1-Objekte weiter lesen, solange das Manifest und das Release bestehen bleiben.
 
 ## Lokale Entwicklung und Tests
+
+## Unterstützte Actions und Cache-Einstellungen
+
+Die folgenden Actions können zusammen mit `cache-the-planet` verwendet werden.
+Native GitHub-Actions-Caches bleiben deaktiviert; der angegebene `cache-name`
+gehört zum Asset-Key der Content-Addressed-Cache-Action.
+
+| Action | `cache-name` | Einstellung der Action | Zu speichernder Pfad |
+| --- | --- | --- | --- |
+| `actions/setup-node` | `npm` | `package-manager-cache: false`, `cache` nicht setzen | `.cache/npm` |
+| `astral-sh/setup-uv` | `uv` | `enable-cache: false`, `cache-local-path: .cache/uv` | `.cache/uv` |
+| `astral-sh/setup-uv` mit uv-managed Python | `uv-python` | `enable-cache: false`, `UV_CACHE_DIR` und `UV_PYTHON_INSTALL_DIR` setzen | `.cache/uv`, `.cache/uv-python` |
+| `go-task/setup-task` | `task` | keine Cache-Einstellung vorhanden | Taskfile-Build-Ausgabe, z. B. `.cache/task` |
+| `actions/setup-java` | `maven` / `gradle` | `cache` nicht setzen | `.cache/m2` / `.cache/gradle` |
+| `actions/setup-python` | `pip` | `cache` nicht setzen | z. B. `.cache/pip` |
+| `docker/setup-qemu-action` | — | `cache-image: false` | — |
+| `docker/setup-buildx-action` | `docker` | keine native Actions-Cache-Konfiguration | — |
+| `docker/build-push-action` | `docker` | `cache-from`/`cache-to` auf lokalen Pfad oder separate BuildKit-Ausgabe setzen | `.cache/buildx` |
+| `docker/login-action` | — | keine Cache-Einstellung vorhanden | — |
+| `docker/metadata-action` | — | keine Cache-Einstellung vorhanden | — |
+| `actions/github-script` | — | keine Cache-Einstellung vorhanden | — |
+| `madrapps/jacoco-report` | — | keine Cache-Einstellung vorhanden | — |
+| `crazy-max/ghaction-github-runtime` | — | keine Cache-Einstellung vorhanden | — |
+| `dorny/paths-filter` | — | keine Cache-Einstellung vorhanden | — |
+| `dtolnay/rust-toolchain` | — | keine Cache-Einstellung vorhanden | — |
+| `digicert/ssm-code-signing` | — | keine Cache-Einstellung vorhanden | — |
+| `tauri-apps/tauri-action` | — | keine native Cache-Einstellung; Build-Cache separat konfigurieren | — |
+| `softprops/action-gh-release` | — | keine Cache-Einstellung vorhanden | — |
+| `imjasonh/setup-crane` | — | keine Cache-Einstellung vorhanden | — |
+| `ossf/scorecard-action` | — | keine Cache-Einstellung vorhanden | — |
+| `peter-evans/create-pull-request` | — | keine Cache-Einstellung vorhanden | — |
+| `KSXGitHub/github-actions-deploy-aur` | — | keine Cache-Einstellung vorhanden | — |
+| `srvaroa/labeler` | — | keine Cache-Einstellung vorhanden | — |
+
+Bei Actions mit `—` gibt es keinen eigenen Cache, der ausgelagert werden
+kann. Für diese Actions ist keine künstliche Cache-Konfiguration nötig.
+
+Ein Cache-Schritt sieht beispielsweise so aus:
+
+```yaml
+- uses: Ludy87/cache-the-planet@main
+  with:
+    repository: Ludy87/cache-the-planet
+    cache-name: npm
+    key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+    path: .cache/npm
+```
 
 Voraussetzungen auf dem Runner:
 

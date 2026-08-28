@@ -17,6 +17,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          package-manager-cache: false
       - name: Configure npm cache directory
         run: npm config set cache "$PWD/.cache/npm" --global
       - name: Restore npm cache asset
@@ -24,6 +25,7 @@ jobs:
         uses: ./
         with:
           repository: Ludy87/cache-the-planet
+          cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/node-build/linux-amd64/npm/${{ hashFiles('package-lock.json') }}/v1
           path: .cache/npm
@@ -34,6 +36,7 @@ jobs:
         uses: ./save
         with:
           repository: Ludy87/cache-the-planet
+          cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/node-build/linux-amd64/npm/${{ hashFiles('package-lock.json') }}/v1
           path: .cache/npm

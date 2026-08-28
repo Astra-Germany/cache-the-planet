@@ -31,6 +31,7 @@ jobs:
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: uv-python
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-uv-python/linux-amd64/uv-python/3.13/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
           path: |
@@ -51,6 +52,7 @@ jobs:
         uses: ./save
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: uv-python
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-uv-python/linux-amd64/uv-python/3.13/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
           path: |
@@ -73,6 +75,7 @@ jobs:
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: uv-python
           token: ${{ secrets.GITHUB_TOKEN }}
           key: trusted/Ludy87/cache-the-planet/example-uv-python/linux-amd64/uv-python/3.13/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1
           path: |

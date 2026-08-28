@@ -24,7 +24,9 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_run' && 'main' || github.ref }}
       - uses: actions/setup-node@v5
-        with: {node-version: 24}
+        with:
+          node-version: 24
+          package-manager-cache: false
       - run: npm install
       - run: npm run test
       - run: bash tests/run.sh

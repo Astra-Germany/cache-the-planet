@@ -16,7 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with: {node-version: 24}
+        with:
+          node-version: 24
+          package-manager-cache: false
       - run: node dist/pr-cleanup.js
         env:
           CACHE_REPOSITORY: Ludy87/cache-the-planet
