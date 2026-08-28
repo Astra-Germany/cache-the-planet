@@ -28,7 +28,7 @@ Ein Cache besteht aus zwei getrennten Ebenen.
 
 ### Immutable Objects
 
-Nach dem Packen wird das Archiv deterministisch mit `tar` erstellt und mit `zstd` komprimiert. Der SHA-256-Hash wird über die fertigen komprimierten Bytes berechnet.
+Nach dem Packen wird das Archiv deterministisch mit `tar` erstellt und mit `zstd` komprimiert. Bei aktivierter Verschlüsselung wird es anschließend mit AES-256-GCM verschlüsselt. Der SHA-256-Hash wird über die tatsächlich gespeicherten Bytes berechnet.
 
 ```text
 sha256:93ae271c...
@@ -37,7 +37,7 @@ sha256:93ae271c...
 Das Objekt wird als Release Asset mit folgendem Namen gespeichert:
 
 ```text
-93ae271c....tar.zst
+<cache-key-slug>--<content-sha256>.tar.zst
 ```
 
 Ein bereits vorhandenes Objekt wird niemals überschrieben. Wenn zwei Workflows denselben Inhalt gleichzeitig speichern, erzeugen beide denselben Hash; nur einer muss das Asset erfolgreich hochladen.
@@ -106,7 +106,8 @@ cache-the-planet/
 │   ├── common.js
 │   ├── restore.js
 │   ├── save.js
-│   └── gc.js
+│   ├── gc.js
+│   └── pr-cleanup.js
 ├── scripts/
 ├── manifests/
 ├── docs/
@@ -120,25 +121,25 @@ npm install
 npm run build
 ```
 
-Der Workflow `build-dist.yml` baut `dist/` bei Änderungen an `src/` automatisch und committed die generierten Dateien nach `main`. Der Testworkflow prüft zusätzlich, dass `dist/` mit dem Source-Code übereinstimmt. Deshalb müssen Änderungen an der Action nicht mehr direkt in `dist/` gepflegt werden.
+Der Workflow `build-dist.yml` baut `dist/` bei Änderungen an `src/` automatisch und committed die generierten Dateien nach `main`. Der Testworkflow prüft zusätzlich, dass alle erwarteten Dist-Dateien vorhanden und syntaktisch gültig sind. Deshalb müssen Änderungen an der Action nicht mehr direkt in `dist/` gepflegt werden.
 
 Der automatisch erzeugte Commit `chore: build action dist` wird mit `GITHUB_TOKEN` gepusht. GitHub startet für solche Pushes absichtlich keine weiteren `push`-Workflows. Der Testworkflow reagiert deshalb zusätzlich auf das erfolgreiche Ende von `Build action distribution` über `workflow_run`.
 
-Die Action-Versionierung erfolgt separat über [Release Please](.github/workflows/release-please.yml). Commits nach Conventional Commits (`feat:`, `fix:`, `perf:` oder ein Breaking Change mit `!`) erzeugen eine Release-PR. Nach deren Merge veröffentlicht Release Please ein normales `vX.Y.Z`-GitHub-Release und aktualisiert `package.json`, `package-lock.json` und `CHANGELOG.md`. Dependabot-Updates für GitHub Actions (`chore(deps):`) werden dabei bewusst nicht als Release-Kategorie verarbeitet und lösen allein keinen Release aus. Das Cache-Release `cache-v1` und seine Assets werden davon nicht verändert.
+Die Action-Versionierung erfolgt separat über [Release Please](.github/workflows/release-please.yml). Commits nach Conventional Commits (`feat:`, `fix:`, `perf:` oder ein Breaking Change mit `!`) erzeugen eine Release-PR. Nach deren Merge veröffentlicht Release Please ein normales `vX.Y.Z`-GitHub-Release und aktualisiert `package.json`, `package-lock.json` und `CHANGELOG.md`. Der Release-Workflow aktualisiert anschließend die beweglichen Tags `vX.Y` und `vX`. Dependabot-Updates für GitHub Actions (`chore(deps):`) werden dabei bewusst nicht als Release-Kategorie verarbeitet und lösen allein keinen Release aus. Das Cache-Release `cache-v1` und seine Assets werden davon nicht verändert.
 
 Dasselbe gilt für automatisch erzeugte Commits wie `cache: update ...`: Sie entstehen innerhalb des Docker-Cache-Workflows und starten wegen `GITHUB_TOKEN` keinen neuen `push`-Lauf. Der Testworkflow reagiert deshalb auch auf das erfolgreiche Ende von `Docker cache integration`. Soll ein direkter `push`-Workflow auf den Manifest-Commit ausgelöst werden, muss für den Schreibvorgang ein GitHub-App-Installation-Token oder Fine-grained PAT verwendet werden. Die Workflows dieses Repositorys aktivieren bewusst kein `cache: npm` und keine `actions/cache`; Cache-Daten werden ausschließlich über die eigenen Release-Assets gespeichert.
 
-Veröffentliche anschließend einen unveränderlichen Release-Tag, zum Beispiel `v1`:
+Für die erste Veröffentlichung kann ein konkreter Release-Tag wie `v1.0.0` erstellt werden:
 
 ```bash
 git add .
 git commit -m "Add content addressed cache action"
 git push origin main
-git tag -a v1 -m "Cache action v1"
-git push origin v1
+git tag -a v1.0.0 -m "Cache action v1.0.0"
+git push origin v1.0.0
 ```
 
-Produktions-Workflows sollten einen Major-Tag wie `@v1` verwenden. Nach kompatiblen Bugfixes kann dieser Tag auf einen neuen Commit zeigen. Für maximale Reproduzierbarkeit kann stattdessen ein vollständiger Commit-SHA verwendet werden.
+Produktions-Workflows können einen beweglichen Major-Tag wie `@v1` oder einen Minor-Tag wie `@v1.1` verwenden. Diese Tags werden nach jedem Release automatisch aktualisiert. Für maximale Reproduzierbarkeit kann stattdessen ein vollständiger Commit-SHA verwendet werden.
 
 ### 3. Cache-Release vorbereiten
 
@@ -171,7 +172,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Restore cache
         id: cache
@@ -414,11 +415,14 @@ Branch- und Default-Branch-Fallback werden durch die Reihenfolge der Prefixe mod
 
 ### Save-Inputs
 
-Zusätzlich zu `repository`, `cache-name`, `key`, `path`, `compression-level`, `token` und `strict`:
+Zusätzlich zu `repository`, `cache-name`, `key`, `path`, `compression-level`,
+`token` und `strict` stehen folgende Inputs zur Verfügung:
 
 | Input | Beschreibung |
 |---|---|
 | `exclude` | Ausschlussmuster, jeweils eine Zeile; zum Beispiel `**/.env` |
+| `encryption-key` | Optionaler AES-256-Schlüssel oder eine Passphrase |
+| `allow-pr-cache` | Erlaubt das Speichern eines isolierten PR-Caches; Standard `true` |
 
 ### Outputs
 
@@ -426,7 +430,7 @@ Zusätzlich zu `repository`, `cache-name`, `key`, `path`, `compression-level`, `
 |---|---|
 | `cache-hit` | `true`, wenn der exakte Key restauriert wurde |
 | `matched-key` | Tatsächlich verwendeter Key |
-| `content-hash` | SHA-256 des komprimierten Objekts |
+| `content-hash` | SHA-256 der tatsächlich gespeicherten Objektdatei, einschließlich einer möglichen Verschlüsselung |
 | `asset-name` | Lesbarer physischer Release-Asset-Name mit enthaltenem Content-Hash |
 | `cache-size` | Größe des komprimierten Archivs in Bytes |
 
@@ -560,6 +564,14 @@ Bei inkompatiblen Protokolländerungen wird ein neuer Namespace wie `cache-v2` u
 
 ## Lokale Entwicklung und Tests
 
+Für lokale Tests und den Build der Action:
+
+```bash
+npm install
+npm test
+bash tests/run.sh
+```
+
 ## Unterstützte Actions und Cache-Einstellungen
 
 Die folgenden Actions können zusammen mit `cache-the-planet` verwendet werden.
@@ -572,7 +584,7 @@ gehört zum Asset-Key der Content-Addressed-Cache-Action.
 | `astral-sh/setup-uv` | `uv` | `enable-cache: false`, `cache-local-path: .cache/uv` | `.cache/uv` |
 | `astral-sh/setup-uv` mit uv-managed Python | `uv-python-3-13` | `enable-cache: false`, `UV_CACHE_DIR`, `UV_PYTHON_CACHE_DIR` und `UV_PYTHON_INSTALL_DIR` setzen; nur `.cache/uv` archivieren | `.cache/uv` |
 | `go-task/setup-task` | `task` | keine Cache-Einstellung vorhanden | Taskfile-Build-Ausgabe, z. B. `.cache/task` |
-| `actions/setup-java` | `maven-java17` / `gradle-java17` | `cache` nicht setzen und `cache-jdk: false`; Java-Version im `cache-name` berücksichtigen | `.cache/m2` / `.cache/gradle` |
+| `actions/setup-java` | `maven-java17` / `gradle-java17` | `cache` nicht setzen; Java-Version im `cache-name` berücksichtigen | `.cache/m2` / `.cache/gradle` |
 | `actions/setup-python` | `pip` | `cache` nicht setzen | z. B. `.cache/pip` |
 | `docker/setup-qemu-action` | — | `cache-image: false` | — |
 | `docker/setup-buildx-action` | `docker` | keine native Actions-Cache-Konfiguration | — |
@@ -599,7 +611,7 @@ kann. Für diese Actions ist keine künstliche Cache-Konfiguration nötig.
 Ein Cache-Schritt sieht beispielsweise so aus:
 
 ```yaml
-- uses: Ludy87/cache-the-planet@main
+- uses: Ludy87/cache-the-planet@v1
   with:
     repository: Ludy87/cache-the-planet
     cache-name: npm
