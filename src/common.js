@@ -329,7 +329,7 @@ async function makeArchive() {
     .filter(Boolean).flatMap((value) => ['--exclude', value]);
   const tar = cp.spawn('tar', [
     '--sort=name', '--mtime=UTC 1970-01-01', '--owner=0', '--group=0',
-    '--numeric-owner', '--dereference', '--exclude-vcs', '--format=gnu', '-cf', '-', ...excludes, '-C', workspace, ...paths,
+    '--numeric-owner', '--dereference', '--hard-dereference', '--exclude-vcs', '--format=gnu', '-cf', '-', ...excludes, '-C', workspace, ...paths,
   ], { stdio: ['ignore', 'pipe', 'inherit'] });
   const zstd = cp.spawn('zstd', ['-q', `-${input('compression-level', '3')}`, '-o', output], {
     stdio: ['pipe', 'inherit', 'inherit'],
