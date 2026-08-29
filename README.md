@@ -482,6 +482,7 @@ und wird nicht um `/v1` erweitert.
 | `compression-level` | nein | zstd-Level, Standard `3` |
 | `token` | nein | Token; alternativ `GITHUB_TOKEN` |
 | `strict` | nein | `true` bricht bei Cache-Fehlern ab, Standard `false` |
+| `config-file` | nein | Optionale JSON-Konfiguration; Umgebungsvariablen haben Vorrang |
 
 ### Save-Inputs
 
@@ -770,12 +771,12 @@ References werden mit der Contents-SHA gelesen und bei Konflikten bis zu fünfma
 ## Weitere Dokumentation
 
 - Ein ausführbares Docker-Beispiel befindet sich unter [examples/docker-cache](examples/docker-cache).
-- Der End-to-End-Testworkflow ist [.github/workflows/docker-cache-integration.yml](.github/workflows/docker-cache-integration.yml).
-- Der Node/npm-Asset-Test ist [.github/workflows/node-cache-integration.yml](.github/workflows/node-cache-integration.yml).
-- Der uv-Asset-Test ist [.github/workflows/uv-cache-integration.yml](.github/workflows/uv-cache-integration.yml). Er verwendet `astral-sh/setup-uv` ausschließlich zur Installation und deaktiviert dessen nativen Cache.
-- Der Task-Asset-Test ist [.github/workflows/task-cache-integration.yml](.github/workflows/task-cache-integration.yml). `go-task/setup-task` selbst besitzt keinen nativen Cache; getestet wird der von `task` erzeugte Build-Cache.
-- Der Java/Maven-Asset-Test ist [.github/workflows/java-cache-integration.yml](.github/workflows/java-cache-integration.yml). `actions/setup-java` wird ohne `cache`-Input verwendet; das Maven-Repository wird nach `.cache/m2` umgeleitet und als Release Asset gespeichert.
-- Der Gradle-Asset-Test ist [.github/workflows/gradle-cache-integration.yml](.github/workflows/gradle-cache-integration.yml). `GRADLE_USER_HOME` wird nach `.cache/gradle` umgeleitet; der Key basiert nur auf `build.gradle`, `settings.gradle` und den Java-Quellen; der Build wird in einem frischen Job mit `--offline` aus dem Release Asset wiederholt.
+- Der End-to-End-Testworkflow ist [.github/workflows/docker-cache-asset-integration.yml](.github/workflows/docker-cache-asset-integration.yml).
+- Der npm-Asset-Test ist [.github/workflows/npm-cache-asset-integration.yml](.github/workflows/npm-cache-asset-integration.yml).
+- Der uv-Asset-Test ist [.github/workflows/uv-cache-asset-integration.yml](.github/workflows/uv-cache-asset-integration.yml). Er verwendet `astral-sh/setup-uv` ausschließlich zur Installation und deaktiviert dessen nativen Cache.
+- Der Task-Asset-Test ist [.github/workflows/task-cache-asset-integration.yml](.github/workflows/task-cache-asset-integration.yml). `go-task/setup-task` selbst besitzt keinen nativen Cache; getestet wird der von `task` erzeugte Build-Cache.
+- Der Java/Maven-Asset-Test ist [.github/workflows/maven-cache-asset-integration.yml](.github/workflows/maven-cache-asset-integration.yml). `actions/setup-java` wird ohne `cache`-Input verwendet; das Maven-Repository wird nach `.cache/m2` umgeleitet und als Release Asset gespeichert.
+- Der Gradle-Asset-Test ist [.github/workflows/gradle-cache-asset-integration.yml](.github/workflows/gradle-cache-asset-integration.yml). `GRADLE_USER_HOME` wird nach `.cache/gradle` umgeleitet; der Key basiert nur auf `build.gradle`, `settings.gradle` und den Java-Quellen; der Build wird in einem frischen Job mit `--offline` aus dem Release Asset wiederholt.
 - [Architektur](docs/architecture.md)
 - [Security](docs/security.md)
 - [Protokoll v1](docs/protocol.md)

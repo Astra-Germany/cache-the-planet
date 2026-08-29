@@ -15,7 +15,7 @@ const os = require('os');
 const path = require('path');
 const cp = require('child_process');
 const { securityScan: sourceSecurityScan } = require('./src/common');
-const { scopedKey, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName } = require('./src/common');
+const { scopedKey, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName, manifestWriteGuard } = require('./src/common');
 const { inspectTar } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
@@ -133,6 +133,18 @@ try {
   namespaceKeyRejected = false;
   try { scopedKey(sharedKey); } catch { namespaceKeyRejected = true; }
   if (!namespaceKeyRejected) throw new Error('explicit shared cache key was accepted');
+  process.env.CACHE_MAX_MANIFEST_WRITES_PER_HOUR = '1';
+  const monitoredManifest = { references: {}, monitoring: {} };
+  if (!manifestWriteGuard(monitoredManifest) || monitoredManifest.monitoring.writes !== 1) {
+    throw new Error('manifest write monitoring did not record the write');
+  }
+  if (manifestWriteGuard(monitoredManifest)) {
+    throw new Error('manifest write rate limit was not enforced');
+  }
+  if (!monitoredManifest.monitoring.locked_until) {
+    throw new Error('manifest was not locked after the write limit was exceeded');
+  }
+  delete process.env.CACHE_MAX_MANIFEST_WRITES_PER_HOUR;
   const sharedSaveCheck = cp.spawnSync(process.execPath, ['./src/save.js'], {
     env: {
       ...process.env,

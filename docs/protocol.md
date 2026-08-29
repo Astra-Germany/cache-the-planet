@@ -20,7 +20,21 @@ Das Manifest liegt im Cache-Repository unter
 `manifests/references-v1.json`:
 
 ```json
-{"schema_version":1,"references":{"key":{"object":"sha256:<64 hex>","updated_at":"RFC3339"}}}
+{
+    "schema_version":1,
+    "references": {
+        "key": {
+            "object": "sha256:<64 hex>",
+            "updated_at": "RFC3339",
+            "source": "owner/repository",
+            "created_by": "actor",
+            "size": 123456
+        }
+    },
+    "monitoring": {
+        "window_started_at": "RFC3339", "writes": 1
+    }
+}
 ```
 
 `key` wird intern als vollständiger, automatisch abgegrenzter Schlüssel
@@ -59,6 +73,13 @@ Wird `scope: shared` in einem Pull Request verwendet, wird er automatisch mit
 einem Hinweis in `untrusted/.../pr-<number>/...` umgewandelt. Dadurch bleibt
 der Pull Request isoliert; auf `main` wird derselbe logische Key wieder als
 Shared-Key erzeugt.
+
+Jede neue Referenz kann zusätzlich `source`, `created_by` und die komprimierte
+Archivgröße `size` enthalten. Der optionale Block `monitoring` zählt
+Manifest-Schreibvorgänge in einem einstündigen Fenster. Bei Überschreitung des
+Limits setzt die Action `locked_until` und verweigert weitere Saves bis zum
+Ablauf der Sperre. Die Limits können mit `CACHE_MAX_MANIFEST_REFERENCES` und
+`CACHE_MAX_MANIFEST_WRITES_PER_HOUR` angepasst werden.
 
 Clients müssen unbekannte Felder ignorieren und `schema_version` erhalten. Ein
 fehlendes Objekt, ein ungültiger Hash, eine fehlende Referenz oder ein

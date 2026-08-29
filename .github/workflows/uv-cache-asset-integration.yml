@@ -1,4 +1,4 @@
-name: uv cache asset integration
+name: uv dependency cache asset integration
 on:
   workflow_call:
 
@@ -38,7 +38,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
           path: .cache/uv
           strict: false
@@ -52,7 +51,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
           path: .cache/uv
           strict: true
@@ -90,7 +88,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
           path: .cache/uv
           strict: true
