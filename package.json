@@ -17,5 +17,8 @@
   },
   "devDependencies": {
     "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@actions/github": "^9.1.1"
   }
 }
