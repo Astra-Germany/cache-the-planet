@@ -104,19 +104,6 @@ jobs:
           java-version: "17"
           cache-jdk: false
 
-      - name: Restore Gradle cache asset
-        uses: ./
-        with:
-          repository: ${{ env.CACHE_REPOSITORY }}
-          cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
-          restore-keys: |
-            shared/${{ github.repository }}/gradle-java17/linux-x64/
-          allow-shared-restore: true
-          path: .cache/gradle
-          strict: false
-
       - name: Build with Gradle
         working-directory: examples/gradle-cache
         run: gradle --no-daemon test
@@ -150,14 +137,14 @@ jobs:
           java-version: "17"
           cache-jdk: false
 
-      - name: Restore Gradle cache asset
-        id: cache
+      - name: Restore Gradle cache asset - auto
+        id: cache-auto
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
           token: ${{ secrets.GITHUB_TOKEN }}
-          scope: shared
+          scope: auto
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           restore-keys: |
             linux-x64/
@@ -168,8 +155,29 @@ jobs:
       - name: Assert exact asset cache hit
         shell: bash
         run: |
-          test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "shared/${{ github.repository }}/gradle-java17/linux-x64/${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}/v1"
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/gradle-java17/linux-x64/${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}/v1"
+
+      - name: Restore Gradle cache asset
+        id: cache-trusted
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: gradle-java17
+          token: ${{ secrets.GITHUB_TOKEN }}
+          scope: trusted
+          key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
+          restore-keys: |
+            linux-x64/
+          path: .cache/gradle
+          strict: true
+
+      - name: Assert exact asset cache hit
+        shell: bash
+        run: |
+          test "${{ steps.cache-trusted.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-trusted.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/gradle-java17/linux-x64/${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}/v1"
+
 
       - name: Build offline with restored Gradle cache
         working-directory: examples/gradle-cache
