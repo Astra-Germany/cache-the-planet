@@ -50,7 +50,7 @@ function baseRef() {
 }
 
 function isCompleteCacheKey(key) {
-  return /^(?:trusted\/[^/]+\/[^/]+\/[^/]+|untrusted\/[^/]+\/[^/]+\/pr-[1-9]\d*|shared\/[^/]+\/[^/]+\/[^/]+)\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1$/.test(key);
+  return /^(?:trusted\/[^/]+\/[^/]+\/[^/]+\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1|untrusted\/[^/]+\/[^/]+\/pr-[1-9]\d*\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1|shared\/[^/]+\/[^/]+\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1)$/.test(key);
 }
 
 function cacheName() {
