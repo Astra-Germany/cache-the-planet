@@ -1,4 +1,4 @@
-name: uv cache asset integration
+name: uv dependency cache asset integration
 on:
   workflow_call:
 

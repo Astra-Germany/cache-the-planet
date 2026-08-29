@@ -1,4 +1,4 @@
-name: Task cache asset integration
+name: Task build cache asset integration
 on:
   workflow_call:
 

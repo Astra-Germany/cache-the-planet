@@ -1,4 +1,4 @@
-name: Docker cache integration
+name: Docker cache asset integration
 on:
   workflow_call:
 
@@ -7,7 +7,7 @@ env:
 
 jobs:
   save-cache:
-    name: Build and save cache
+    name: Build and save Docker cache asset
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -59,7 +59,7 @@ jobs:
           strict: true
 
   restore-cache:
-    name: Restore cache in a fresh job
+    name: Restore Docker cache asset in a fresh job
     needs: save-cache
     runs-on: ubuntu-latest
     timeout-minutes: 5

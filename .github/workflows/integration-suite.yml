@@ -10,7 +10,7 @@ on:
 concurrency:
   # Keep duplicate integration suites from running in parallel without
   # blocking cleanup, release, or distribution workflows.
-  group: cache-integration-${{ github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -52,7 +52,7 @@ jobs:
   node:
     needs: [detect-changes, build-dist]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
-    uses: ./.github/workflows/node-cache-integration.yml
+    uses: ./.github/workflows/npm-cache-asset-integration.yml
     permissions:
       contents: write
     secrets: inherit
@@ -60,7 +60,7 @@ jobs:
   uv:
     needs: [detect-changes, build-dist, node]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
-    uses: ./.github/workflows/uv-cache-integration.yml
+    uses: ./.github/workflows/uv-cache-asset-integration.yml
     permissions:
       contents: write
     secrets: inherit
@@ -68,7 +68,7 @@ jobs:
   uv-python:
     needs: [detect-changes, build-dist, uv]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
-    uses: ./.github/workflows/uv-python-cache-integration.yml
+    uses: ./.github/workflows/uv-python-cache-asset-integration.yml
     permissions:
       contents: write
     secrets: inherit
@@ -76,7 +76,7 @@ jobs:
   task:
     needs: [detect-changes, build-dist, uv-python]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
-    uses: ./.github/workflows/task-cache-integration.yml
+    uses: ./.github/workflows/task-cache-asset-integration.yml
     permissions:
       contents: write
     secrets: inherit
@@ -84,7 +84,7 @@ jobs:
   java:
     needs: [detect-changes, build-dist, task]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
-    uses: ./.github/workflows/java-cache-integration.yml
+    uses: ./.github/workflows/maven-cache-asset-integration.yml
     permissions:
       contents: write
     secrets: inherit
@@ -92,7 +92,7 @@ jobs:
   gradle:
     needs: [detect-changes, build-dist, java]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
-    uses: ./.github/workflows/gradle-cache-integration.yml
+    uses: ./.github/workflows/gradle-cache-asset-integration.yml
     permissions:
       contents: write
     secrets: inherit
@@ -100,7 +100,7 @@ jobs:
   docker:
     needs: [detect-changes, build-dist, gradle]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
-    uses: ./.github/workflows/docker-cache-integration.yml
+    uses: ./.github/workflows/docker-cache-asset-integration.yml
     permissions:
       contents: write
     secrets: inherit

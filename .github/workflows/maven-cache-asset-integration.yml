@@ -1,4 +1,4 @@
-name: Java cache asset integration
+name: Maven cache asset integration
 on:
   workflow_call:
 

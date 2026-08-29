@@ -1,4 +1,4 @@
-name: uv Python cache asset integration
+name: uv Python runtime cache asset integration
 on:
   workflow_call:
 

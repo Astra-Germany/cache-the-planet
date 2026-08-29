@@ -1,4 +1,4 @@
-name: Node cache asset integration
+name: npm cache asset integration
 on:
   workflow_call:
 
