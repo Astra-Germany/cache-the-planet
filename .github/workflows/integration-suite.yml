@@ -43,7 +43,7 @@ jobs:
 
   build-dist:
     needs: detect-changes
-    if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || needs.detect-changes.outputs.build_dist == 'true'
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')  ||  needs.detect-changes.outputs.build_dist == 'true' }}
     uses: ./.github/workflows/build-dist.yml
     with:
       dry-run: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' || 'true' }}
