@@ -53,6 +53,10 @@ inputs:
     description: "Fail on cache errors"
     required: false
     default: "false"
+  config-file:
+    description: "Optional JSON configuration file; environment variables override its values"
+    required: false
+    default: ""
   allow-pr-cache:
     description: "Allow saving an isolated untrusted cache for a pull request"
     required: false

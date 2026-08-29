@@ -482,6 +482,7 @@ und wird nicht um `/v1` erweitert.
 | `compression-level` | nein | zstd-Level, Standard `3` |
 | `token` | nein | Token; alternativ `GITHUB_TOKEN` |
 | `strict` | nein | `true` bricht bei Cache-Fehlern ab, Standard `false` |
+| `config-file` | nein | Optionale JSON-Konfiguration; Umgebungsvariablen haben Vorrang |
 
 ### Save-Inputs
 

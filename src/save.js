@@ -80,7 +80,9 @@ const c = require('./common');
       c.log(`object already exists: ${hash}`);
     }
 
-    await c.setRef(repository, key, hash);
+    await c.setRef(repository, key, hash, {
+      size: fs.statSync(archive.file).size,
+    });
     if (process.env.GITHUB_OUTPUT) {
       fs.appendFileSync(
         process.env.GITHUB_OUTPUT,

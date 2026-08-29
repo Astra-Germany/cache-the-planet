@@ -10,6 +10,8 @@ const maxCompressedBytes = Number(process.env.CACHE_MAX_COMPRESSED_BYTES || 2 * 
 const maxTarBytes = Number(process.env.CACHE_MAX_TAR_BYTES || 8 * 1024 ** 3);
 const maxArchiveEntries = Number(process.env.CACHE_MAX_ENTRIES || 200000);
 const maxArchivePathLength = 4096;
+const defaultManifestReferenceLimit = 100000;
+const defaultManifestWritesPerHour = 1000;
 
 function input(name, defaultValue = '') {
   const variable = `INPUT_${name.replace(/ /g, '_').toUpperCase()}`;
@@ -32,6 +34,39 @@ function authorizationHeaders() {
 }
 
 let githubClientPromise;
+let configurationCache;
+
+function configuration() {
+  if (configurationCache) return configurationCache;
+  const configuredFile = input('config-file') || process.env.CACHE_CONFIG_FILE;
+  if (!configuredFile) return (configurationCache = {});
+  const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+  const file = path.resolve(workspace, configuredFile);
+  const relative = path.relative(workspace, file);
+  if (path.isAbsolute(relative) || relative === '..' || relative.startsWith(`..${path.sep}`)) {
+    throw new Error('config-file must be inside the GitHub workspace');
+  }
+  try {
+    configurationCache = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (error) {
+    throw new Error(`could not read config-file: ${error.message}`);
+  }
+  if (!configurationCache || typeof configurationCache !== 'object' || Array.isArray(configurationCache)) {
+    throw new Error('config-file must contain a JSON object');
+  }
+  return configurationCache;
+}
+
+function configuredLimit(environmentName, configName, fallback) {
+  const environmentValue = process.env[environmentName];
+  const configValue = configuration().monitoring?.[configName];
+  const value = environmentValue ?? configValue ?? fallback;
+  const limit = Number(value);
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new Error(`${environmentName} must be a positive integer`);
+  }
+  return limit;
+}
 
 async function githubClient() {
   const value = token();
@@ -299,13 +334,19 @@ async function gh(url, options = {}) {
   const client = await githubClient();
   if (client) {
     try {
-      const response = await client.request(url, {
+      const requestOptions = {
         ...options,
         headers: {
           Accept: 'application/vnd.github+json',
           'X-GitHub-Api-Version': apiVersion,
           ...(options.headers || {}),
         },
+      };
+      if (typeof requestOptions.body === 'string') {
+        try { requestOptions.body = JSON.parse(requestOptions.body); } catch { /* non-JSON body */ }
+      }
+      const response = await client.request(url, {
+        ...requestOptions,
       });
       return { body: response.data, headers: response.headers };
     } catch (error) {
@@ -629,11 +670,59 @@ async function updateManifest(repository, message, update) {
   throw new Error(`reference update conflicted after ${maxAttempts} attempts`);
 }
 
-async function setRef(repository, key, hash) {
+function manifestWriteGuard(manifest) {
+  const now = Date.now();
+  const maxReferences = configuredLimit(
+    'CACHE_MAX_MANIFEST_REFERENCES', 'max_manifest_references', defaultManifestReferenceLimit,
+  );
+  const maxWrites = configuredLimit(
+    'CACHE_MAX_MANIFEST_WRITES_PER_HOUR', 'max_manifest_writes_per_hour', defaultManifestWritesPerHour,
+  );
+  const monitoring = manifest.monitoring && typeof manifest.monitoring === 'object'
+    ? manifest.monitoring : {};
+  const lockedUntil = Date.parse(monitoring.locked_until || '');
+  if (Number.isFinite(lockedUntil) && lockedUntil > now) {
+    throw new Error(`cache writes are temporarily locked until ${monitoring.locked_until}`);
+  }
+  if (Object.keys(manifest.references || {}).length >= maxReferences) {
+    throw new Error(`cache manifest reference limit reached (${maxReferences})`);
+  }
+  const windowStarted = Date.parse(monitoring.window_started_at || '');
+  if (!Number.isFinite(windowStarted) || now - windowStarted >= 60 * 60 * 1000) {
+    monitoring.window_started_at = new Date(now).toISOString();
+    monitoring.writes = 0;
+  }
+  if (Number(monitoring.writes || 0) >= maxWrites) {
+    monitoring.locked_until = new Date(now + 60 * 60 * 1000).toISOString();
+    monitoring.lock_reason = 'manifest write rate limit exceeded';
+    monitoring.locked_at = new Date(now).toISOString();
+    manifest.monitoring = monitoring;
+    return false;
+  }
+  monitoring.writes = Number(monitoring.writes || 0) + 1;
+  manifest.monitoring = monitoring;
+  return true;
+}
+
+async function setRef(repository, key, hash, metadata = {}) {
+  let locked = false;
   return updateManifest(repository, `cache: update ${key}`, (manifest) => {
     if (manifest.references[key]?.object === hash) return false;
-    manifest.references[key] = { object: hash, updated_at: new Date().toISOString() };
+    if (!manifestWriteGuard(manifest)) {
+      locked = true;
+      return true;
+    }
+    manifest.references[key] = {
+      object: hash,
+      updated_at: new Date().toISOString(),
+      source: process.env.GITHUB_REPOSITORY || null,
+      created_by: process.env.GITHUB_ACTOR || null,
+      size: Number.isFinite(metadata.size) ? metadata.size : null,
+    };
     return true;
+  }).then((result) => {
+    if (locked) throw new Error('cache writes are temporarily locked: manifest write rate limit exceeded');
+    return result;
   });
 }
 
@@ -684,6 +773,6 @@ module.exports = {
   upload, entries, refName,
   securityScan, makeArchive, inspectTar, digest, assetName, hashFromAssetName,
   encryptFile, decryptFile,
-  release, assets, object, refs, updateManifest, setRef,
+  release, assets, object, refs, updateManifest, setRef, manifestWriteGuard,
   download, extract,
 };
