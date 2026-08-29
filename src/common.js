@@ -50,7 +50,7 @@ function baseRef() {
 }
 
 function isCompleteCacheKey(key) {
-  return /^(?:trusted\/[^/]+\/[^/]+\/[^/]+|untrusted\/[^/]+\/[^/]+\/pr-[1-9]\d*)\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1$/.test(key);
+  return /^(?:trusted\/[^/]+\/[^/]+\/[^/]+|untrusted\/[^/]+\/[^/]+\/pr-[1-9]\d*|shared\/[^/]+\/[^/]+\/[^/]+)\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1$/.test(key);
 }
 
 function cacheName() {
@@ -68,7 +68,9 @@ function validateRestorePrefix(key) {
     ? parts.length >= 5 && validPart(parts[1]) && validPart(parts[2]) && validPart(parts[3])
     : parts[0] === 'untrusted'
       && parts.length >= 5 && validPart(parts[1]) && validPart(parts[2]) && /^pr-[1-9]\d*$/.test(parts[3]);
-  if (!validNamespace || parts.some((part) => !validPart(part))) {
+  const sharedNamespace = parts[0] === 'shared'
+    && parts.length >= 5 && validPart(parts[1]) && validPart(parts[2]) && validPart(parts[3]);
+  if ((!validNamespace && !sharedNamespace) || parts.some((part) => !validPart(part))) {
     throw new Error('restore-keys contains a value outside the trusted/untrusted schema');
   }
   return key;
@@ -140,6 +142,10 @@ function assertTrustedRestoreAllowed(keys) {
   const isPullRequest = eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/');
   if (isPullRequest && keys.some((key) => key.startsWith('trusted/'))) {
     throw new Error('pull requests may not restore trusted cache keys');
+  }
+  if (isPullRequest && keys.some((key) => key.startsWith('shared/'))
+    && String(input('allow-shared-restore')).toLowerCase() !== 'true') {
+    throw new Error('shared cache restore requires allow-shared-restore=true');
   }
 }
 

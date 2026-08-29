@@ -54,3 +54,10 @@ der Workflow stellt ausdrücklich und sicher die erforderliche Berechtigung bzw.
 das erforderliche Token bereit. Ein Cache-Treffer ist kein Herkunftsnachweis;
 Builds dürfen keine beliebigen zwischengespeicherten Binärdateien ohne eigene
 Vertrauensprüfung ausführen.
+
+Der optionale Namespace `shared/` ist ausschließlich für geprüfte Inhalte aus
+`main` oder Release-Tags vorgesehen. Pull Requests dürfen ihn standardmäßig
+nicht lesen und benötigen für einen ausdrücklich angegebenen Shared-Prefix
+`allow-shared-restore: true`. Shared-Caches müssen trotzdem frei von
+Geheimnissen bleiben, weil ein Pull-Request-Prozess die gelesenen Daten
+verarbeiten kann.

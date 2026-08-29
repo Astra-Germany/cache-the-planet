@@ -114,6 +114,13 @@ try {
   if (scopedKey('Linux-X64/hash/v1') !== 'trusted/example/project/main/npm/Linux-X64/hash/v1') {
     throw new Error('automatic cache namespace was not generated correctly');
   }
+  const sharedKey = 'shared/example/project/npm/Linux-X64/hash/v1';
+  if (scopedKey(sharedKey) !== sharedKey) {
+    throw new Error('shared cache key was not accepted');
+  }
+  if (scopedRestorePrefix('shared/example/project/npm/Linux-X64/') !== sharedKey.replace('/hash/v1', '/')) {
+    throw new Error('shared restore prefix was not accepted');
+  }
   let invalidKeyRejected = false;
   try { scopedKey('trusted/example/project/npm/Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
   if (!invalidKeyRejected) throw new Error('invalid trusted cache key was accepted');
@@ -133,6 +140,11 @@ try {
   let trustedRestoreRejected = false;
   try { assertTrustedRestoreAllowed(['trusted/example/project/main/npm/Linux-X64/hash/v1']); } catch { trustedRestoreRejected = true; }
   if (!trustedRestoreRejected) throw new Error('trusted restore prefix was not rejected by schema validation');
+  let sharedRestoreRejected = false;
+  try { assertTrustedRestoreAllowed([sharedKey]); } catch { sharedRestoreRejected = true; }
+  if (!sharedRestoreRejected) throw new Error('shared restore was allowed without explicit opt-in');
+  process.env['INPUT_ALLOW-SHARED-RESTORE'] = 'true';
+  assertTrustedRestoreAllowed([sharedKey]);
   const limitDir = path.join(root, 'archive');
   fs.mkdirSync(path.join(limitDir, '.venv'), { recursive: true });
   rejected = false;

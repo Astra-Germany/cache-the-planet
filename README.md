@@ -370,12 +370,35 @@ Untrusted-Format für Pull Requests:
 untrusted/<owner>/<repository>/pr-123/<cache-name>/<os>-<architecture>/<dependency-hash>/v1
 ```
 
+Geprüfte Basis-Caches können zusätzlich im Shared-Format veröffentlicht
+werden:
+
+```text
+shared/<owner>/<repository>/<cache-name>/<os>-<architecture>/<dependency-hash>/v1
+```
+
+`shared` darf nur aus `main` oder einem Release-Tag gespeichert werden. Ein
+Pull Request darf einen ausdrücklich angegebenen Shared-Cache nur mit
+`allow-shared-restore: true` lesen. Das Schreiben in `shared` aus einem PR ist
+nicht erlaubt.
+
 Beispiel für den Workflow-Key:
 
 ```yaml
 cache-name: npm
 key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
 ```
+
+Ein Pull Request kann optional einen geprüften Basis-Cache lesen:
+
+```yaml
+allow-shared-restore: true
+restore-keys: |
+  shared/Astra-Germany/my-project/npm/Linux-X64/
+```
+
+Der Shared-Prefix muss bewusst angegeben werden und wird nicht automatisch
+aus einem PR-Key abgeleitet.
 
 Sinnvolle Bestandteile:
 
