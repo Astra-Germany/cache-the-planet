@@ -110,7 +110,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           restore-keys: |
-            shared/${{ github.repository }}/main/gradle-java17/linux-x64/
+            shared/${{ github.repository }}/gradle-java17/linux-x64/
           allow-shared-restore: true
           path: .cache/gradle
           strict: false
@@ -158,7 +158,7 @@ jobs:
           scope: auto
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           restore-keys: |
-            ${{ github.repository }}/main/gradle-java17/linux-x64/
+            linux-x64/
           allow-shared-restore: true
           path: .cache/gradle
           strict: true
