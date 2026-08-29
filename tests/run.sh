@@ -166,6 +166,11 @@ try {
   }
   process.env.RUNNER_OS = 'Linux';
   process.env.RUNNER_ARCH = 'X64';
+  process.env['INPUT_OS'] = '__runner__';
+  process.env['INPUT_ARCH'] = '__runner__';
+  if (require('./src/common').runnerPlatform() !== 'linux-x64') {
+    throw new Error('omitted runner inputs did not use runner values');
+  }
   process.env['INPUT_OS'] = '';
   process.env['INPUT_ARCH'] = '';
   if (require('./src/common').runnerPlatform() !== 'unknown-unknown') {

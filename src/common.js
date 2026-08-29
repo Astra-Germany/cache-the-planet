@@ -75,8 +75,14 @@ function cacheScope() {
 }
 
 function runnerPlatform() {
-  const osValue = hasInput('os') ? input('os') : process.env.RUNNER_OS;
-  const archValue = hasInput('arch') ? input('arch') : process.env.RUNNER_ARCH;
+  // GitHub exposes optional action inputs as INPUT_* even when omitted. The
+  // metadata default distinguishes omission from an explicitly empty value.
+  const osInput = input('os');
+  const archInput = input('arch');
+  const osValue = osInput === '__runner__'
+    ? process.env.RUNNER_OS : (hasInput('os') ? osInput : process.env.RUNNER_OS);
+  const archValue = archInput === '__runner__'
+    ? process.env.RUNNER_ARCH : (hasInput('arch') ? archInput : process.env.RUNNER_ARCH);
   const osName = (osValue || 'unknown').trim() || 'unknown';
   const architecture = (archValue || 'unknown').trim() || 'unknown';
   const safe = (value) => value.replace(/[^A-Za-z0-9._-]/g, '-').toLowerCase();
