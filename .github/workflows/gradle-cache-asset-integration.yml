@@ -13,7 +13,6 @@ env:
 jobs:
   save-cache:
     name: Build and save Gradle cache asset
-    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
