@@ -3,7 +3,13 @@ run-name: Test - ${{ github.event_name }}${{ github.event_name == 'workflow_run'
 on:
   push:
     paths-ignore:
+      - '.github/**'
+      - 'docs/**'
+      - 'save/**'
+      - 'scripts/**'
       - 'src/**'
+      - '.gitignore'
+      - '.release-please-manifest.json'
   pull_request:
   workflow_run:
     workflows:
