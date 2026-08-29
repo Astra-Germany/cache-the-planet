@@ -18,9 +18,11 @@ inputs:
   os:
     description: "Operating system component of the cache key; defaults to RUNNER_OS"
     required: false
+    default: "__runner__"
   arch:
     description: "Architecture component of the cache key; defaults to RUNNER_ARCH"
     required: false
+    default: "__runner__"
   version:
     description: "Numeric cache format version, for example 1 or 2"
     required: true
