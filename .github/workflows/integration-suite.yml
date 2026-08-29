@@ -49,7 +49,7 @@ jobs:
 
   node:
     needs: [detect-changes, build-dist]
-    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
     uses: ./.github/workflows/node-cache-integration.yml
     permissions:
       contents: write
@@ -57,7 +57,7 @@ jobs:
 
   uv:
     needs: [detect-changes, build-dist, node]
-    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
     uses: ./.github/workflows/uv-cache-integration.yml
     permissions:
       contents: write
@@ -65,7 +65,7 @@ jobs:
 
   uv-python:
     needs: [detect-changes, build-dist, uv]
-    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
     uses: ./.github/workflows/uv-python-cache-integration.yml
     permissions:
       contents: write
@@ -73,7 +73,7 @@ jobs:
 
   task:
     needs: [detect-changes, build-dist, uv-python]
-    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
     uses: ./.github/workflows/task-cache-integration.yml
     permissions:
       contents: write
@@ -81,7 +81,7 @@ jobs:
 
   java:
     needs: [detect-changes, build-dist, task]
-    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
     uses: ./.github/workflows/java-cache-integration.yml
     permissions:
       contents: write
@@ -97,6 +97,7 @@ jobs:
 
   docker:
     needs: [detect-changes, build-dist, gradle]
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
     uses: ./.github/workflows/docker-cache-integration.yml
     permissions:
       contents: write
