@@ -29,7 +29,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java')) }}
+          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/src/**/*.java')) }}
           path: .cache/gradle
           strict: false
 
@@ -44,7 +44,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java')) }}
+          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/src/**/*.java')) }}
           path: .cache/gradle
           strict: true
 
@@ -72,7 +72,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java')) }}
+          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/src/**/*.java')) }}
           path: .cache/gradle
           strict: true
 
@@ -80,7 +80,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/gradle-java17/${{ runner.os }}-${{ runner.arch }}/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/**/*.java') }}/v1"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/gradle-java17/${{ runner.os }}-${{ runner.arch }}/${{ hashFiles('examples/gradle-cache/**/*.gradle', 'examples/gradle-cache/src/**/*.java') }}/v1"
 
       - name: Build offline with restored Gradle cache
         working-directory: examples/gradle-cache
