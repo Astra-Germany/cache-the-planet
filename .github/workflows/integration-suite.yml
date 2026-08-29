@@ -51,7 +51,7 @@ jobs:
 
   node:
     needs: [detect-changes, build-dist]
-    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/npm-cache-asset-integration.yml
     permissions:
       contents: write
