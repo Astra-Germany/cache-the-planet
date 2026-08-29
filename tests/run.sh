@@ -120,6 +120,7 @@ try {
     throw new Error('shared scope did not generate the shared cache key');
   }
   process.env.GITHUB_EVENT_NAME = 'pull_request';
+  fs.writeFileSync(eventFile, JSON.stringify({ pull_request: { number: 7 } }));
   if (scopedKey('Linux-X64/hash/v1') !== 'untrusted/example/project/pr-7/npm/Linux-X64/hash/v1') {
     throw new Error('shared scope was not isolated for pull requests');
   }
@@ -128,6 +129,7 @@ try {
   if (!namespaceKeyRejected) throw new Error('explicit shared key was accepted in a pull request');
   process.env['INPUT_SCOPE'] = 'auto';
   process.env.GITHUB_EVENT_NAME = 'push';
+  fs.writeFileSync(eventFile, JSON.stringify({ repository: { default_branch: 'main' } }));
   namespaceKeyRejected = false;
   try { scopedKey(sharedKey); } catch { namespaceKeyRejected = true; }
   if (!namespaceKeyRejected) throw new Error('explicit shared cache key was accepted');
@@ -183,6 +185,8 @@ try {
   try { scopedKey('hash'); } catch { invalidKeyRejected = true; }
   if (!invalidKeyRejected) throw new Error('non-numeric version was accepted');
   delete process.env['INPUT_VERSION'];
+  process.env.RUNNER_OS = 'Linux';
+  process.env.RUNNER_ARCH = 'X64';
   if (scopedRestorePrefix('npm/Linux-X64/') !== 'trusted/example/project/main/npm/Linux-X64/') {
     throw new Error('automatic restore prefix was not generated correctly');
   }
