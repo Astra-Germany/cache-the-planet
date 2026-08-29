@@ -605,7 +605,7 @@ gehört zum Asset-Key der Content-Addressed-Cache-Action.
 | --- | --- | --- | --- |
 | `actions/setup-node` | `npm` | `package-manager-cache: false`, `cache` nicht setzen | `.cache/npm` |
 | `astral-sh/setup-uv` | `uv` | `enable-cache: false`, `cache-local-path: .cache/uv` | `.cache/uv` |
-| `astral-sh/setup-uv` mit uv-managed Python | `uv-python-3-13` | `enable-cache: false`, `UV_CACHE_DIR`, `UV_PYTHON_CACHE_DIR` und `UV_PYTHON_INSTALL_DIR` setzen; nur `.cache/uv` archivieren | `.cache/uv` |
+| `astral-sh/setup-uv` mit uv-managed Python | `uv-python-3-13` | `enable-cache: false`, `UV_CACHE_DIR`, `UV_PYTHON_CACHE_DIR` und `UV_PYTHON_INSTALL_DIR` setzen; nur den Download-Cache `.cache/uv` archivieren; Python pro Job in einem sauberen Installationsverzeichnis installieren | `.cache/uv` |
 | `go-task/setup-task` | `task` | keine Cache-Einstellung vorhanden | Taskfile-Build-Ausgabe, z. B. `.cache/task` |
 | `actions/setup-java` | `maven-java17` / `gradle-java17` | `cache` nicht setzen; Java-Version im `cache-name` berücksichtigen | `.cache/m2` / `.cache/gradle` |
 | `actions/setup-python` | `pip` | `cache` nicht setzen | z. B. `.cache/pip` |
