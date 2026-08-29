@@ -50,7 +50,7 @@ jobs:
     secrets: inherit
 
   node:
-    needs: [detect-changes, build-dist]
+    needs: [build-dist]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/npm-cache-asset-integration.yml
     permissions:
@@ -58,7 +58,7 @@ jobs:
     secrets: inherit
 
   uv:
-    needs: [detect-changes, build-dist, node]
+    needs: [build-dist, node]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
     uses: ./.github/workflows/uv-cache-asset-integration.yml
     permissions:
@@ -66,7 +66,7 @@ jobs:
     secrets: inherit
 
   uv-python:
-    needs: [detect-changes, build-dist, uv]
+    needs: [build-dist, uv]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
     uses: ./.github/workflows/uv-python-cache-asset-integration.yml
     permissions:
@@ -74,7 +74,7 @@ jobs:
     secrets: inherit
 
   task:
-    needs: [detect-changes, build-dist, uv-python]
+    needs: [build-dist, uv-python]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
     uses: ./.github/workflows/task-cache-asset-integration.yml
     permissions:
@@ -82,7 +82,7 @@ jobs:
     secrets: inherit
 
   java:
-    needs: [detect-changes, build-dist, task]
+    needs: [build-dist, task]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
     uses: ./.github/workflows/maven-cache-asset-integration.yml
     permissions:
@@ -90,7 +90,7 @@ jobs:
     secrets: inherit
 
   gradle:
-    needs: [detect-changes, build-dist, java]
+    needs: [build-dist, java]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/gradle-cache-asset-integration.yml
     permissions:
@@ -98,7 +98,7 @@ jobs:
     secrets: inherit
 
   docker:
-    needs: [detect-changes, build-dist, gradle]
+    needs: [build-dist, gradle]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
     uses: ./.github/workflows/docker-cache-asset-integration.yml
     permissions:
