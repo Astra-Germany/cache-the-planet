@@ -61,3 +61,5 @@ test-results/
 !package-lock.json
 
 dist/
+!dist/
+!dist/*.js
