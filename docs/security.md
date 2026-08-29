@@ -17,9 +17,29 @@ Im Workflow:
 token: ${{ secrets.CACHE_APP_TOKEN }}
 ```
 
-Wenn `token` nicht angegeben wird, verwendet die Action standardmäßig `GITHUB_TOKEN` beziehungsweise `ACTIONS_RUNTIME_TOKEN`. Ein explizit gesetzter `token` hat immer Vorrang.
+Wenn `token` nicht angegeben wird, verwendet die Action standardmäßig `GITHUB_TOKEN`. Ein explizit gesetzter `token` hat immer Vorrang. `ACTIONS_RUNTIME_TOKEN` wird bewusst nicht verwendet, weil dieser interne Runtime-Token kein GitHub-REST-API-Token ist.
 
 Kein dauerhaft gültiges Token ohne Ablaufdatum und kein Fallback auf `github.token` verwenden. Fork-Pull-Requests dürfen keine Schreib-Secrets erhalten; der Save-Schritt bleibt für sie deaktiviert.
+
+Das Manifest protokolliert bei neuen Referenzen Quelle, Ersteller und
+komprimierte Archivgröße. Zusätzlich begrenzt die Action standardmäßig das
+Manifest auf 100.000 Referenzen und 1.000 Schreibvorgänge pro Stunde. Wird das
+Schreiblimit überschritten, wird das Manifest für eine Stunde gesperrt.
+Administratoren können die Grenzen mit `CACHE_MAX_MANIFEST_REFERENCES` und
+`CACHE_MAX_MANIFEST_WRITES_PER_HOUR` anpassen.
+
+Alternativ können diese Einstellungen in einer JSON-Datei im Workspace liegen.
+Der Pfad wird mit `config-file` oder `CACHE_CONFIG_FILE` angegeben;
+Umgebungsvariablen überschreiben Werte aus der Datei:
+
+```yaml
+with:
+  config-file: .cache-the-planet.json
+```
+
+Ein Beispiel befindet sich in
+`.cache-the-planet.json.example`. Die Konfigurationsdatei darf nicht außerhalb
+des Workspace liegen.
 
 ## Cache-Scope
 

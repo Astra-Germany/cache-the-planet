@@ -1,4 +1,4 @@
-name: Java cache asset integration
+name: Maven cache asset integration
 on:
   workflow_call:
 
@@ -27,7 +27,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: maven-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/java-cache/pom.xml') }}
           path: .cache/m2
           strict: false
@@ -40,7 +39,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: maven-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/java-cache/pom.xml') }}
           path: .cache/m2
           strict: true
@@ -68,7 +66,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: maven-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/java-cache/pom.xml') }}
           path: .cache/m2
           strict: true

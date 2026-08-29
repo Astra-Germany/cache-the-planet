@@ -1,4 +1,4 @@
-name: Node cache asset integration
+name: npm cache asset integration
 on:
   workflow_call:
 
@@ -24,20 +24,11 @@ jobs:
       - name: Configure npm cache directory
         run: npm config set cache "$PWD/.cache/npm" --global
 
-      - name: Restore npm cache asset
-        uses: ./
-        with:
-          repository: ${{ env.CACHE_REPOSITORY }}
-          cache-name: npm
-          token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ hashFiles('package-lock.json') }}
-          path: .cache/npm
-          strict: false
-
       - name: Install dependencies
         run: npm ci
 
       - name: Save npm cache asset
+        if: success()
         uses: ./save
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
@@ -66,22 +57,42 @@ jobs:
       - name: Configure npm cache directory
         run: npm config set cache "$PWD/.cache/npm" --global
 
-      - name: Restore npm cache asset
-        id: cache
+      - name: Restore npm cache asset - auto
+        id: cache-auto
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # token: ${{ secrets.GITHUB_TOKEN }}
+          scope: auto
           key: ${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            linux-x64/
           path: .cache/npm
           strict: true
 
-      - name: Assert exact asset cache hit
+      - name: Assert exact asset cache hit start with trusted
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'trusted/') }}
         shell: bash
         run: |
-          test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/npm/linux-x64/${{ hashFiles('package-lock.json') }}/v1"
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/npm/linux-x64/${{ hashFiles('package-lock.json') }}/v1"
+          test -d .cache/npm
+
+      - name: Assert exact asset cache hit start with untrusted
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'untrusted/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/npm/linux-x64/${{ hashFiles('package-lock.json') }}/v1"
+          test -d .cache/npm
+
+      - name: Assert exact asset cache hit start with shared
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'shared/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/npm/linux-x64/${{ hashFiles('package-lock.json') }}/v1"
           test -d .cache/npm
 
       - name: Verify npm can use restored cache

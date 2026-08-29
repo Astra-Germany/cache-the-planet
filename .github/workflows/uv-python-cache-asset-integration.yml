@@ -1,4 +1,4 @@
-name: uv Python cache asset integration
+name: uv Python runtime cache asset integration
 on:
   workflow_call:
 
@@ -29,7 +29,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv-python-3-13
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
           version: 3
           path: |
@@ -52,7 +51,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv-python-3-13
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
           version: 3
           path: |
@@ -80,7 +78,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv-python-3-13
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
           version: 3
           path: |
