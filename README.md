@@ -357,6 +357,8 @@ Installation Tokens sind kurzlebig und sollten nicht als dauerhafte Secrets gesp
 Ein Key ist eine logische Adresse, nicht der Content-Hash. Der Workflow gibt
 normalerweise nur den logischen Teil an; `cache-name` ist eine Pflichtangabe.
 Die Action ergänzt Namespace, Repository und PR-/Default-Branch automatisch.
+Mit `scope` kann der Namespace explizit gewählt werden: `auto` (Standard),
+`shared`, `trusted` oder `untrusted`.
 
 Trusted-Format:
 
@@ -377,10 +379,11 @@ werden:
 shared/<owner>/<repository>/<cache-name>/<os>-<architecture>/<dependency-hash>/v1
 ```
 
-`shared` darf nur aus `main` oder einem Release-Tag gespeichert werden. Ein
-Pull Request darf einen ausdrücklich angegebenen Shared-Cache nur mit
-`allow-shared-restore: true` lesen. Das Schreiben in `shared` aus einem PR ist
-nicht erlaubt.
+`shared` darf nur aus `main` oder einem Release-Tag gespeichert werden. Wird
+`scope: shared` in einem Pull Request verwendet, wandelt die Action den Scope
+automatisch in `untrusted` um und gibt nur einen Hinweis aus. So bleibt der
+Pull Request isoliert und kann später ohne Key-Anpassung nach `main` gemergt
+werden. Das Schreiben in `shared` aus einem PR ist nicht erlaubt.
 
 Beispiel für den Workflow-Key:
 
@@ -389,16 +392,32 @@ cache-name: npm
 key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
 ```
 
-Ein Pull Request kann optional einen geprüften Basis-Cache lesen:
+Ein geprüfter gemeinsamer Cache wird mit demselben kurzen Key gespeichert und
+gelesen:
 
 ```yaml
-allow-shared-restore: true
-restore-keys: |
-  shared/Astra-Germany/my-project/npm/Linux-X64/
+cache-name: npm
+scope: shared
+key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
 ```
 
-Der Shared-Prefix muss bewusst angegeben werden und wird nicht automatisch
-aus einem PR-Key abgeleitet.
+Daraus erzeugt die Action automatisch:
+
+```text
+shared/<owner>/<repository>/npm/<os>-<architecture>/<dependency-hash>/v1
+```
+
+`shared` darf nur aus `main` oder einem Release-Tag gespeichert werden.
+
+Ein Pull Request kann einen isolierten PR-Cache lesen:
+
+```yaml
+restore-keys: |
+  npm/Linux-X64/
+```
+
+Ein `shared`-Scope wird bei Pull Requests nicht aus einem Shared-Cache gelesen,
+sondern automatisch auf den isolierten PR-Namespace umgestellt.
 
 Sinnvolle Bestandteile:
 
@@ -429,6 +448,7 @@ Branch- und Default-Branch-Fallback werden durch die Reihenfolge der Prefixe mod
 |---|---:|---|
 | `repository` | ja | Cache-Repository im Format `owner/name` |
 | `cache-name` | ja | Cache-Kategorie, zum Beispiel `npm`, `uv` oder `gradle` |
+| `scope` | nein | `auto`, `shared`, `trusted` oder `untrusted`; Standard: `auto` |
 | `key` | ja | Logischer Key ohne automatisch ergänzten Namespace |
 | `restore-keys` | nein | Mehrere Prefixe, jeweils eine Zeile |
 | `path` | ja | Eine oder mehrere Dateien/Verzeichnisse, jeweils eine Zeile |
@@ -532,7 +552,7 @@ Für interne Pull Requests kann ein eigener, automatisch löschbarer PR-Cache ak
 
 Der Key muss mit `untrusted/<repository>/pr-<number>/` beginnen. Beim Event `pull_request: closed` entfernt [pr-cache-cleanup.yml](.github/workflows/pr-cache-cleanup.yml) die PR-References und die dadurch nicht mehr referenzierten Release Assets. Für Fork-Pull-Requests bleibt das Speichern deaktiviert, weil dort keine Schreib-Secrets an untrusted Code gegeben werden sollten.
 
-Alternativ kann `key` nur den logischen Teil enthalten, zum Beispiel `npm/Linux-X64/<hash>/v1`. Die Action ergänzt automatisch `untrusted/<repository>/pr-<number>/` bei Pull Requests bzw. `trusted/<repository>/<default-branch>/` bei Pushes und Tags. Vollständige `trusted/...`- oder `untrusted/...`-Keys bleiben kompatibel.
+Alternativ kann `key` nur den logischen Teil enthalten, zum Beispiel `npm/Linux-X64/<hash>/v1`. Die Action ergänzt bei `scope: auto` automatisch `untrusted/<repository>/pr-<number>/` bei Pull Requests bzw. `trusted/<repository>/<default-branch>/` bei Pushes und Tags. Mit `scope: shared`, `scope: trusted` oder `scope: untrusted` wird der gewünschte Namespace automatisch verwendet. Vollständige Keys bleiben kompatibel, müssen aber zum angegebenen `scope` passen.
 
 Der Cache-Typ kann auch separat mit `cache-name` angegeben werden. Dann enthält `key` nur noch Plattform, Hash und Version:
 

@@ -25,15 +25,24 @@ Das Manifest liegt im Cache-Repository unter
 
 `key` ist der vollständige, automatisch abgegrenzte Schlüssel.
 Vertrauenswürdige Schlüssel verwenden das Schema
-`trusted/<repository>/<default-branch>/<cache-name>/<logical-key>/v1`.
+`trusted/<owner>/<repository>/<default-branch>/<cache-name>/<logical-key>/v1`.
 Pull-Request-Schlüssel verwenden
-`untrusted/<repository>/pr-<number>/<cache-name>/<logical-key>/v1`.
+`untrusted/<owner>/<repository>/pr-<number>/<cache-name>/<logical-key>/v1`.
 
 Geprüfte Basis-Caches können unter
-`shared/<repository>/<cache-name>/<logical-key>/v1` veröffentlicht werden.
+`shared/<owner>/<repository>/<cache-name>/<logical-key>/v1` veröffentlicht werden.
 Sie dürfen nur aus `main` oder Release-Tags geschrieben werden. Pull Requests
 benötigen für deren Restore den expliziten Schalter
 `allow-shared-restore: true`.
+
+Clients können den vollständigen Namespace automatisch aus `scope` erzeugen.
+Erlaubte Werte sind `auto`, `shared`, `trusted` und `untrusted`. Bei `auto`
+wird für Pull Requests `untrusted` und für Pushes bzw. Tags `trusted` gewählt.
+Der logische Key enthält dabei nur Cache-Name, Plattform, Hash und Version.
+Wird `scope: shared` in einem Pull Request verwendet, wird er automatisch mit
+einem Hinweis in `untrusted/.../pr-<number>/...` umgewandelt. Dadurch bleibt
+der Pull Request isoliert; auf `main` wird derselbe logische Key wieder als
+Shared-Key erzeugt.
 
 Clients müssen unbekannte Felder ignorieren und `schema_version` erhalten. Ein
 fehlendes Objekt, ein ungültiger Hash, eine fehlende Referenz oder ein

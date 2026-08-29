@@ -21,6 +21,30 @@ Wenn `token` nicht angegeben wird, verwendet die Action standardmäßig `GITHUB_
 
 Kein dauerhaft gültiges Token ohne Ablaufdatum und kein Fallback auf `github.token` verwenden. Fork-Pull-Requests dürfen keine Schreib-Secrets erhalten; der Save-Schritt bleibt für sie deaktiviert.
 
+## Cache-Scope
+
+Der `scope`-Input steuert die automatische Namespace-Auswahl:
+
+| Scope | Zweck | Speichern erlaubt aus |
+|---|---|---|
+| `auto` | `trusted` auf dem Standard-Branch, `untrusted` im Pull Request | abhängig vom Event |
+| `trusted` | stabile, vertrauenswürdige Cache-Referenz | `main` oder Release-Tag |
+| `shared` | geprüfter Cache für mehrere Workflows/Projekte | `main` oder Release-Tag |
+| `untrusted` | isolierter Pull-Request-Cache | Pull Request |
+
+Für einen Shared-Cache reicht:
+
+```yaml
+cache-name: npm
+scope: shared
+key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+```
+
+Wird `scope: shared` in einem Pull Request verwendet, wird der Scope mit einem
+Hinweis automatisch auf `untrusted` und `pr-<nummer>` umgestellt. Dadurch liest
+oder schreibt der Pull Request keinen Shared-Cache. Nach dem Merge auf `main`
+wird derselbe logische Key wieder als `shared` verwendet.
+
 ## Optionale Cache-Verschlüsselung
 
 Mit `encryption-key` werden komprimierte Archive vor dem Upload mit AES-256-GCM verschlüsselt. Restore und Save müssen denselben Schlüssel verwenden:
@@ -56,8 +80,7 @@ Builds dürfen keine beliebigen zwischengespeicherten Binärdateien ohne eigene
 Vertrauensprüfung ausführen.
 
 Der optionale Namespace `shared/` ist ausschließlich für geprüfte Inhalte aus
-`main` oder Release-Tags vorgesehen. Pull Requests dürfen ihn standardmäßig
-nicht lesen und benötigen für einen ausdrücklich angegebenen Shared-Prefix
-`allow-shared-restore: true`. Shared-Caches müssen trotzdem frei von
-Geheimnissen bleiben, weil ein Pull-Request-Prozess die gelesenen Daten
-verarbeiten kann.
+`main` oder Release-Tags vorgesehen. Bei Pull Requests wird ein angeforderter
+Shared-Scope automatisch in einen isolierten `untrusted/.../pr-<nummer>`-
+Namespace umgewandelt. Shared-Caches müssen trotzdem frei von Geheimnissen
+bleiben, weil andere Workflows die gelesenen Daten verarbeiten können.

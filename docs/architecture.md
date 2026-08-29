@@ -37,6 +37,13 @@ Pull Requests dürfen keine vertrauenswürdigen Referenzen wiederherstellen.
 Ihre Cache-Referenzen liegen in einem getrennten `untrusted/.../pr-<number>`-
 Namensraum und werden beim Schließen des Pull Requests bereinigt.
 
+Der Namespace kann über den Input `scope` automatisch gewählt werden. Erlaubte
+Werte sind `auto`, `shared`, `trusted` und `untrusted`. `auto` verwendet im
+Pull Request `untrusted` und auf dem Standard-Branch beziehungsweise einem
+Tag `trusted`. `shared` ist für geprüfte, von mehreren Workflows verwendete
+Caches vorgesehen und darf nur aus `main` oder einem Release-Tag gespeichert
+werden.
+
 ## Aufräumen und Erweiterbarkeit
 
 Die Garbage-Collection entfernt nicht mehr referenzierte oder ausreichend alte
