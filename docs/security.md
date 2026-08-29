@@ -28,8 +28,8 @@ Der `scope`-Input steuert die automatische Namespace-Auswahl:
 | Scope | Zweck | Speichern erlaubt aus |
 |---|---|---|
 | `auto` | `trusted` auf dem Standard-Branch, `untrusted` im Pull Request | abhängig vom Event |
-| `trusted` | stabile, vertrauenswürdige Cache-Referenz | `main` oder Release-Tag |
-| `shared` | geprüfter Cache für mehrere Workflows/Projekte | `main` oder Release-Tag |
+| `trusted` | stabile, vertrauenswürdige Cache-Referenz | konfigurierter Default-Branch oder Release-Tag |
+| `shared` | geprüfter Cache für mehrere Workflows/Projekte | konfigurierter Default-Branch |
 | `untrusted` | isolierter Pull-Request-Cache | Pull Request |
 
 Für einen Shared-Cache reicht:
@@ -80,7 +80,7 @@ Builds dürfen keine beliebigen zwischengespeicherten Binärdateien ohne eigene
 Vertrauensprüfung ausführen.
 
 Der optionale Namespace `shared/` ist ausschließlich für geprüfte Inhalte aus
-`main` oder Release-Tags vorgesehen. Ein `shared/<owner>/<repository>/`-
+dem konfigurierten Default-Branch vorgesehen. Ein `shared/<owner>/<repository>/`-
 Prefix oder ein vollständiger `shared/...`-Prefix darf in `restore-keys` als
 Fallback verwendet werden. Bei Pull Requests wird ein angeforderter
 Shared-Scope automatisch in einen isolierten `untrusted/.../pr-<nummer>`-

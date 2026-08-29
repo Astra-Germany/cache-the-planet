@@ -41,7 +41,7 @@ Der Namespace kann über den Input `scope` automatisch gewählt werden. Erlaubte
 Werte sind `auto`, `shared`, `trusted` und `untrusted`. `auto` verwendet im
 Pull Request `untrusted` und auf dem Standard-Branch beziehungsweise einem
 Tag `trusted`. `shared` ist für geprüfte, von mehreren Workflows verwendete
-Caches vorgesehen und darf nur aus `main` oder einem Release-Tag gespeichert
+Caches vorgesehen und darf nur aus dem konfigurierten Default-Branch gespeichert
 werden.
 
 ## Aufräumen und Erweiterbarkeit
