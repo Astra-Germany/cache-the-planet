@@ -4,6 +4,7 @@ on:
 
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
+  TASK_TEMP_DIR: ${{ github.workspace }}/examples/task-cache/.cache/task-state
 
 jobs:
   save-cache:
@@ -27,7 +28,9 @@ jobs:
           cache-name: task
           token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/task-cache/Taskfile.yml', 'examples/task-cache/src/**') }}
-          path: examples/task-cache/.cache/task
+          path: |
+            examples/task-cache/.cache/task
+            examples/task-cache/.cache/task-state
           strict: false
 
       - name: Run task build
@@ -40,7 +43,9 @@ jobs:
           cache-name: task
           token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/task-cache/Taskfile.yml', 'examples/task-cache/src/**') }}
-          path: examples/task-cache/.cache/task
+          path: |
+            examples/task-cache/.cache/task
+            examples/task-cache/.cache/task-state
           strict: true
 
   restore-cache:
@@ -66,7 +71,9 @@ jobs:
           cache-name: task
           token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/task-cache/Taskfile.yml', 'examples/task-cache/src/**') }}
-          path: examples/task-cache/.cache/task
+          path: |
+            examples/task-cache/.cache/task
+            examples/task-cache/.cache/task-state
           strict: true
 
       - name: Assert exact asset cache hit
