@@ -28,14 +28,15 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv-python-3-13
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v2', runner.os, runner.arch, hashFiles('examples/uv-cache/requirements.txt')) }}
+          key: ${{ format('{0}-{1}/{2}/v3', runner.os, runner.arch, hashFiles('examples/uv-cache/requirements.txt')) }}
           path: |
             .cache/uv
-            .cache/uv-python
           strict: false
 
       - name: Install managed Python
-        run: uv python install 3.13
+        run: |
+          rm -rf "$UV_PYTHON_INSTALL_DIR"
+          uv python install 3.13
 
       - name: Create environment and populate uv cache
         run: |
@@ -49,10 +50,9 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv-python-3-13
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v2', runner.os, runner.arch, hashFiles('examples/uv-cache/requirements.txt')) }}
+          key: ${{ format('{0}-{1}/{2}/v3', runner.os, runner.arch, hashFiles('examples/uv-cache/requirements.txt')) }}
           path: |
             .cache/uv
-            .cache/uv-python
           strict: true
 
   restore-cache:
@@ -75,16 +75,20 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv-python-3-13
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v2', runner.os, runner.arch, hashFiles('examples/uv-cache/requirements.txt')) }}
+          key: ${{ format('{0}-{1}/{2}/v3', runner.os, runner.arch, hashFiles('examples/uv-cache/requirements.txt')) }}
           path: |
             .cache/uv
-            .cache/uv-python
           strict: true
+
+      - name: Install managed Python from restored download cache
+        run: |
+          rm -rf "$UV_PYTHON_INSTALL_DIR"
+          uv python install 3.13
 
       - name: Assert exact asset cache hit
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/${{ github.event.repository.default_branch }}/uv-python-3-13/${{ runner.os }}-${{ runner.arch }}/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v2"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/${{ github.event.repository.default_branch }}/uv-python-3-13/${{ runner.os }}-${{ runner.arch }}/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v3"
 
       - name: Verify managed Python and uv cache offline
         run: |
