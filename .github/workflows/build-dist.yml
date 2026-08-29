@@ -19,12 +19,15 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           package-manager-cache: false
+
       - name: Configure npm cache directory
         run: npm config set cache "$PWD/.cache/npm" --global
+
       - name: Restore npm cache asset
         id: npm-cache
         uses: ./
@@ -36,7 +39,9 @@ jobs:
           path: .cache/npm
           strict: false
         continue-on-error: true
+
       - run: npm install
+
       - name: Save npm cache asset
         if: success() && steps.npm-cache.outputs.cache-hit != 'true'
         uses: ./save
@@ -48,6 +53,7 @@ jobs:
           path: .cache/npm
           strict: false
         continue-on-error: true
+
       - name: Commit generated dist
         shell: bash
         run: |

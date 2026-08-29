@@ -61,6 +61,14 @@ function cacheName() {
   return value;
 }
 
+function cacheScope() {
+  const value = input('scope', 'auto').trim().toLowerCase();
+  if (!['auto', 'shared', 'trusted', 'untrusted'].includes(value)) {
+    throw new Error('scope must be auto, shared, trusted, or untrusted');
+  }
+  return value;
+}
+
 function validateRestorePrefix(key) {
   const parts = key.replace(/\/$/, '').split('/');
   const validPart = (part) => /^[A-Za-z0-9._-]+$/.test(part) && part !== '..' && part !== '.';
@@ -97,15 +105,23 @@ function pullRequestNumber() {
 function scopedKey(key) {
   if (!key) return key;
   const name = cacheName();
+  const scope = cacheScope();
   if (key.startsWith('trusted/') || key.startsWith('untrusted/') || key.startsWith('shared/')) {
     if (!isCompleteCacheKey(key)) {
       throw new Error('cache key does not match the trusted/untrusted schema');
+    }
+    if (scope !== 'auto' && !key.startsWith(`${scope}/`)) {
+      throw new Error(`cache key does not match scope=${scope}`);
     }
     return key;
   }
   const logicalKey = key.startsWith(`${name}/`) ? key : `${name}/${key}`;
   const sourceRepository = repository();
-  if (eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/')) {
+  if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic cache key');
+  const pullRequest = eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/');
+  const selectedScope = scope === 'auto' ? (pullRequest ? 'untrusted' : 'trusted') : scope;
+  if (selectedScope === 'shared') return `shared/${sourceRepository}/${logicalKey}`;
+  if (selectedScope === 'untrusted' || pullRequest && selectedScope === 'untrusted') {
     const number = pullRequestNumber();
     if (!sourceRepository || !number) throw new Error('repository and pull request number are required for an automatic PR cache key');
     return `untrusted/${sourceRepository}/pr-${number}/${logicalKey}`;
@@ -123,6 +139,7 @@ function scopedRestorePrefix(prefix) {
     return validateRestorePrefix(value);
   }
   const name = cacheName();
+  const scope = cacheScope();
   const logicalKey = value.startsWith(`${name}/`) ? value : `${name}/${value}`;
   const logicalParts = logicalKey.replace(/\/$/, '').split('/');
   if (!logicalParts.length || logicalParts.some((part) => !/^[A-Za-z0-9._-]+$/.test(part))) {
@@ -130,7 +147,10 @@ function scopedRestorePrefix(prefix) {
   }
   const sourceRepository = repository();
   if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic restore key');
-  if (eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/')) {
+  const pullRequest = eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/');
+  const selectedScope = scope === 'auto' ? (pullRequest ? 'untrusted' : 'trusted') : scope;
+  if (selectedScope === 'shared') return `shared/${sourceRepository}/${logicalKey}`;
+  if (selectedScope === 'untrusted' || pullRequest && selectedScope === 'untrusted') {
     const number = pullRequestNumber();
     if (!number) throw new Error('pull request number is required for an automatic restore key');
     return `untrusted/${sourceRepository}/pr-${number}/${logicalKey}`;
@@ -523,7 +543,7 @@ function extract(file) {
 }
 
 module.exports = {
-  input, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName,
+  input, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName, cacheScope,
   scopedKey, scopedRestorePrefix, assertTrustedRestoreAllowed,
   log, fail, gh,
   upload, entries, refName,

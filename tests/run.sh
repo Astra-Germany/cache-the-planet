@@ -115,6 +115,11 @@ try {
     throw new Error('automatic cache namespace was not generated correctly');
   }
   const sharedKey = 'shared/example/project/npm/Linux-X64/hash/v1';
+  process.env['INPUT_SCOPE'] = 'shared';
+  if (scopedKey('Linux-X64/hash/v1') !== sharedKey) {
+    throw new Error('shared scope did not generate the shared cache key');
+  }
+  process.env['INPUT_SCOPE'] = 'auto';
   if (scopedKey(sharedKey) !== sharedKey) {
     throw new Error('shared cache key was not accepted');
   }
@@ -129,6 +134,11 @@ try {
   try { scopedKey('Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
   if (!invalidKeyRejected) throw new Error('invalid cache-name was accepted');
   process.env['INPUT_CACHE-NAME'] = 'npm';
+  process.env['INPUT_SCOPE'] = 'invalid';
+  invalidKeyRejected = false;
+  try { scopedKey('Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
+  if (!invalidKeyRejected) throw new Error('invalid scope was accepted');
+  process.env['INPUT_SCOPE'] = 'auto';
   if (scopedRestorePrefix('npm/Linux-X64/') !== 'trusted/example/project/main/npm/Linux-X64/') {
     throw new Error('automatic restore prefix was not generated correctly');
   }
