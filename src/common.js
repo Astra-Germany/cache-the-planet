@@ -31,6 +31,18 @@ function authorizationHeaders() {
   return value ? { Authorization: `Bearer ${value}` } : {};
 }
 
+let githubClientPromise;
+
+async function githubClient() {
+  const value = token();
+  if (!value) return null;
+  if (!githubClientPromise) {
+    githubClientPromise = import('@actions/github')
+      .then(({ getOctokit }) => getOctokit(value, { userAgent: 'cache-the-planet' }));
+  }
+  return githubClientPromise;
+}
+
 function eventName() {
   return process.env.GITHUB_EVENT_NAME || '';
 }
@@ -284,6 +296,26 @@ function githubApiError(status, message) {
 }
 
 async function gh(url, options = {}) {
+  const client = await githubClient();
+  if (client) {
+    try {
+      const response = await client.request(url, {
+        ...options,
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': apiVersion,
+          ...(options.headers || {}),
+        },
+      });
+      return { body: response.data, headers: response.headers };
+    } catch (error) {
+      const message = error.response?.data?.message || error.message;
+      const apiError = githubApiError(error.status || 500, message);
+      apiError.status = error.status;
+      apiError.headers = error.response?.headers;
+      throw apiError;
+    }
+  }
   const response = await fetch(`https://api.github.com${url}`, {
     ...options,
     headers: {
