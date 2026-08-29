@@ -22,19 +22,23 @@ const c = require('./common');
     const trustedKey = key.startsWith('trusted/');
     const untrustedKey = key.startsWith('untrusted/');
     const sharedKey = key.startsWith('shared/');
-    const trustedRef = process.env.GITHUB_REF === 'refs/heads/main'
+    const defaultBranch = c.defaultBranch();
+    const trustedRef = (defaultBranch
+      && process.env.GITHUB_REF === `refs/heads/${defaultBranch}`)
       || process.env.GITHUB_REF_TYPE === 'tag';
+    const sharedRef = defaultBranch
+      && process.env.GITHUB_REF === `refs/heads/${defaultBranch}`;
     if (!trustedKey && !untrustedKey && !sharedKey) {
       throw new Error('cache key must start with trusted/, untrusted/, or shared/');
     }
     if (trustedKey && !trustedRef) {
-      throw new Error('trusted cache keys may only be saved from main or tags');
+      throw new Error('trusted cache keys may only be saved from the repository default branch or tags');
     }
     if (untrustedKey && !isPullRequest) {
       throw new Error('untrusted cache keys may only be saved from pull requests');
     }
-    if (sharedKey && !trustedRef) {
-      throw new Error('shared cache keys may only be saved from main or tags');
+    if (sharedKey && !sharedRef) {
+      throw new Error('shared cache keys may only be saved from the repository default branch');
     }
     const current = await c.refs(repository);
     const existingReference = current.json.references[key];
