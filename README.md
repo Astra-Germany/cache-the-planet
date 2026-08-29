@@ -73,7 +73,7 @@ Sie wird beim ersten Save automatisch erstellt. Das Manifest enthält nur Metada
 Erstelle ein eigenes Repository, zum Beispiel:
 
 ```text
-Ludy87/cache-the-planet
+  Ludy87/cache-the-planet
 ```
 
 Empfohlene Einstellungen:
@@ -182,9 +182,9 @@ jobs:
           cache-name: python
           key: ${{ hashFiles('uv.lock') }}
           restore-keys: |
-            python/${{ runner.os }}-${{ runner.arch }}/
+            linux-x64/
           path: |
-            ~/.cache/pip
+            .cache/pip
             .cache/uv
           token: ${{ secrets.CACHE_APP_TOKEN }}
 
@@ -199,7 +199,7 @@ jobs:
           cache-name: python
           key: ${{ hashFiles('uv.lock') }}
           path: |
-            ~/.cache/pip
+            .cache/pip
             .cache/uv
           token: ${{ secrets.CACHE_APP_TOKEN }}
           exclude: |
@@ -347,7 +347,7 @@ Verwende die offizielle Action zum Erzeugen eines kurzlebigen Installation Token
     cache-name: npm
     token: ${{ steps.cache-token.outputs.token }}
     key: ${{ hashFiles('package-lock.json') }}
-    path: ~/.npm
+    path: .cache/npm
 ```
 
 Installation Tokens sind kurzlebig und sollten nicht als dauerhafte Secrets gespeichert werden. Die App selbst darf nur auf das Cache-Repository installiert sein.
@@ -413,7 +413,7 @@ Ein Pull Request kann einen isolierten PR-Cache lesen:
 
 ```yaml
 restore-keys: |
-  npm/Linux-X64/
+  linux-x64/
 ```
 
 Ein `shared`-Scope wird bei Pull Requests nicht aus einem Shared-Cache gelesen,
@@ -454,9 +454,10 @@ erlaubt. In Pull Requests muss dafür zusätzlich
 `allow-shared-restore: true` gesetzt werden. Beispiel:
 
 ```yaml
-key: node-${{ hashFiles('package-lock.json') }}
+cache-name: node
+key: ${{ hashFiles('package-lock.json') }}
 restore-keys: |
-  node-
+  linux-x64/
 ```
 
 Die Action ergänzt Cache-Name, Betriebssystem, Architektur und Scope auch für
@@ -576,7 +577,7 @@ Für interne Pull Requests kann ein eigener, automatisch löschbarer PR-Cache ak
     path: .cache/build
 ```
 
-Der Key muss mit `untrusted/<repository>/pr-<number>/` beginnen. Beim Event `pull_request: closed` entfernt [pr-cache-cleanup.yml](.github/workflows/pr-cache-cleanup.yml) die PR-References und die dadurch nicht mehr referenzierten Release Assets. Für Fork-Pull-Requests bleibt das Speichern deaktiviert, weil dort keine Schreib-Secrets an untrusted Code gegeben werden sollten.
+Der logische Nutzer-Key enthält keinen Namespace. Die Action ergänzt bei Pull Requests automatisch `untrusted/<repository>/pr-<number>/`. Beim Event `pull_request: closed` entfernt [pr-cache-cleanup.yml](.github/workflows/pr-cache-cleanup.yml) die PR-References und die dadurch nicht mehr referenzierten Release Assets. Für Fork-Pull-Requests bleibt das Speichern deaktiviert, weil dort keine Schreib-Secrets an untrusted Code gegeben werden sollten.
 
 `key` darf nur den Abhängigkeits-Hash enthalten, zum Beispiel `${{ hashFiles('package-lock.json') }}`. Die Action ergänzt Cache-Name, Betriebssystem, Architektur und Version automatisch. Diese Werte können optional explizit angegeben werden:
 
