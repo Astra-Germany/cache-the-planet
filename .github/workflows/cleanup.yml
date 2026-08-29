@@ -5,6 +5,16 @@ concurrency:
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: Cleanup mode
+        required: true
+        default: orphan
+        type: choice
+        options: [orphan, all, object]
+      object:
+        description: SHA-256 hash or asset filename when mode is object
+        required: false
+        type: string
       dry-run:
         { description: Dry run, required: false, default: true, type: boolean }
   schedule: [{ cron: "0 3 * * *" }]
@@ -19,8 +29,10 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
-      - run: node dist/gc.js --dry-run
+      - run: node dist/gc.js
         env:
           CACHE_REPOSITORY: ${{ github.repository }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DRY_RUN: ${{ inputs.dry-run || 'true' }}
+          GC_MODE: ${{ inputs.mode || 'orphan' }}
+          GC_OBJECT: ${{ inputs.object || '' }}
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'true' || (inputs.dry-run && 'true' || 'false') }}
