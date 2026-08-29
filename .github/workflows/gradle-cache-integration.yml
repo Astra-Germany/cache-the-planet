@@ -9,6 +9,7 @@ env:
 jobs:
   save-cache:
     name: Build and save Gradle cache asset
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -50,6 +51,7 @@ jobs:
 
   restore-cache:
     name: Restore Gradle cache asset in a fresh job
+    if: false
     needs: save-cache
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -155,7 +157,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
           token: ${{ secrets.GITHUB_TOKEN }}
-          scope: auto
+          scope: shared
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           restore-keys: |
             linux-x64/
