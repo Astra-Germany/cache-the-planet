@@ -158,7 +158,7 @@ jobs:
           scope: shared
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           restore-keys: |
-            trusted/${{ github.repository }}/main/gradle-java17/linux-x64/
+            ${{ github.repository }}/main/gradle-java17/linux-x64/
           allow-shared-restore: true
           path: .cache/gradle
           strict: true
