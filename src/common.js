@@ -246,11 +246,18 @@ function log(message) {
 }
 
 function fail(error) {
+  const message = error?.message || String(error);
+  const debug = process.env.ACTIONS_STEP_DEBUG === 'true'
+    || process.env.RUNNER_DEBUG === '1';
   if (String(input('strict')).toLowerCase() !== 'true') {
-    console.log(`::warning::cache ignored: ${error.message || error}`);
+    console.log(`::warning::cache ignored: ${message}`);
+    if (debug && error?.stack) console.error(error.stack);
     return false;
   }
-  throw error;
+  console.error(`Cache error: ${message}`);
+  if (debug && error?.stack) console.error(error.stack);
+  process.exitCode = 1;
+  return false;
 }
 
 function githubApiError(status, message) {
