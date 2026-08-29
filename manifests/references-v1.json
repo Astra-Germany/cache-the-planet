@@ -1,4 +1,29 @@
 {
   "schema_version": 1,
-  "references": {}
+  "references": {
+    "trusted/Astra-Germany/cache-the-planet/main/npm/Linux-X64/60957c477d7e654c6e5e6f0b555e265cd8c64d68afb74ac347a3cea4698ffb92/v1": {
+      "object": "sha256:7e1876eefbafa35df7059206dbee6e4e59135eb3c5e578554a4adb786511c613",
+      "updated_at": "2026-08-29T11:00:11.061Z"
+    },
+    "trusted/Astra-Germany/cache-the-planet/main/uv/Linux-X64/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v1": {
+      "object": "sha256:2fe170473b804d875ed9a5eac338a15f26834497bc5e4de4673ce8459b5807d4",
+      "updated_at": "2026-08-29T11:00:40.987Z"
+    },
+    "trusted/Astra-Germany/cache-the-planet/main/uv-python-3-13/Linux-X64/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v2": {
+      "object": "sha256:8c3529c9722f9b9337c71fb5d23d14d174d46bd50f90ef375e82eb27308ba2fe",
+      "updated_at": "2026-08-29T11:01:10.596Z"
+    },
+    "trusted/Astra-Germany/cache-the-planet/main/task/Linux-X64/5fbdf10f0e27f361ec495008517476d1a80b08f27e611b750f85fdfa1dff1ed7/v1": {
+      "object": "sha256:0d066a6cc12d610125470357e8e1f528db67131f5df62e2cec1dad5af248e1df",
+      "updated_at": "2026-08-29T11:01:39.898Z"
+    },
+    "trusted/Astra-Germany/cache-the-planet/main/maven-java17/Linux-X64/bebe0d6eac024116aec3e8995a6d24974063faa8fb30d39da9ffa8c80ca78c33/v1": {
+      "object": "sha256:1c636e9596cdcb3838aefb72e8b08ba5612a09de6e59b63bf8f6d629680d3a6d",
+      "updated_at": "2026-08-29T11:02:14.282Z"
+    },
+    "trusted/Astra-Germany/cache-the-planet/main/gradle-java17/Linux-X64/ec2e66a7d3325b728978bd371ac0b975a2c7b7807da734fc65fd2b5ab753aeea/v1": {
+      "object": "sha256:82588e2665cd1e33293a47c327c1d8e234496ca1a3111d6b3e2b3751a20ae1b5",
+      "updated_at": "2026-08-29T11:03:06.913Z"
+    }
+  }
 }
