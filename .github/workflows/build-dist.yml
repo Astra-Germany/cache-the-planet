@@ -6,6 +6,12 @@ concurrency:
   cancel-in-progress: false
 on:
   workflow_call:
+    inputs:
+      dry-run:
+        description: Dry run, do not commit generated dist
+        required: false
+        default: true
+        type: boolean
   workflow_dispatch:
 
 env:
@@ -39,7 +45,7 @@ jobs:
           strict: false
         continue-on-error: true
 
-      - run: npm install
+      - run: npm ci
 
       - name: Save npm cache asset
         if: success() && steps.npm-cache.outputs.cache-hit != 'true'
