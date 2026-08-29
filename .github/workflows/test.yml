@@ -13,8 +13,6 @@ on:
   pull_request:
   workflow_run:
     workflows:
-      - Build action distribution
-      - Docker cache integration
       - Cache integration suite
     types: [completed]
 
