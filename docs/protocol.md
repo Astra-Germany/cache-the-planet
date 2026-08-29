@@ -29,6 +29,12 @@ Vertrauenswürdige Schlüssel verwenden das Schema
 Pull-Request-Schlüssel verwenden
 `untrusted/<repository>/pr-<number>/<cache-name>/<logical-key>/v1`.
 
+Geprüfte Basis-Caches können unter
+`shared/<repository>/<cache-name>/<logical-key>/v1` veröffentlicht werden.
+Sie dürfen nur aus `main` oder Release-Tags geschrieben werden. Pull Requests
+benötigen für deren Restore den expliziten Schalter
+`allow-shared-restore: true`.
+
 Clients müssen unbekannte Felder ignorieren und `schema_version` erhalten. Ein
 fehlendes Objekt, ein ungültiger Hash, eine fehlende Referenz oder ein
 beschädigtes Archiv gilt als Cache-Miss. Bei `strict: true` wird stattdessen
