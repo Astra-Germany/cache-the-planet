@@ -253,6 +253,23 @@ function fail(error) {
   throw error;
 }
 
+function githubApiError(status, message) {
+  if (status === 401) {
+    return new Error(
+      'GitHub authentication failed (401 Bad credentials): the cache repository rejected the token. '
+      + 'Pass token: ${{ github.token }} or set GITHUB_TOKEN. For a separate cache repository, '
+      + 'use a PAT or GitHub App token with access to that repository. Fork pull requests cannot '
+      + 'use write-capable secrets; skip saving there or save from a trusted workflow.',
+    );
+  }
+  if (status === 403) {
+    return new Error(
+      `GitHub authorization failed (403): the token is valid but is not allowed to access the cache repository. ${message}`,
+    );
+  }
+  return new Error(`${status} ${message}`);
+}
+
 async function gh(url, options = {}) {
   const response = await fetch(`https://api.github.com${url}`, {
     ...options,
@@ -267,7 +284,7 @@ async function gh(url, options = {}) {
   let body;
   try { body = JSON.parse(text); } catch { body = text; }
   if (!response.ok) {
-    const error = new Error(`${response.status} ${body.message || text}`);
+    const error = githubApiError(response.status, body.message || text);
     error.status = response.status;
     error.headers = response.headers;
     throw error;
@@ -288,7 +305,10 @@ async function upload(url, file, name, contentType) {
     body: bytes,
   });
   if (response.ok) return JSON.parse(await response.text());
-  const error = new Error(`${response.status} ${await response.text()}`);
+  const text = await response.text();
+  let message;
+  try { message = JSON.parse(text).message || text; } catch { message = text; }
+  const error = githubApiError(response.status, message);
   error.status = response.status;
   throw error;
 }
