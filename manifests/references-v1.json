@@ -64,6 +64,10 @@
     "trusted/Astra-Germany/cache-the-planet/main/npm/60957c477d7e654c6e5e6f0b555e265cd8c64d68afb74ac347a3cea4698ffb92": {
       "object": "sha256:62ae94b6d47afc438d2317cd0b6577b4f94a45996ef375be5d784734a498bffb",
       "updated_at": "2026-08-29T13:57:49.719Z"
+    },
+    "trusted/Astra-Germany/cache-the-planet/main/npm/unknown-unknown/60957c477d7e654c6e5e6f0b555e265cd8c64d68afb74ac347a3cea4698ffb92/v1": {
+      "object": "sha256:7e32353a3da2b87e8b4a6422cad0b61e0bb37543d1e137ad3f249e99eb34bb25",
+      "updated_at": "2026-08-29T13:58:03.435Z"
     }
   }
 }
