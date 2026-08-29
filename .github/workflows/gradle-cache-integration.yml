@@ -34,9 +34,9 @@ jobs:
           path: .cache/gradle
           strict: false
 
-      # - name: Build with Gradle
-      #   working-directory: examples/gradle-cache
-      #   run: gradle --no-daemon test
+      - name: Build with Gradle
+        working-directory: examples/gradle-cache
+        run: gradle --no-daemon test
 
       - name: Save Gradle cache asset
         if: success()
@@ -104,9 +104,9 @@ jobs:
           java-version: "17"
           cache-jdk: false
 
-      # - name: Build with Gradle
-      #   working-directory: examples/gradle-cache
-      #   run: gradle --no-daemon test
+      - name: Build with Gradle
+        working-directory: examples/gradle-cache
+        run: gradle --no-daemon test
 
       - name: Save Gradle cache asset
         if: success()
