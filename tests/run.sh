@@ -166,10 +166,10 @@ try {
   cp.execFileSync('tar', ['--hard-dereference', '-cf', path.basename(flattenedTar), 'target.txt', 'hardlink.txt'], { cwd: limitDir });
   inspectTar(flattenedTar);
   const namedAsset = assetName(
-    'untrusted/Ludy87/spdf-cache/pr-6/buildx/Linux-X64/unoserver/v1',
+    'untrusted/Astra-Germany/spdf-cache/pr-6/buildx/Linux-X64/unoserver/v1',
     `sha256:${'a'.repeat(64)}`,
   );
-  if (!namedAsset.startsWith('untrusted-Ludy87-spdf-cache-pr-6-buildx-Linux-X64-unoserver-v1--')
+  if (!namedAsset.startsWith('untrusted-Astra-Germany-spdf-cache-pr-6-buildx-Linux-X64-unoserver-v1--')
     || hashFromAssetName(namedAsset) !== `sha256:${'a'.repeat(64)}`) {
     throw new Error('descriptive asset name was not generated correctly');
   }

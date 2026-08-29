@@ -7,8 +7,12 @@ concurrency:
 on:
   push:
     branches: [main]
-    paths-ignore: ['dist/**', '**.md']
+    paths-ignore: ["dist/**", "**.md"]
   workflow_dispatch:
+
+env:
+  CACHE_REPOSITORY: Astra-Germany/cache-the-planet
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,7 +31,7 @@ jobs:
         id: npm-cache
         uses: ./
         with:
-          repository: Ludy87/cache-the-planet
+          repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
@@ -39,7 +43,7 @@ jobs:
         if: success() && steps.npm-cache.outputs.cache-hit != 'true'
         uses: ./save
         with:
-          repository: Ludy87/cache-the-planet
+          repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
