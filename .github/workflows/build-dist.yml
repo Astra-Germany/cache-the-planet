@@ -45,7 +45,7 @@ jobs:
           strict: false
         continue-on-error: true
 
-      - run: npm ci
+      - run: npm ci ${{ inputs.dry-run && '--dry-run' || '' }}
 
       - name: Save npm cache asset
         if: success() && steps.npm-cache.outputs.cache-hit != 'true'
