@@ -30,7 +30,8 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv-python-3-13
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v3', runner.os, runner.arch, hashFiles('examples/uv-cache/requirements.txt')) }}
+          key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
+          version: 3
           path: |
             .cache/uv
           strict: false
@@ -52,7 +53,8 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv-python-3-13
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v3', runner.os, runner.arch, hashFiles('examples/uv-cache/requirements.txt')) }}
+          key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
+          version: 3
           path: |
             .cache/uv
           strict: true
@@ -79,7 +81,8 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv-python-3-13
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v3', runner.os, runner.arch, hashFiles('examples/uv-cache/requirements.txt')) }}
+          key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
+          version: 3
           path: |
             .cache/uv
           strict: true
@@ -92,7 +95,7 @@ jobs:
       - name: Assert exact asset cache hit
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/${{ github.event.repository.default_branch }}/uv-python-3-13/${{ runner.os }}-${{ runner.arch }}/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v3"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/${{ github.event.repository.default_branch }}/uv-python-3-13/linux-x64/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v3"
 
       - name: Verify managed Python and uv cache offline
         run: |

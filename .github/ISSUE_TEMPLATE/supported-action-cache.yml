@@ -57,7 +57,7 @@ body:
       render: yaml
       placeholder: |
         cache-name: example
-        key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('lockfile')) }}
+        key: ${{ hashFiles('lockfile') }}
     validations:
       required: true
 

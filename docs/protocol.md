@@ -24,8 +24,11 @@ Das Manifest liegt im Cache-Repository unter
 ```
 
 `key` wird intern als vollständiger, automatisch abgegrenzter Schlüssel
-gespeichert. Nutzer dürfen in `key` und `restore-keys` nur den logischen Key
-angeben; der Namespace wird ausschließlich über `scope` bestimmt.
+gespeichert. Nutzer dürfen in `key` nur den logischen Key angeben; der
+ Namespace wird über `scope` bestimmt. In `restore-keys` darf zusätzlich ein
+ `shared/<owner>/<repository>/`-Prefix oder ein vollständiger `shared/...`-
+ Prefix als geprüfter Fallback angegeben werden.
+`trusted/...` und `untrusted/...` sind dort weiterhin nicht erlaubt.
 Vertrauenswürdige Schlüssel verwenden das Schema
 `trusted/<owner>/<repository>/<default-branch>/<cache-name>/<logical-key>/v1`.
 Pull-Request-Schlüssel verwenden
@@ -41,6 +44,13 @@ Clients können den vollständigen Namespace automatisch aus `scope` erzeugen.
 Erlaubte Werte sind `auto`, `shared`, `trusted` und `untrusted`. Bei `auto`
 wird für Pull Requests `untrusted` und für Pushes bzw. Tags `trusted` gewählt.
 Der logische Key enthält dabei nur Cache-Name, Plattform, Hash und Version.
+Wird die Plattform im logischen Key weggelassen, ergänzt die Action automatisch
+`RUNNER_OS` und `RUNNER_ARCH`; fehlende Werte werden als `unknown` eingesetzt.
+Die Komponenten können mit `os`, `arch` und `version` explizit überschrieben
+werden. Der Nutzer-Key kann dadurch ausschließlich aus dem Abhängigkeits-Hash
+bestehen.
+`version` ist numerisch und wird als `v<version>` im vollständigen Key
+gespeichert.
 Wird `scope: shared` in einem Pull Request verwendet, wird er automatisch mit
 einem Hinweis in `untrusted/.../pr-<number>/...` umgewandelt. Dadurch bleibt
 der Pull Request isoliert; auf `main` wird derselbe logische Key wieder als

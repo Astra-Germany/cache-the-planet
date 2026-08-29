@@ -131,9 +131,13 @@ try {
   namespaceKeyRejected = false;
   try { scopedKey(sharedKey); } catch { namespaceKeyRejected = true; }
   if (!namespaceKeyRejected) throw new Error('explicit shared cache key was accepted');
-  namespaceKeyRejected = false;
-  try { scopedRestorePrefix('shared/example/project/npm/Linux-X64/'); } catch { namespaceKeyRejected = true; }
-  if (!namespaceKeyRejected) throw new Error('explicit shared restore prefix was accepted');
+  if (scopedRestorePrefix('shared/example/project/npm/Linux-X64/hash/v1/')
+    !== 'shared/example/project/npm/Linux-X64/hash/v1/') {
+    throw new Error('explicit shared restore prefix was not preserved');
+  }
+  if (scopedRestorePrefix('shared/example/project/') !== 'shared/example/project/') {
+    throw new Error('shared repository restore prefix was not accepted');
+  }
   let invalidKeyRejected = false;
   try { scopedKey('trusted/example/project/npm/Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
   if (!invalidKeyRejected) throw new Error('invalid trusted cache key was accepted');
@@ -142,17 +146,56 @@ try {
   try { scopedKey('Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
   if (!invalidKeyRejected) throw new Error('invalid cache-name was accepted');
   process.env['INPUT_CACHE-NAME'] = 'npm';
+  process.env.RUNNER_OS = 'Linux';
+  process.env.RUNNER_ARCH = 'X64';
+  process.env['INPUT_OS'] = 'linux';
+  process.env['INPUT_ARCH'] = 'x64';
+  process.env['INPUT_VERSION'] = '1';
+  if (scopedKey('hash') !== 'trusted/example/project/main/npm/linux-x64/hash/v1') {
+    throw new Error('runner platform was not added automatically');
+  }
+  delete process.env.RUNNER_OS;
+  delete process.env.RUNNER_ARCH;
+  delete process.env['INPUT_OS'];
+  delete process.env['INPUT_ARCH'];
+  delete process.env['INPUT_VERSION'];
+  if (require('./src/common').runnerPlatform() !== 'unknown-unknown') {
+    throw new Error('missing runner platform did not use unknown');
+  }
+  process.env.RUNNER_OS = 'Linux';
+  process.env.RUNNER_ARCH = 'X64';
+  process.env['INPUT_OS'] = '';
+  process.env['INPUT_ARCH'] = '';
+  if (require('./src/common').runnerPlatform() !== 'unknown-unknown') {
+    throw new Error('empty runner inputs did not use unknown');
+  }
+  delete process.env.RUNNER_OS;
+  delete process.env.RUNNER_ARCH;
+  delete process.env['INPUT_OS'];
+  delete process.env['INPUT_ARCH'];
   process.env['INPUT_SCOPE'] = 'invalid';
   invalidKeyRejected = false;
   try { scopedKey('Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
   if (!invalidKeyRejected) throw new Error('invalid scope was accepted');
   process.env['INPUT_SCOPE'] = 'auto';
+  process.env['INPUT_VERSION'] = 'v1';
+  invalidKeyRejected = false;
+  try { scopedKey('hash'); } catch { invalidKeyRejected = true; }
+  if (!invalidKeyRejected) throw new Error('non-numeric version was accepted');
+  delete process.env['INPUT_VERSION'];
   if (scopedRestorePrefix('npm/Linux-X64/') !== 'trusted/example/project/main/npm/Linux-X64/') {
     throw new Error('automatic restore prefix was not generated correctly');
   }
   if (scopedRestorePrefix('npm/Linux-X64') !== 'trusted/example/project/main/npm/Linux-X64') {
     throw new Error('automatic restore prefix without trailing slash was not generated correctly');
   }
+  process.env.RUNNER_OS = 'Linux';
+  process.env.RUNNER_ARCH = 'X64';
+  if (scopedRestorePrefix('hash/') !== 'trusted/example/project/main/npm/linux-x64/hash/') {
+    throw new Error('automatic restore prefix was not generated without a version suffix');
+  }
+  delete process.env.RUNNER_OS;
+  delete process.env.RUNNER_ARCH;
   process.env.GITHUB_EVENT_NAME = 'pull_request';
   fs.writeFileSync(eventFile, JSON.stringify({ pull_request: { number: 7 } }));
   let trustedRestoreRejected = false;
