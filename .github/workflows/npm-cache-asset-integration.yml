@@ -63,7 +63,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # token: ${{ secrets.GITHUB_TOKEN }}
           scope: auto
           key: ${{ hashFiles('package-lock.json') }}
           restore-keys: |
