@@ -379,7 +379,7 @@ werden:
 shared/<owner>/<repository>/<cache-name>/<os>-<architecture>/<dependency-hash>/v1
 ```
 
-`shared` darf nur aus `main` oder einem Release-Tag gespeichert werden. Wird
+`shared` darf nur aus dem konfigurierten Default-Branch gespeichert werden. Wird
 `scope: shared` in einem Pull Request verwendet, wandelt die Action den Scope
 automatisch in `untrusted` um und gibt nur einen Hinweis aus. So bleibt der
 Pull Request isoliert und kann später ohne Key-Anpassung nach `main` gemergt
@@ -407,7 +407,7 @@ Daraus erzeugt die Action automatisch:
 shared/<owner>/<repository>/npm/<os>-<architecture>/<dependency-hash>/v1
 ```
 
-`shared` darf nur aus `main` oder einem Release-Tag gespeichert werden.
+`shared` darf nur aus dem konfigurierten Default-Branch gespeichert werden.
 
 Ein Pull Request kann einen isolierten PR-Cache lesen:
 

@@ -133,6 +133,25 @@ try {
   namespaceKeyRejected = false;
   try { scopedKey(sharedKey); } catch { namespaceKeyRejected = true; }
   if (!namespaceKeyRejected) throw new Error('explicit shared cache key was accepted');
+  const sharedSaveCheck = cp.spawnSync(process.execPath, ['./src/save.js'], {
+    env: {
+      ...process.env,
+      INPUT_REPOSITORY: 'example/project',
+      'INPUT_CACHE-NAME': 'npm',
+      INPUT_SCOPE: 'shared',
+      INPUT_KEY: 'Linux-X64/hash/v1',
+      INPUT_PATH: root,
+      INPUT_TOKEN: 'test-token',
+      GITHUB_EVENT_NAME: 'push',
+      GITHUB_REF: 'refs/heads/feature',
+      GITHUB_DEFAULT_BRANCH: 'main',
+    },
+    encoding: 'utf8',
+  });
+  if (sharedSaveCheck.status === 0
+    || !`${sharedSaveCheck.stdout}\n${sharedSaveCheck.stderr}`.includes('shared cache keys may only be saved')) {
+    throw new Error('shared cache was allowed outside the default branch');
+  }
   if (scopedRestorePrefix('shared/example/project/npm/Linux-X64/hash/v1/')
     !== 'shared/example/project/npm/Linux-X64/hash/v1/') {
     throw new Error('explicit shared restore prefix was not preserved');

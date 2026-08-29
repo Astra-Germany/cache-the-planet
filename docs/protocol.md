@@ -40,7 +40,7 @@ Pull-Request-Schlüssel verwenden
 
 Geprüfte Basis-Caches können unter
 `shared/<owner>/<repository>/<cache-name>/<logical-key>/v1` veröffentlicht werden.
-Sie dürfen nur aus `main` oder Release-Tags geschrieben werden. Pull Requests
+Sie dürfen nur aus dem konfigurierten Default-Branch geschrieben werden. Pull Requests
 benötigen für deren Restore den expliziten Schalter
 `allow-shared-restore: true`.
 
