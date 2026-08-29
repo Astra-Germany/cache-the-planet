@@ -48,6 +48,8 @@ jobs:
     secrets: inherit
 
   node:
+    needs: [detect-changes, build-dist]
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/node-cache-integration.yml
     permissions:
       contents: write
