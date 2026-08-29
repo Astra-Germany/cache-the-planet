@@ -37,7 +37,7 @@ Für einen Shared-Cache reicht:
 ```yaml
 cache-name: npm
 scope: shared
-key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+key: ${{ hashFiles('package-lock.json') }}
 ```
 
 Wird `scope: shared` in einem Pull Request verwendet, wird der Scope mit einem
@@ -80,7 +80,9 @@ Builds dürfen keine beliebigen zwischengespeicherten Binärdateien ohne eigene
 Vertrauensprüfung ausführen.
 
 Der optionale Namespace `shared/` ist ausschließlich für geprüfte Inhalte aus
-`main` oder Release-Tags vorgesehen. Bei Pull Requests wird ein angeforderter
+`main` oder Release-Tags vorgesehen. Ein `shared/<owner>/<repository>/`-
+Prefix oder ein vollständiger `shared/...`-Prefix darf in `restore-keys` als
+Fallback verwendet werden. Bei Pull Requests wird ein angeforderter
 Shared-Scope automatisch in einen isolierten `untrusted/.../pr-<nummer>`-
 Namespace umgewandelt. Shared-Caches müssen trotzdem frei von Geheimnissen
 bleiben, weil andere Workflows die gelesenen Daten verarbeiten können.

@@ -30,7 +30,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('npm/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+          key: ${{ hashFiles('package-lock.json') }}
           path: .cache/npm
           strict: false
 
@@ -43,7 +43,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('npm/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+          key: ${{ hashFiles('package-lock.json') }}
           path: .cache/npm
           strict: true
 
@@ -73,7 +73,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('npm/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+          key: ${{ hashFiles('package-lock.json') }}
           path: .cache/npm
           strict: true
 
@@ -81,7 +81,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/npm/${{ runner.os }}-${{ runner.arch }}/${{ hashFiles('package-lock.json') }}/v1"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/npm/linux-x64/${{ hashFiles('package-lock.json') }}/v1"
           test -d .cache/npm
 
       - name: Verify npm can use restored cache

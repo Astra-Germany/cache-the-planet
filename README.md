@@ -180,7 +180,7 @@ jobs:
         with:
           repository: Ludy87/cache-the-planet
           cache-name: python
-          key: ${{ format('python/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('uv.lock')) }}
+          key: ${{ hashFiles('uv.lock') }}
           restore-keys: |
             python/${{ runner.os }}-${{ runner.arch }}/
           path: |
@@ -197,7 +197,7 @@ jobs:
         with:
           repository: Ludy87/cache-the-planet
           cache-name: python
-          key: ${{ format('python/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('uv.lock')) }}
+          key: ${{ hashFiles('uv.lock') }}
           path: |
             ~/.cache/pip
             .cache/uv
@@ -346,7 +346,7 @@ Verwende die offizielle Action zum Erzeugen eines kurzlebigen Installation Token
     repository: Ludy87/cache-the-planet
     cache-name: npm
     token: ${{ steps.cache-token.outputs.token }}
-    key: ${{ format('npm/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+    key: ${{ hashFiles('package-lock.json') }}
     path: ~/.npm
 ```
 
@@ -389,7 +389,7 @@ Beispiel für den Workflow-Key:
 
 ```yaml
 cache-name: npm
-key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+key: ${{ hashFiles('package-lock.json') }}
 ```
 
 Ein geprüfter gemeinsamer Cache wird mit demselben kurzen Key gespeichert und
@@ -398,7 +398,7 @@ gelesen:
 ```yaml
 cache-name: npm
 scope: shared
-key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+key: ${{ hashFiles('package-lock.json') }}
 ```
 
 Daraus erzeugt die Action automatisch:
@@ -440,6 +440,22 @@ Die Action sucht in dieser Reihenfolge:
 
 Branch- und Default-Branch-Fallback werden durch die Reihenfolge der Prefixe modelliert. Die Action gibt `matched-key` aus, damit der tatsächlich verwendete Cache sichtbar ist.
 
+`restore-keys` enthalten normalerweise nur logische Prefixe und niemals
+`trusted/` oder `untrusted/`. Ein `shared/<owner>/<repository>/`-Prefix oder
+ein vollständiger `shared/...`-Prefix ist als expliziter, geprüfter Fallback
+erlaubt. In Pull Requests muss dafür zusätzlich
+`allow-shared-restore: true` gesetzt werden. Beispiel:
+
+```yaml
+key: node-${{ hashFiles('package-lock.json') }}
+restore-keys: |
+  node-
+```
+
+Die Action ergänzt Cache-Name, Betriebssystem, Architektur und Scope auch für
+das Prefix automatisch. Ein Prefix mit abschließendem `/` bleibt ein Prefix
+und wird nicht um `/v1` erweitert.
+
 ## Inputs und Outputs
 
 ### Restore-Inputs
@@ -449,6 +465,9 @@ Branch- und Default-Branch-Fallback werden durch die Reihenfolge der Prefixe mod
 | `repository` | ja | Cache-Repository im Format `owner/name` |
 | `cache-name` | ja | Cache-Kategorie, zum Beispiel `npm`, `uv` oder `gradle` |
 | `scope` | nein | `auto`, `shared`, `trusted` oder `untrusted`; Standard: `auto` |
+| `os` | nein | Betriebssystemteil; Standard: `RUNNER_OS`, leer ergibt `unknown` |
+| `arch` | nein | Architekturteil; Standard: `RUNNER_ARCH`, leer ergibt `unknown` |
+| `version` | nein | Numerische Cache-Version, zum Beispiel `1`; Standard: `1` |
 | `key` | ja | Logischer Key ohne automatisch ergänzten Namespace |
 | `restore-keys` | nein | Mehrere Prefixe, jeweils eine Zeile |
 | `path` | ja | Eine oder mehrere Dateien/Verzeichnisse, jeweils eine Zeile |
@@ -546,19 +565,36 @@ Für interne Pull Requests kann ein eigener, automatisch löschbarer PR-Cache ak
     cache-name: build
     token: ${{ secrets.CACHE_APP_TOKEN }}
     allow-pr-cache: true
-    key: ${{ format('build/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+    key: ${{ hashFiles('package-lock.json') }}
     path: .cache/build
 ```
 
 Der Key muss mit `untrusted/<repository>/pr-<number>/` beginnen. Beim Event `pull_request: closed` entfernt [pr-cache-cleanup.yml](.github/workflows/pr-cache-cleanup.yml) die PR-References und die dadurch nicht mehr referenzierten Release Assets. Für Fork-Pull-Requests bleibt das Speichern deaktiviert, weil dort keine Schreib-Secrets an untrusted Code gegeben werden sollten.
 
-`key` darf nur den logischen Teil enthalten, zum Beispiel `npm/Linux-X64/<hash>/v1`. Die Action ergänzt bei `scope: auto` automatisch `untrusted/<repository>/pr-<number>/` bei Pull Requests bzw. `trusted/<repository>/<default-branch>/` bei Pushes und Tags. Mit `scope: shared`, `scope: trusted` oder `scope: untrusted` wird der gewünschte Namespace automatisch verwendet. Präfixe wie `trusted/`, `untrusted/` oder `shared/` sind in `key` und `restore-keys` nicht erlaubt.
+`key` darf nur den Abhängigkeits-Hash enthalten, zum Beispiel `${{ hashFiles('package-lock.json') }}`. Die Action ergänzt Cache-Name, Betriebssystem, Architektur und Version automatisch. Diese Werte können optional explizit angegeben werden:
+
+```yaml
+scope: auto
+os: linux
+arch: x64
+version: 1
+key: ${{ hashFiles('package-lock.json') }}
+```
+
+`version` darf ausschließlich aus Ziffern bestehen, zum Beispiel `1` oder
+`2`. Die Action stellt automatisch ein `v` voran.
+
+Wird `os` oder `arch` ausdrücklich leer angegeben, verwendet die Action
+`unknown` statt des Runner-Standardwerts. Wird der Input nicht angegeben,
+werden `RUNNER_OS` und `RUNNER_ARCH` verwendet.
+
+Mit `scope: auto` ergänzt sie außerdem `untrusted/<repository>/pr-<number>/` bei Pull Requests bzw. `trusted/<repository>/<default-branch>/` bei Pushes und Tags. Mit `scope: shared`, `scope: trusted` oder `scope: untrusted` wird der gewünschte Namespace automatisch verwendet. Präfixe wie `trusted/` oder `untrusted/` sind in `key` und `restore-keys` nicht erlaubt; ein vollständiger `shared/...`-Prefix ist nur in `restore-keys` als geschützter Fallback zulässig. Fehlen `os`/`arch` und auch `RUNNER_OS`/`RUNNER_ARCH`, verwendet die Action `unknown`.
 
 Der Cache-Typ kann auch separat mit `cache-name` angegeben werden. Dann enthält `key` nur noch Plattform, Hash und Version:
 
 ```yaml
 cache-name: npm
-key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+key: ${{ hashFiles('package-lock.json') }}
 ```
 
 ## Garbage Collection
@@ -658,7 +694,7 @@ Ein Cache-Schritt sieht beispielsweise so aus:
   with:
     repository: Ludy87/cache-the-planet
     cache-name: npm
-    key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+    key: ${{ hashFiles('package-lock.json') }}
     path: .cache/npm
 ```
 

@@ -24,7 +24,8 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v2', runner.os, runner.arch, hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt')) }}
+          key: ${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}
+          version: 2
           path: examples/docker-cache/.cache/docker-buildx
           # Ein beschädigtes oder fehlendes altes Objekt darf den Reparaturlauf nicht blockieren.
           strict: false
@@ -54,7 +55,8 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v2', runner.os, runner.arch, hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt')) }}
+          key: ${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}
+          version: 2
           path: examples/docker-cache/.cache/docker-buildx
           strict: true
 
@@ -78,7 +80,8 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v2', runner.os, runner.arch, hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt')) }}
+          key: ${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}
+          version: 2
           path: examples/docker-cache/.cache/docker-buildx
           strict: true
 
@@ -86,7 +89,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/docker/${{ runner.os }}-${{ runner.arch }}/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/docker/linux-x64/${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}/v2"
           test -d examples/docker-cache/.cache/docker-buildx
 
       - name: Set up Docker Buildx

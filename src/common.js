@@ -16,6 +16,11 @@ function input(name, defaultValue = '') {
   return process.env[variable] ?? defaultValue;
 }
 
+function hasInput(name) {
+  const variable = `INPUT_${name.replace(/ /g, '_').toUpperCase()}`;
+  return Object.prototype.hasOwnProperty.call(process.env, variable);
+}
+
 function token() {
   return input('token') || process.env.GITHUB_TOKEN || process.env.ACTIONS_RUNTIME_TOKEN;
 }
@@ -69,6 +74,30 @@ function cacheScope() {
   return value;
 }
 
+function runnerPlatform() {
+  const osValue = hasInput('os') ? input('os') : process.env.RUNNER_OS;
+  const archValue = hasInput('arch') ? input('arch') : process.env.RUNNER_ARCH;
+  const osName = (osValue || 'unknown').trim() || 'unknown';
+  const architecture = (archValue || 'unknown').trim() || 'unknown';
+  const safe = (value) => value.replace(/[^A-Za-z0-9._-]/g, '-').toLowerCase();
+  return `${safe(osName)}-${safe(architecture)}`;
+}
+
+function logicalCacheKey(value, name, includeVersion = true) {
+  const key = value.startsWith(`${name}/`) ? value : `${name}/${value}`;
+  const platform = runnerPlatform();
+  const withoutName = key.slice(name.length + 1);
+  const firstPart = withoutName.split('/')[0];
+  const hasPlatform = firstPart.toLowerCase() === platform.toLowerCase()
+    || (/^[A-Za-z0-9._-]+-[A-Za-z0-9._-]+$/.test(firstPart) && withoutName.split('/').length > 1);
+  const withPlatform = hasPlatform ? key : `${name}/${platform}/${withoutName}`;
+  if (!includeVersion) return withPlatform;
+  const version = input('version', '1').trim() || '1';
+  if (!/^\d+$/.test(version)) throw new Error('version must contain numbers only');
+  return /\/v[A-Za-z0-9._-]+$/.test(withPlatform)
+    ? withPlatform : `${withPlatform}/v${version}`;
+}
+
 function isPullRequestEvent() {
   return eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/');
 }
@@ -81,9 +110,9 @@ function validateRestorePrefix(key) {
     : parts[0] === 'untrusted'
       && parts.length >= 5 && validPart(parts[1]) && validPart(parts[2]) && /^pr-[1-9]\d*$/.test(parts[3]);
   const sharedNamespace = parts[0] === 'shared'
-    && parts.length >= 5 && validPart(parts[1]) && validPart(parts[2]) && validPart(parts[3]);
+    && parts.length >= 3 && validPart(parts[1]) && validPart(parts[2]);
   if ((!validNamespace && !sharedNamespace) || parts.some((part) => !validPart(part))) {
-    throw new Error('restore-keys contains a value outside the trusted/untrusted schema');
+    throw new Error('restore-keys contains a value outside the trusted/untrusted/shared schema');
   }
   return key;
 }
@@ -113,7 +142,7 @@ function scopedKey(key) {
   if (/^(?:trusted|untrusted|shared)\//.test(key)) {
     throw new Error('key must not contain a trusted/, untrusted/, or shared/ prefix; use scope');
   }
-  const logicalKey = key.startsWith(`${name}/`) ? key : `${name}/${key}`;
+  const logicalKey = logicalCacheKey(key, name);
   const sourceRepository = repository();
   if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic cache key');
   const pullRequest = isPullRequestEvent();
@@ -141,12 +170,17 @@ function scopedKey(key) {
 function scopedRestorePrefix(prefix) {
   const value = prefix.trim();
   if (!value) return value;
-  if (/^(?:trusted|untrusted|shared)\//.test(value)) {
-    throw new Error('restore-keys must not contain a trusted/, untrusted/, or shared/ prefix; use scope');
+  // An explicit shared prefix is a read-only fallback. PR access remains
+  // guarded by assertTrustedRestoreAllowed and allow-shared-restore.
+  if (/^shared\//.test(value)) {
+    return validateRestorePrefix(value);
+  }
+  if (/^(?:trusted|untrusted)\//.test(value)) {
+    throw new Error('restore-keys must not contain a trusted/ or untrusted/ prefix; use scope');
   }
   const name = cacheName();
   const scope = cacheScope();
-  const logicalKey = value.startsWith(`${name}/`) ? value : `${name}/${value}`;
+  const logicalKey = logicalCacheKey(value, name, false);
   const logicalParts = logicalKey.replace(/\/$/, '').split('/');
   if (!logicalParts.length || logicalParts.some((part) => !/^[A-Za-z0-9._-]+$/.test(part))) {
     throw new Error('restore-keys contains invalid path components');
@@ -557,7 +591,7 @@ function extract(file) {
 }
 
 module.exports = {
-  input, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName, cacheScope,
+  input, hasInput, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName, cacheScope, runnerPlatform,
   scopedKey, scopedRestorePrefix, assertTrustedRestoreAllowed,
   log, fail, gh,
   upload, entries, refName,

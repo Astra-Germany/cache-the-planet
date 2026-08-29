@@ -5,11 +5,25 @@ inputs:
     description: "owner/name of cache repository"
     required: true
   key:
-    description: "Logical cache key; trusted/untrusted repository and PR scope are added automatically when omitted"
+    description: "Logical dependency key; namespace and platform are generated from scope, os, arch, and version"
     required: true
   cache-name:
     description: "Cache namespace such as npm, uv, gradle, or docker"
     required: true
+  scope:
+    description: "Cache scope: auto, shared, trusted, or untrusted"
+    required: false
+    default: auto
+  os:
+    description: "Operating system component of the cache key; defaults to RUNNER_OS"
+    required: false
+  arch:
+    description: "Architecture component of the cache key; defaults to RUNNER_ARCH"
+    required: false
+  version:
+    description: "Numeric cache format version, for example 1 or 2"
+    required: false
+    default: "1"
   path:
     description: "Newline separated files or directories to cache"
     required: true
