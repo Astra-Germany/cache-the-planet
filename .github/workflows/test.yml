@@ -10,8 +10,6 @@ on:
       - 'src/**'
       - '.gitignore'
       - '.release-please-manifest.json'
-  pull_request:
-    branches: ["main"]
   workflow_run:
     workflows:
       - Cache integration suite
