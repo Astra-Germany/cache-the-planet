@@ -11,6 +11,10 @@ inputs:
   cache-name:
     description: "Cache namespace such as npm, uv, gradle, or docker"
     required: true
+  scope:
+    description: "Cache scope: auto, shared, trusted, or untrusted"
+    required: false
+    default: auto
   restore-keys:
     description: "Newline separated fallback prefixes"
     required: false
