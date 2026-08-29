@@ -97,7 +97,7 @@ function pullRequestNumber() {
 function scopedKey(key) {
   if (!key) return key;
   const name = cacheName();
-  if (key.startsWith('trusted/') || key.startsWith('untrusted/')) {
+  if (key.startsWith('trusted/') || key.startsWith('untrusted/') || key.startsWith('shared/')) {
     if (!isCompleteCacheKey(key)) {
       throw new Error('cache key does not match the trusted/untrusted schema');
     }
@@ -119,7 +119,9 @@ function scopedKey(key) {
 function scopedRestorePrefix(prefix) {
   const value = prefix.trim();
   if (!value) return value;
-  if (value.startsWith('trusted/') || value.startsWith('untrusted/')) return validateRestorePrefix(value);
+  if (value.startsWith('trusted/') || value.startsWith('untrusted/') || value.startsWith('shared/')) {
+    return validateRestorePrefix(value);
+  }
   const name = cacheName();
   const logicalKey = value.startsWith(`${name}/`) ? value : `${name}/${value}`;
   const logicalParts = logicalKey.replace(/\/$/, '').split('/');
