@@ -12,6 +12,41 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  detect-changes:
+    name: Detect distribution changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      build_dist: ${{ steps.filter.outputs.build_dist || 'false' }}
+    steps:
+      - name: Checkout
+        if: github.event_name == 'push'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Filter distribution changes
+        if: github.event_name == 'push'
+        id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v3.0.2
+        with:
+          filters: |
+            build_dist:
+              - 'src/**'
+              - 'action.yml'
+              - 'save/action.yml'
+              - 'package.json'
+              - 'package-lock.json'
+
+  build-dist:
+    needs: detect-changes
+    if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.build_dist == 'true'
+    uses: ./.github/workflows/build-dist.yml
+    permissions:
+      contents: write
+    secrets: inherit
+
   node:
     uses: ./.github/workflows/node-cache-integration.yml
     permissions:
