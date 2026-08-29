@@ -25,6 +25,11 @@ function token() {
   return input('token') || process.env.GITHUB_TOKEN || process.env.ACTIONS_RUNTIME_TOKEN;
 }
 
+function authorizationHeaders() {
+  const value = token();
+  return value ? { Authorization: `Bearer ${value}` } : {};
+}
+
 function eventName() {
   return process.env.GITHUB_EVENT_NAME || '';
 }
@@ -283,7 +288,7 @@ async function gh(url, options = {}) {
     headers: {
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': apiVersion,
-      Authorization: `Bearer ${token()}`,
+      ...authorizationHeaders(),
       ...(options.headers || {}),
     },
   });
@@ -304,7 +309,7 @@ async function upload(url, file, name, contentType) {
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token()}`,
+      ...authorizationHeaders(),
       'Content-Type': contentType,
       'Content-Length': bytes.length,
       'X-GitHub-Api-Version': apiVersion,
@@ -604,7 +609,7 @@ async function download(repository, hash) {
   if (!asset) throw new Error(`object ${hash} not found`);
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cad-'));
   const file = path.join(directory, asset.name);
-  const response = await fetch(asset.browser_download_url, { headers: { Authorization: `Bearer ${token()}` } });
+  const response = await fetch(asset.browser_download_url, { headers: authorizationHeaders() });
   if (!response.ok) throw new Error(`download failed: ${response.status}`);
   const contentLength = Number(response.headers.get('content-length') || 0);
   if (contentLength > maxCompressedBytes) throw new Error('cache archive exceeds the compressed size limit');
