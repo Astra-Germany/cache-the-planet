@@ -17,7 +17,7 @@ Im Workflow:
 token: ${{ secrets.CACHE_APP_TOKEN }}
 ```
 
-Wenn `token` nicht angegeben wird, verwendet die Action standardmäßig `GITHUB_TOKEN` beziehungsweise `ACTIONS_RUNTIME_TOKEN`. Ein explizit gesetzter `token` hat immer Vorrang.
+Wenn `token` nicht angegeben wird, verwendet die Action standardmäßig `GITHUB_TOKEN`. Ein explizit gesetzter `token` hat immer Vorrang. `ACTIONS_RUNTIME_TOKEN` wird bewusst nicht verwendet, weil dieser interne Runtime-Token kein GitHub-REST-API-Token ist.
 
 Kein dauerhaft gültiges Token ohne Ablaufdatum und kein Fallback auf `github.token` verwenden. Fork-Pull-Requests dürfen keine Schreib-Secrets erhalten; der Save-Schritt bleibt für sie deaktiviert.
 

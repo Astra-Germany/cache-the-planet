@@ -22,7 +22,8 @@ function hasInput(name) {
 }
 
 function token() {
-  return input('token') || process.env.GITHUB_TOKEN || process.env.ACTIONS_RUNTIME_TOKEN;
+  // ACTIONS_RUNTIME_TOKEN is for the Actions service, not the GitHub REST API.
+  return input('token') || process.env.GITHUB_TOKEN;
 }
 
 function authorizationHeaders() {
