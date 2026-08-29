@@ -552,7 +552,7 @@ Für interne Pull Requests kann ein eigener, automatisch löschbarer PR-Cache ak
 
 Der Key muss mit `untrusted/<repository>/pr-<number>/` beginnen. Beim Event `pull_request: closed` entfernt [pr-cache-cleanup.yml](.github/workflows/pr-cache-cleanup.yml) die PR-References und die dadurch nicht mehr referenzierten Release Assets. Für Fork-Pull-Requests bleibt das Speichern deaktiviert, weil dort keine Schreib-Secrets an untrusted Code gegeben werden sollten.
 
-Alternativ kann `key` nur den logischen Teil enthalten, zum Beispiel `npm/Linux-X64/<hash>/v1`. Die Action ergänzt bei `scope: auto` automatisch `untrusted/<repository>/pr-<number>/` bei Pull Requests bzw. `trusted/<repository>/<default-branch>/` bei Pushes und Tags. Mit `scope: shared`, `scope: trusted` oder `scope: untrusted` wird der gewünschte Namespace automatisch verwendet. Vollständige Keys bleiben kompatibel, müssen aber zum angegebenen `scope` passen.
+`key` darf nur den logischen Teil enthalten, zum Beispiel `npm/Linux-X64/<hash>/v1`. Die Action ergänzt bei `scope: auto` automatisch `untrusted/<repository>/pr-<number>/` bei Pull Requests bzw. `trusted/<repository>/<default-branch>/` bei Pushes und Tags. Mit `scope: shared`, `scope: trusted` oder `scope: untrusted` wird der gewünschte Namespace automatisch verwendet. Präfixe wie `trusted/`, `untrusted/` oder `shared/` sind in `key` und `restore-keys` nicht erlaubt.
 
 Der Cache-Typ kann auch separat mit `cache-name` angegeben werden. Dann enthält `key` nur noch Plattform, Hash und Version:
 
