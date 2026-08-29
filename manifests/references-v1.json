@@ -104,6 +104,10 @@
     "trusted/Astra-Germany/cache-the-planet/main/gradle-java17/linux-x64/82a39c981d4703078f76f4d3021b9c5004efac1ad28a1ee8774b06127511901e/v1": {
       "object": "sha256:494f32d2613cac3e67c098c96fa4bd670e65fe0c0182167c1e5f327311c504d1",
       "updated_at": "2026-08-29T14:22:17.290Z"
+    },
+    "trusted/Astra-Germany/cache-the-planet/main/gradle-java17/linux-x64/ddfcbf966264893c5721851c7fe2b2a0221f38f0fc5e75e17745b2c632766c4e/v1": {
+      "object": "sha256:4f933ac0358259c9028c391f65c5a6363d2068c803ed5b5719004f7b053515b5",
+      "updated_at": "2026-08-29T14:31:17.874Z"
     }
   }
 }
