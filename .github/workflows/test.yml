@@ -2,6 +2,8 @@ name: Test
 run-name: Test - ${{ github.event_name }}${{ github.event_name == 'workflow_run' && format(' ({0})', github.event.workflow_run.name) || '' }}
 on:
   push:
+    paths-ignore:
+      - 'src/**'
   pull_request:
   workflow_run:
     workflows:
