@@ -23,7 +23,9 @@ Das Manifest liegt im Cache-Repository unter
 {"schema_version":1,"references":{"key":{"object":"sha256:<64 hex>","updated_at":"RFC3339"}}}
 ```
 
-`key` ist der vollständige, automatisch abgegrenzte Schlüssel.
+`key` wird intern als vollständiger, automatisch abgegrenzter Schlüssel
+gespeichert. Nutzer dürfen in `key` und `restore-keys` nur den logischen Key
+angeben; der Namespace wird ausschließlich über `scope` bestimmt.
 Vertrauenswürdige Schlüssel verwenden das Schema
 `trusted/<owner>/<repository>/<default-branch>/<cache-name>/<logical-key>/v1`.
 Pull-Request-Schlüssel verwenden

@@ -69,6 +69,10 @@ function cacheScope() {
   return value;
 }
 
+function isPullRequestEvent() {
+  return eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/');
+}
+
 function validateRestorePrefix(key) {
   const parts = key.replace(/\/$/, '').split('/');
   const validPart = (part) => /^[A-Za-z0-9._-]+$/.test(part) && part !== '..' && part !== '.';
@@ -106,21 +110,23 @@ function scopedKey(key) {
   if (!key) return key;
   const name = cacheName();
   const scope = cacheScope();
-  if (key.startsWith('trusted/') || key.startsWith('untrusted/') || key.startsWith('shared/')) {
-    if (!isCompleteCacheKey(key)) {
-      throw new Error('cache key does not match the trusted/untrusted schema');
-    }
-    if (scope !== 'auto' && !key.startsWith(`${scope}/`)) {
-      throw new Error(`cache key does not match scope=${scope}`);
-    }
-    return key;
+  if (/^(?:trusted|untrusted|shared)\//.test(key)) {
+    throw new Error('key must not contain a trusted/, untrusted/, or shared/ prefix; use scope');
   }
   const logicalKey = key.startsWith(`${name}/`) ? key : `${name}/${key}`;
   const sourceRepository = repository();
   if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic cache key');
-  const pullRequest = eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/');
+  const pullRequest = isPullRequestEvent();
   const selectedScope = scope === 'auto' ? (pullRequest ? 'untrusted' : 'trusted') : scope;
-  if (selectedScope === 'shared') return `shared/${sourceRepository}/${logicalKey}`;
+  if (selectedScope === 'shared') {
+    if (pullRequest) log('scope=shared is mapped to an isolated untrusted PR cache');
+    if (pullRequest) {
+      const number = pullRequestNumber();
+      if (!number) throw new Error('pull request number is required for an automatic PR cache key');
+      return `untrusted/${sourceRepository}/pr-${number}/${logicalKey}`;
+    }
+    return `shared/${sourceRepository}/${logicalKey}`;
+  }
   if (selectedScope === 'untrusted' || pullRequest && selectedScope === 'untrusted') {
     const number = pullRequestNumber();
     if (!sourceRepository || !number) throw new Error('repository and pull request number are required for an automatic PR cache key');
@@ -135,8 +141,8 @@ function scopedKey(key) {
 function scopedRestorePrefix(prefix) {
   const value = prefix.trim();
   if (!value) return value;
-  if (value.startsWith('trusted/') || value.startsWith('untrusted/') || value.startsWith('shared/')) {
-    return validateRestorePrefix(value);
+  if (/^(?:trusted|untrusted|shared)\//.test(value)) {
+    throw new Error('restore-keys must not contain a trusted/, untrusted/, or shared/ prefix; use scope');
   }
   const name = cacheName();
   const scope = cacheScope();
@@ -147,9 +153,17 @@ function scopedRestorePrefix(prefix) {
   }
   const sourceRepository = repository();
   if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic restore key');
-  const pullRequest = eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/');
+  const pullRequest = isPullRequestEvent();
   const selectedScope = scope === 'auto' ? (pullRequest ? 'untrusted' : 'trusted') : scope;
-  if (selectedScope === 'shared') return `shared/${sourceRepository}/${logicalKey}`;
+  if (selectedScope === 'shared') {
+    if (pullRequest) log('scope=shared is mapped to an isolated untrusted PR cache');
+    if (pullRequest) {
+      const number = pullRequestNumber();
+      if (!number) throw new Error('pull request number is required for an automatic restore key');
+      return `untrusted/${sourceRepository}/pr-${number}/${logicalKey}`;
+    }
+    return `shared/${sourceRepository}/${logicalKey}`;
+  }
   if (selectedScope === 'untrusted' || pullRequest && selectedScope === 'untrusted') {
     const number = pullRequestNumber();
     if (!number) throw new Error('pull request number is required for an automatic restore key');

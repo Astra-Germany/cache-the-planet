@@ -119,13 +119,21 @@ try {
   if (scopedKey('Linux-X64/hash/v1') !== sharedKey) {
     throw new Error('shared scope did not generate the shared cache key');
   }
+  process.env.GITHUB_EVENT_NAME = 'pull_request';
+  if (scopedKey('Linux-X64/hash/v1') !== 'untrusted/example/project/pr-7/npm/Linux-X64/hash/v1') {
+    throw new Error('shared scope was not isolated for pull requests');
+  }
+  let namespaceKeyRejected = false;
+  try { scopedKey(sharedKey); } catch { namespaceKeyRejected = true; }
+  if (!namespaceKeyRejected) throw new Error('explicit shared key was accepted in a pull request');
   process.env['INPUT_SCOPE'] = 'auto';
-  if (scopedKey(sharedKey) !== sharedKey) {
-    throw new Error('shared cache key was not accepted');
-  }
-  if (scopedRestorePrefix('shared/example/project/npm/Linux-X64/') !== sharedKey.replace('/hash/v1', '/')) {
-    throw new Error('shared restore prefix was not accepted');
-  }
+  process.env.GITHUB_EVENT_NAME = 'push';
+  namespaceKeyRejected = false;
+  try { scopedKey(sharedKey); } catch { namespaceKeyRejected = true; }
+  if (!namespaceKeyRejected) throw new Error('explicit shared cache key was accepted');
+  namespaceKeyRejected = false;
+  try { scopedRestorePrefix('shared/example/project/npm/Linux-X64/'); } catch { namespaceKeyRejected = true; }
+  if (!namespaceKeyRejected) throw new Error('explicit shared restore prefix was accepted');
   let invalidKeyRejected = false;
   try { scopedKey('trusted/example/project/npm/Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
   if (!invalidKeyRejected) throw new Error('invalid trusted cache key was accepted');
