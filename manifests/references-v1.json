@@ -8,6 +8,10 @@
     "trusted/Astra-Germany/cache-the-planet/main/uv/Linux-X64/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v1": {
       "object": "sha256:2fe170473b804d875ed9a5eac338a15f26834497bc5e4de4673ce8459b5807d4",
       "updated_at": "2026-08-29T11:00:40.987Z"
+    },
+    "trusted/Astra-Germany/cache-the-planet/main/uv-python-3-13/Linux-X64/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v2": {
+      "object": "sha256:8c3529c9722f9b9337c71fb5d23d14d174d46bd50f90ef375e82eb27308ba2fe",
+      "updated_at": "2026-08-29T11:01:10.596Z"
     }
   }
 }
