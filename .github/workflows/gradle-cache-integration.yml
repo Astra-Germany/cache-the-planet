@@ -155,9 +155,10 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
           token: ${{ secrets.GITHUB_TOKEN }}
+          scope: shared
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           restore-keys: |
-            shared/${{ github.repository }}/main/gradle-java17/linux-x64/
+            trusted/${{ github.repository }}/main/gradle-java17/linux-x64/
           allow-shared-restore: true
           path: .cache/gradle
           strict: true
@@ -166,7 +167,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/gradle-java17/linux-x64/${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}/v1"
+          test "${{ steps.cache.outputs.matched-key }}" = "shared/${{ github.repository }}/main/gradle-java17/linux-x64/${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}/v1"
 
       - name: Build offline with restored Gradle cache
         working-directory: examples/gradle-cache
