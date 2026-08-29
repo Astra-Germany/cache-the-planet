@@ -29,6 +29,10 @@ gespeichert. Nutzer dürfen in `key` nur den logischen Key angeben; der
  `shared/<owner>/<repository>/`-Prefix oder ein vollständiger `shared/...`-
  Prefix als geprüfter Fallback angegeben werden.
 `trusted/...` und `untrusted/...` sind dort weiterhin nicht erlaubt.
+Bei `scope: auto` werden logische Restore-Prefixe zuerst als `shared` und
+danach als `trusted` bzw. bei Pull Requests als `untrusted` ausgewertet.
+Shared-Restore in Pull Requests erfordert weiterhin
+`allow-shared-restore: true`.
 Vertrauenswürdige Schlüssel verwenden das Schema
 `trusted/<owner>/<repository>/<default-branch>/<cache-name>/<logical-key>/v1`.
 Pull-Request-Schlüssel verwenden

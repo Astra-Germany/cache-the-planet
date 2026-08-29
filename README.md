@@ -440,6 +440,13 @@ Die Action sucht in dieser Reihenfolge:
 
 Branch- und Default-Branch-Fallback werden durch die Reihenfolge der Prefixe modelliert. Die Action gibt `matched-key` aus, damit der tatsächlich verwendete Cache sichtbar ist.
 
+Bei `scope: auto` werden unpräfixierte `restore-keys` auf `main` und Tags
+zuerst im `shared`-Namespace und danach im `trusted`-Namespace gesucht. In
+Pull Requests wird zuerst `shared` gesucht, sofern
+`allow-shared-restore: true` gesetzt ist, und danach der isolierte
+`untrusted`-Namespace. Ohne diese Freigabe wird der Shared-Fallback im PR
+übersprungen.
+
 `restore-keys` enthalten normalerweise nur logische Prefixe und niemals
 `trusted/` oder `untrusted/`. Ein `shared/<owner>/<repository>/`-Prefix oder
 ein vollständiger `shared/...`-Prefix ist als expliziter, geprüfter Fallback

@@ -12,10 +12,18 @@ function setOutput(name, value) {
     const repository = c.input('repository');
     const key = c.scopedKey(c.input('key'));
     const manifest = await c.refs(repository);
-    const candidates = [
-      key,
-      ...c.input('restore-keys').split(/\r?\n/).map(c.scopedRestorePrefix).filter(Boolean),
-    ];
+    const candidates = [key];
+    for (const prefix of c.input('restore-keys').split(/\r?\n/).map((value) => value.trim()).filter(Boolean)) {
+      if (c.cacheScope() === 'auto' && !prefix.startsWith('shared/')) {
+        // On auto, prefer a verified shared cache, then use the normal
+        // trusted (main/tag) or isolated untrusted (PR) namespace.
+        if (String(c.input('allow-shared-restore')).toLowerCase() === 'true'
+          || c.eventName() !== 'pull_request') {
+          candidates.push(c.sharedRestorePrefix(prefix));
+        }
+      }
+      candidates.push(c.scopedRestorePrefix(prefix));
+    }
     c.assertTrustedRestoreAllowed(candidates);
     let found = null;
 
