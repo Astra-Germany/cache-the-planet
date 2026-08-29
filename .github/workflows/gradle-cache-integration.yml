@@ -29,7 +29,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           path: .cache/gradle
           strict: false
@@ -44,7 +43,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           path: .cache/gradle
           strict: true
@@ -73,7 +71,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           path: .cache/gradle
           strict: true
@@ -114,11 +111,10 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
           scope: shared
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           path: .cache/gradle
-          strict: true
+          strict: false
 
   restore-cache-shared:
     name: Restore Gradle cache asset in a fresh job - shared
@@ -143,7 +139,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
           scope: auto
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           restore-keys: |
@@ -163,7 +158,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
           scope: trusted
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           restore-keys: |
@@ -183,7 +177,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
           scope: shared
           key: ${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}
           restore-keys: |
@@ -196,7 +189,6 @@ jobs:
         run: |
           test "${{ steps.cache-shared.outputs.cache-hit }}" = "true"
           test "${{ steps.cache-shared.outputs.matched-key }}" = "shared/${{ github.repository }}/gradle-java17/linux-x64/${{ hashFiles('examples/gradle-cache/build.gradle', 'examples/gradle-cache/settings.gradle', 'examples/gradle-cache/src/**/*.java') }}/v1"
-
 
       - name: Build offline with restored Gradle cache
         working-directory: examples/gradle-cache

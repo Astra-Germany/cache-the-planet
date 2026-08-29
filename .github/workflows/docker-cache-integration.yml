@@ -23,7 +23,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}
           version: 2
           path: examples/docker-cache/.cache/docker-buildx
@@ -54,7 +53,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}
           version: 2
           path: examples/docker-cache/.cache/docker-buildx
@@ -79,7 +77,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}
           version: 2
           path: examples/docker-cache/.cache/docker-buildx

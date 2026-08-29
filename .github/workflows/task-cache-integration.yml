@@ -26,7 +26,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: task
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/task-cache/Taskfile.yml', 'examples/task-cache/src/**') }}
           path: |
             examples/task-cache/.cache/task
@@ -41,7 +40,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: task
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/task-cache/Taskfile.yml', 'examples/task-cache/src/**') }}
           path: |
             examples/task-cache/.cache/task
@@ -69,7 +67,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: task
-          token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('examples/task-cache/Taskfile.yml', 'examples/task-cache/src/**') }}
           path: |
             examples/task-cache/.cache/task
