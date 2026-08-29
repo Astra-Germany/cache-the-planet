@@ -15,7 +15,7 @@ const os = require('os');
 const path = require('path');
 const cp = require('child_process');
 const { securityScan: sourceSecurityScan } = require('./src/common');
-const { scopedKey, scopedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName } = require('./src/common');
+const { scopedKey, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName } = require('./src/common');
 const { inspectTar } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
@@ -139,6 +139,9 @@ try {
   }
   if (scopedRestorePrefix('shared/example/project/') !== 'shared/example/project/') {
     throw new Error('shared repository restore prefix was not accepted');
+  }
+  if (sharedRestorePrefix('hash/') !== 'shared/example/project/npm/linux-x64/hash/') {
+    throw new Error('automatic shared restore prefix was not generated correctly');
   }
   let invalidKeyRejected = false;
   try { scopedKey('trusted/example/project/npm/Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }

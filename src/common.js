@@ -214,6 +214,22 @@ function scopedRestorePrefix(prefix) {
   return `trusted/${sourceRepository}/${branch}/${logicalKey}`;
 }
 
+function sharedRestorePrefix(prefix) {
+  const value = prefix.trim();
+  if (!value) return value;
+  if (/^shared\//.test(value)) return validateRestorePrefix(value);
+  if (/^(?:trusted|untrusted)\//.test(value)) {
+    throw new Error('restore-keys must not contain a trusted/ or untrusted/ prefix; use scope');
+  }
+  const logicalKey = logicalCacheKey(value, cacheName(), false);
+  if (logicalKey.replace(/\/$/, '').split('/').some((part) => !/^[A-Za-z0-9._-]+$/.test(part))) {
+    throw new Error('restore-keys contains invalid path components');
+  }
+  const sourceRepository = repository();
+  if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic shared restore key');
+  return `shared/${sourceRepository}/${logicalKey}`;
+}
+
 function assertTrustedRestoreAllowed(keys) {
   const isPullRequest = eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/');
   if (isPullRequest && keys.some((key) => key.startsWith('trusted/'))) {
@@ -598,7 +614,7 @@ function extract(file) {
 
 module.exports = {
   input, hasInput, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName, cacheScope, runnerPlatform,
-  scopedKey, scopedRestorePrefix, assertTrustedRestoreAllowed,
+  scopedKey, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed,
   log, fail, gh,
   upload, entries, refName,
   securityScan, makeArchive, inspectTar, digest, assetName, hashFromAssetName,
