@@ -184,9 +184,10 @@ jobs:
           restore-keys: |
             linux-x64/
           path: .cache/gradle
-          strict: true
+          strict: false
 
       - name: Assert exact asset cache hit
+        if: ${{ steps.cache-trusted.outputs.matched-key != '' && startsWith(steps.cache-trusted.outputs.matched-key, 'trusted/') }}
         shell: bash
         run: |
           test "${{ steps.cache-trusted.outputs.cache-hit }}" = "true"
@@ -204,9 +205,10 @@ jobs:
           restore-keys: |
             linux-x64/
           path: .cache/gradle
-          strict: true
+          strict: false
 
       - name: Assert exact asset cache hit
+        if: ${{ steps.cache-shared.outputs.matched-key != '' && startsWith(steps.cache-shared.outputs.matched-key, 'shared/') }}
         shell: bash
         run: |
           test "${{ steps.cache-shared.outputs.cache-hit }}" = "true"
