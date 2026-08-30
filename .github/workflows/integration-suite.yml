@@ -210,7 +210,7 @@ jobs:
   all-checks-passed:
     name: All checks passed
     if: always()
-    needs: [build-dist, node, uv, uv-python, task, java-save-cache, java-restore-cache, gradle-save-cache, gradle-restore-cache, docker-save-cache, docker-restore-cache]
+    needs: [build-dist, node-save-cache, uv-save-cache, uv-python-save-cache, task-save-cache, java-save-cache, java-restore-cache, gradle-save-cache, gradle-restore-cache, docker-save-cache, docker-restore-cache]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -223,10 +223,14 @@ jobs:
         env:
           JOB_RESULTS: >-
             build-dist=${{ needs.build-dist.result }}
-            node=${{ needs.node.result }}
-            uv=${{ needs.uv.result }}
-            uv-python=${{ needs.uv-python.result }}
-            task=${{ needs.task.result }}
+            node-save-cache=${{ needs.node-save-cache.result }}
+            node-restore-cache=${{ needs.node-restore-cache.result }}
+            uv-save-cache=${{ needs.uv-save-cache.result }}
+            uv-restore-cache=${{ needs.uv-restore-cache.result }}
+            uv-python-save-cache=${{ needs.uv-python-save-cache.result }}
+            uv-python-restore-cache=${{ needs.uv-python-restore-cache.result }}
+            task-save-cache=${{ needs.task-save-cache.result }}
+            task-restore-cache=${{ needs.task-restore-cache.result }}
             java-save-cache=${{ needs.java-save-cache.result }}
             java-restore-cache=${{ needs.java-restore-cache.result }}
             gradle-save-cache=${{ needs.gradle-save-cache.result }}
