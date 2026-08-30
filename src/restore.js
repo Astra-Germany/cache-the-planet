@@ -63,12 +63,21 @@ function setOutput(name, value) {
 
     const archive = await c.download(repository, found[1].object);
     c.extract(archive);
-    setOutput('cache-hit', found[0] === key);
+    const cacheIdentity = (value) => {
+      const parts = value.split('/');
+      if (parts[0] === 'shared') return parts.slice(3).join('/');
+      if (parts[0] === 'trusted') return parts.slice(4).join('/');
+      if (parts[0] === 'untrusted') return parts.slice(5).join('/');
+      return value;
+    };
+    const cacheHit = found[0] === key
+      || (found[0].startsWith('shared/') && cacheIdentity(found[0]) === cacheIdentity(key));
+    setOutput('cache-hit', cacheHit);
     setOutput('matched-key', found[0]);
     setOutput('content-hash', found[1].object);
     setOutput('asset-name', asset.name);
     setOutput('cache-size', fs.statSync(archive).size);
-    console.log(`Cache found: requested-key=${key}; matched-key=${found[0]}; asset=${asset.name}; exact-hit=${found[0] === key}`);
+    console.log(`Cache found: requested-key=${key}; matched-key=${found[0]}; asset=${asset.name}; exact-hit=${found[0] === key}; cache-hit=${cacheHit}`);
   } catch (error) {
     c.fail(error);
   }
