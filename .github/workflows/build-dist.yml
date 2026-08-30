@@ -56,6 +56,8 @@ jobs:
           key: ${{ hashFiles('package-lock.json') }}
           path: .cache/npm
           strict: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allow-pr-cache: false
         continue-on-error: true
 
       - name: Commit generated dist
