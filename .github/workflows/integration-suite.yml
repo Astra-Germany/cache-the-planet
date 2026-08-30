@@ -54,41 +54,95 @@ jobs:
       contents: write
     secrets: inherit
 
-  node:
+  node-save-cache:
     needs: [build-dist]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/npm-cache-asset-integration.yml
+    with:
+      save-cache: true
     permissions:
       contents: write
     secrets: inherit
 
-  uv:
-    needs: [build-dist, node]
+  node-restore-cache:
+    needs: [build-dist]
+    if: always() && (needs.node-save-cache.result == 'success')
+    uses: ./.github/workflows/npm-cache-asset-integration.yml
+    with:
+      restore-cache: true
+    permissions:
+      contents: read
+    secrets: inherit
+
+  uv-save-cache:
+    name: Save uv cache asset
+    needs: [build-dist, node-save-cache]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/uv-cache-asset-integration.yml
+    with:
+      save-cache: true
     permissions:
       contents: write
     secrets: inherit
 
-  uv-python:
-    needs: [build-dist, uv]
+  uv-restore-cache:
+    name: Restore uv cache asset
+    needs: [uv-save-cache]
+    if: always() && (needs.uv-save-cache.result == 'success')
+    uses: ./.github/workflows/uv-cache-asset-integration.yml
+    with:
+      restore-cache: true
+    permissions:
+      contents: read
+    secrets: inherit
+
+  uv-python-save-cache:
+    name: Save uv Python cache asset
+    needs: [build-dist, uv-save-cache]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/uv-python-cache-asset-integration.yml
+    with:
+      save-cache: true
     permissions:
       contents: write
     secrets: inherit
 
-  task:
-    needs: [build-dist, uv-python]
+  uv-python-restore-cache:
+    name: Restore uv Python cache asset
+    needs: [uv-python-save-cache]
+    if: always() && (needs.uv-python-save-cache.result == 'success')
+    uses: ./.github/workflows/uv-python-cache-asset-integration.yml
+    with:
+      restore-cache: true
+    permissions:
+      contents: read
+    secrets: inherit
+
+  task-save-cache:
+    name: Save task cache asset
+    needs: [build-dist, uv-python-save-cache]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/task-cache-asset-integration.yml
+    with:
+      save-cache: true
     permissions:
       contents: write
+    secrets: inherit
+
+  task-restore-cache:
+    name: Restore task cache asset
+    needs: [task-save-cache]
+    if: always() && (needs.task-save-cache.result == 'success')
+    uses: ./.github/workflows/task-cache-asset-integration.yml
+    with:
+      restore-cache: true
+    permissions:
+      contents: read
     secrets: inherit
 
   java-save-cache:
     name: Save Maven cache asset
-    needs: [build-dist, task]
+    needs: [build-dist, task-save-cache]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/maven-cache-asset-integration.yml
     with:
@@ -105,12 +159,12 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: write
+      contents: read
     secrets: inherit
 
   gradle-save-cache:
     name: Save Gradle cache asset
-    needs: [build-dist, java-restore-cache]
+    needs: [build-dist, java-save-cache]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/gradle-cache-asset-integration.yml
     with:
@@ -127,12 +181,12 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: write
+      contents: read
     secrets: inherit
 
   docker-save-cache:
     name: Save Docker cache asset
-    needs: [build-dist, gradle-restore-cache]
+    needs: [build-dist, gradle-save-cache]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/docker-cache-asset-integration.yml
     with:
@@ -149,7 +203,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: write
+      contents: read
     secrets: inherit
 
   # when an upstream job fails.
