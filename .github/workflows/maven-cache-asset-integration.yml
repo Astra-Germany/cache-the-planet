@@ -4,13 +4,30 @@ on:
 
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
+  FILES_TO_HASH: |
+    examples/java-cache/pom.xml
 
 permissions:
   contents: read
 
 jobs:
+  hash_pr:
+    name: Hash Maven files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      files_hash: ${{ steps.hash.outputs.files_hash }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Hash Maven files
+        id: hash
+        run: |
+          HASH="${{ hashFiles(env.FILES_TO_HASH) }}"
+          echo "files_hash=$HASH" >> "$GITHUB_OUTPUT"
   save-cache:
     name: Build and save Maven cache asset
+    needs: hash_pr
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -30,7 +47,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: maven-java17
-          key: ${{ hashFiles('examples/java-cache/pom.xml') }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/m2
           strict: false
 
@@ -42,13 +59,13 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: maven-java17
-          key: ${{ hashFiles('examples/java-cache/pom.xml') }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/m2
-          strict: true
+          strict: false
 
   restore-cache:
     name: Restore Maven cache asset in a fresh job
-    needs: save-cache
+    needs: [save-cache, hash_pr]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -69,7 +86,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: maven-java17
-          key: ${{ hashFiles('examples/java-cache/pom.xml') }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/m2
           strict: true
 
@@ -77,7 +94,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/maven-java17/linux-x64/${{ hashFiles('examples/java-cache/pom.xml') }}/v1"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/maven-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
 
       - name: Build offline with restored Maven cache
         run: mvn -B -o -Dmaven.repo.local="$PWD/.cache/m2" package --file examples/java-cache/pom.xml

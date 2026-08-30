@@ -4,13 +4,30 @@ on:
 
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
+  FILES_TO_HASH: |
+    package-lock.json
 
 permissions:
   contents: read
 
 jobs:
+  hash_pr:
+    name: Hash npm files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      files_hash: ${{ steps.hash.outputs.files_hash }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Hash npm files
+        id: hash
+        run: |
+          HASH="${{ hashFiles(env.FILES_TO_HASH) }}"
+          echo "files_hash=$HASH" >> "$GITHUB_OUTPUT"
   save-cache:
     name: Install and save npm cache asset
+    needs: hash_pr
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -38,13 +55,13 @@ jobs:
           cache-name: npm
           scope: shared
           token: ${{ github.token }}
-          key: ${{ hashFiles('package-lock.json') }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/npm
-          strict: true
+          strict: false
 
   restore-cache:
     name: Restore npm cache asset in a fresh job
-    needs: save-cache
+    needs: [save-cache, hash_pr]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -69,7 +86,7 @@ jobs:
           cache-name: npm
           # token: ${{ github.token }}
           scope: auto
-          key: ${{ hashFiles('package-lock.json') }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |
             linux-x64/
           path: .cache/npm
@@ -81,7 +98,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/npm/linux-x64/${{ hashFiles('package-lock.json') }}/v1"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/npm/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
           test -d .cache/npm
 
       - name: Assert exact asset cache hit start with untrusted
@@ -89,7 +106,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/npm/linux-x64/${{ hashFiles('package-lock.json') }}/v1"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/npm/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
           test -d .cache/npm
 
       - name: Restore npm cache asset - auto allow shared restore
@@ -100,7 +117,7 @@ jobs:
           cache-name: npm
           # token: ${{ github.token }}
           scope: auto
-          key: ${{ hashFiles('package-lock.json') }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |
             linux-x64/
           path: .cache/npm
@@ -112,7 +129,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-auto-allow-shared-restore.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto-allow-shared-restore.outputs.matched-key }}" = "shared/${{ github.repository }}/npm/linux-x64/${{ hashFiles('package-lock.json') }}/v1"
+          test "${{ steps.cache-auto-allow-shared-restore.outputs.matched-key }}" = "shared/${{ github.repository }}/npm/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
           test -d .cache/npm
 
       - name: Verify npm can use restored cache

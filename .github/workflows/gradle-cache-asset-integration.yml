@@ -14,8 +14,23 @@ permissions:
   contents: read
 
 jobs:
+  hash_pr:
+    name: Hash Gradle files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      files_hash: ${{ steps.hash.outputs.files_hash }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Hash Gradle files
+        id: hash
+        run: |
+          HASH="${{ hashFiles(env.FILES_TO_HASH) }}"
+          echo "files_hash=$HASH" >> "$GITHUB_OUTPUT"
   save-cache:
     name: Build and save Gradle cache asset
+    needs: hash_pr
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -42,13 +57,13 @@ jobs:
           cache-name: gradle-java17
           scope: auto
           token: ${{ github.token }}
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/gradle
-          strict: true
+          strict: false
 
   restore-cache:
     name: Restore Gradle cache asset in a fresh job
-    needs: save-cache
+    needs: [save-cache, hash_pr]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -71,7 +86,7 @@ jobs:
           cache-name: gradle-java17
           token: ${{ github.token }}
           scope: auto
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           allow-shared-restore: true
           restore-keys: |
             linux-x64/
@@ -83,21 +98,21 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/gradle-java17/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v1"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/gradle-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
 
       - name: Assert exact asset cache hit start with untrusted
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'untrusted/') }}
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/gradle-java17/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v1"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/gradle-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
 
       - name: Assert exact asset cache hit start with shared
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'shared/') }}
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/gradle-java17/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v1"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/gradle-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
 
       - name: Restore Gradle cache asset - auto with restore-keys
         if: ${{ steps.cache-auto.outputs.cache-hit != 'true' }}
@@ -108,7 +123,7 @@ jobs:
           cache-name: gradle-java17
           token: ${{ github.token }}
           scope: auto
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |
             linux-x64/
 
@@ -120,7 +135,7 @@ jobs:
           cache-name: gradle-java17
           token: ${{ github.token }}
           scope: trusted
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |
             linux-x64/
           path: .cache/gradle
@@ -131,7 +146,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-trusted.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-trusted.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/gradle-java17/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v1"
+          test "${{ steps.cache-trusted.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/gradle-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
 
       - name: Restore Gradle cache asset - shared
         id: cache-shared
@@ -141,7 +156,7 @@ jobs:
           cache-name: gradle-java17
           token: ${{ github.token }}
           scope: shared
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |
             linux-x64/
           path: .cache/gradle
@@ -152,7 +167,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-shared.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-shared.outputs.matched-key }}" = "shared/${{ github.repository }}/gradle-java17/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v1"
+          test "${{ steps.cache-shared.outputs.matched-key }}" = "shared/${{ github.repository }}/gradle-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
 
       - name: Restore Gradle cache asset - untrusted
         id: cache-untrusted
@@ -162,7 +177,7 @@ jobs:
           cache-name: gradle-java17
           token: ${{ github.token }}
           scope: untrusted
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |
             linux-x64/
           path: .cache/gradle
@@ -173,7 +188,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-untrusted.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-untrusted.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/gradle-java17/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v1"
+          test "${{ steps.cache-untrusted.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/gradle-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
 
 
       - name: Build offline with restored Gradle cache

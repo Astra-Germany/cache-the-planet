@@ -4,13 +4,30 @@ on:
 
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
+  FILES_TO_HASH: |
+    examples/uv-cache/requirements.txt
 
 permissions:
   contents: read
 
 jobs:
+  hash_pr:
+    name: Hash uv files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      files_hash: ${{ steps.hash.outputs.files_hash }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Hash uv files
+        id: hash
+        run: |
+          HASH="${{ hashFiles(env.FILES_TO_HASH) }}"
+          echo "files_hash=$HASH" >> "$GITHUB_OUTPUT"
   save-cache:
     name: Install and save uv cache asset
+    needs: hash_pr
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -41,7 +58,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv
-          key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/uv
           strict: false
 
@@ -54,13 +71,13 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv
-          key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/uv
           strict: true
 
   restore-cache:
     name: Restore uv cache asset in a fresh job
-    needs: save-cache
+    needs: [save-cache, hash_pr]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -91,7 +108,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv
-          key: ${{ hashFiles('examples/uv-cache/requirements.txt') }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/uv
           strict: true
 
@@ -99,7 +116,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/${{ github.event.repository.default_branch }}/uv/linux-x64/${{ hashFiles('examples/uv-cache/requirements.txt') }}/v1"
+          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/${{ github.event.repository.default_branch }}/uv/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
           test -d .cache/uv
 
       - name: Verify uv can use restored cache
