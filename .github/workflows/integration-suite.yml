@@ -109,3 +109,27 @@ jobs:
     permissions:
       contents: write
     secrets: inherit
+
+  # when an upstream job fails.
+  all-checks-passed:
+    name: All checks passed
+    if: always()
+    needs: [build-dist, node, uv, uv-python, task, java, gradle, docker]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: All checks passed
+        run: echo "All checks passed!"
+
+      - name: Verify every required job passed (or was legitimately skipped)
+        env:
+          JOBS: build-dist,node,uv,uv-python,task,java,gradle,docker
+        run: |
+          for job in $(echo $JOBS | tr "," "\n"); do
+            result="${{ needs[job].result }}"
+            if [[ "$result" != "success" && "$result" != "skipped" ]]; then
+              echo "Job $job did not pass (result: $result)"
+              exit 1
+            fi
