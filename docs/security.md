@@ -47,6 +47,10 @@ Gegen Key-Flooding begrenzt die Action standardmäßig jeden logischen Key auf
 auf bekannte Cache-Namen beschränkt werden. Die Environment-Variable verwendet
 eine kommagetrennte Liste:
 
+Ein `cache-name` ist 1 bis 32 Zeichen lang und darf ausschließlich Buchstaben,
+Zahlen, `-` und `_` enthalten. Dadurch können keine zusätzlichen Pfadsegmente
+oder Sonderzeichen in den automatisch erzeugten Manifest-Key gelangen.
+
 ```yaml
 env:
   CACHE_MAX_LOGICAL_KEY_LENGTH: 512
@@ -73,10 +77,16 @@ scope: shared
 key: ${{ hashFiles('package-lock.json') }}
 ```
 
-Wird `scope: shared` in einem Pull Request verwendet, wird der Scope mit einem
-Hinweis automatisch auf `untrusted` und `pr-<nummer>` umgestellt. Dadurch liest
-oder schreibt der Pull Request keinen Shared-Cache. Nach dem Merge auf `main`
-wird derselbe logische Key wieder als `shared` verwendet.
+Wird `scope: shared` in einem Pull Request verwendet, wird der Save-Schritt mit
+einem Hinweis übersprungen. Dadurch schreibt der Pull Request weder einen
+Shared- noch einen zusätzlichen untrusted-Cache. Nach dem Merge auf `main` kann
+derselbe logische Key als `shared` gespeichert werden.
+
+Für untrusted-Pull-Request-Caches ist pro PR, Cache-Name, Plattform und Version
+maximal ein Cache erlaubt. Mit `strict: true` führt ein zweiter Inhalt zu einem
+Fehler. Mit `strict: false` wird der alte untrusted-Verweis atomar durch den
+neuen ersetzt; das alte Asset wird nur gelöscht, wenn es nicht mehr anderweitig
+referenziert wird. Shared-Caches werden dabei niemals automatisch ersetzt.
 
 ## Optionale Cache-Verschlüsselung
 
@@ -115,7 +125,8 @@ Vertrauensprüfung ausführen.
 Der optionale Namespace `shared/` ist ausschließlich für geprüfte Inhalte aus
 dem konfigurierten Default-Branch vorgesehen. Ein `shared/<owner>/<repository>/`-
 Prefix oder ein vollständiger `shared/...`-Prefix darf in `restore-keys` als
-Fallback verwendet werden. Bei Pull Requests wird ein angeforderter
-Shared-Scope automatisch in einen isolierten `untrusted/.../pr-<nummer>`-
-Namespace umgewandelt. Shared-Caches müssen trotzdem frei von Geheimnissen
-bleiben, weil andere Workflows die gelesenen Daten verarbeiten können.
+Fallback verwendet werden. Bei Pull Requests wird ein Save mit
+`scope: shared` übersprungen. Ein angeforderter Shared-Restore bleibt dagegen
+durch `allow-shared-restore: true` ausdrücklich freischaltbar. Shared-Caches
+müssen trotzdem frei von Geheimnissen bleiben, weil andere Workflows die
+gelesenen Daten verarbeiten können.

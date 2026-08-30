@@ -69,10 +69,15 @@ werden. Der Nutzer-Key kann dadurch ausschließlich aus dem Abhängigkeits-Hash
 bestehen.
 `version` ist numerisch und wird als `v<version>` im vollständigen Key
 gespeichert.
-Wird `scope: shared` in einem Pull Request verwendet, wird er automatisch mit
-einem Hinweis in `untrusted/.../pr-<number>/...` umgewandelt. Dadurch bleibt
-der Pull Request isoliert; auf `main` wird derselbe logische Key wieder als
-Shared-Key erzeugt.
+Wird `scope: shared` in einem Pull Request verwendet, wird der Save-Schritt mit
+einem Hinweis übersprungen. Dadurch bleibt der Pull Request ohne Shared-Save;
+auf `main` kann derselbe logische Key als Shared-Key erzeugt werden.
+
+Für untrusted-Pull-Request-Referenzen gilt pro PR, Cache-Name, Plattform und
+Version ein Ein-Cache-Limit. Bei `strict: true` wird ein weiterer Inhalt
+abgelehnt. Bei `strict: false` ersetzt die Action den bisherigen untrusted-
+Verweis atomar und entfernt das alte Asset nur bei fehlenden weiteren
+Referenzen. Shared-Referenzen werden nicht automatisch ersetzt.
 
 Jede neue Referenz kann zusätzlich `source`, `created_by` und die komprimierte
 Archivgröße `size` enthalten. Der optionale Block `monitoring` zählt
