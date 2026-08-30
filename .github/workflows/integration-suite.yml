@@ -112,7 +112,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
     secrets: inherit
 
   task-save-cache:
@@ -134,7 +134,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
     secrets: inherit
 
   java-save-cache:
@@ -156,7 +156,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
     secrets: inherit
 
   gradle-save-cache:
@@ -178,7 +178,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
     secrets: inherit
 
   docker-save-cache:
@@ -200,7 +200,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
     secrets: inherit
 
   # when an upstream job fails.
