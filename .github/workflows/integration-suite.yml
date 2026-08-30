@@ -11,7 +11,7 @@ concurrency:
   # Keep duplicate integration suites from running in parallel without
   # blocking cleanup, release, or distribution workflows.
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
