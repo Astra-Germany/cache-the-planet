@@ -103,21 +103,100 @@ jobs:
       - name: Verify restored Python runtime
         run: python --version
 
-      - name: Restore uv cache asset
-        id: cache
+      - name: Restore uv cache asset - auto
+        id: cache-auto
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv
+          scope: auto
           key: ${{ needs.hash_pr.outputs.files_hash }}
+          allow-shared-restore: true
+          restore-keys: |
+            linux-x64/
           path: .cache/uv
           strict: true
 
-      - name: Assert exact asset cache hit
+      - name: Assert exact asset cache hit - trusted
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'trusted/') }}
         shell: bash
         run: |
-          test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/${{ github.event.repository.default_branch }}/uv/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/uv/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Assert shared asset cache fallback
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'shared/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "false"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/uv/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Assert exact asset cache hit - untrusted
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'untrusted/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/uv/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Restore uv cache asset - trusted
+        id: cache-trusted
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: uv
+          scope: trusted
+          key: ${{ needs.hash_pr.outputs.files_hash }}
+          restore-keys: |
+            linux-x64/
+          path: .cache/uv
+          strict: false
+
+      - name: Assert exact asset cache hit - trusted
+        if: ${{ steps.cache-trusted.outputs.matched-key != '' && startsWith(steps.cache-trusted.outputs.matched-key, 'trusted/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-trusted.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-trusted.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/uv/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Restore uv cache asset - shared
+        id: cache-shared
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: uv
+          scope: shared
+          key: ${{ needs.hash_pr.outputs.files_hash }}
+          restore-keys: |
+            linux-x64/
+          path: .cache/uv
+          strict: false
+
+      - name: Assert exact asset cache hit - shared
+        if: ${{ steps.cache-shared.outputs.matched-key != '' && startsWith(steps.cache-shared.outputs.matched-key, 'shared/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-shared.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-shared.outputs.matched-key }}" = "shared/${{ github.repository }}/uv/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Restore uv cache asset - untrusted
+        id: cache-untrusted
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: uv
+          scope: untrusted
+          key: ${{ needs.hash_pr.outputs.files_hash }}
+          restore-keys: |
+            linux-x64/
+          path: .cache/uv
+          strict: false
+
+      - name: Assert exact asset cache hit - untrusted
+        if: ${{ steps.cache-untrusted.outputs.matched-key != '' && startsWith(steps.cache-untrusted.outputs.matched-key, 'untrusted/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-untrusted.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-untrusted.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/uv/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
           test -d .cache/uv
 
       - name: Verify uv can use restored cache
