@@ -4,7 +4,9 @@ on:
 
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
-  FILES_TO_HASH: examples/docker-cache/Dockerfile,examples/docker-cache/hello.txt
+  FILES_TO_HASH: |
+    examples/docker-cache/Dockerfile
+    examples/docker-cache/hello.txt
 
 permissions:
   contents: read
