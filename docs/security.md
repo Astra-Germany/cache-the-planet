@@ -41,6 +41,19 @@ Ein Beispiel befindet sich in
 `.cache-the-planet.json.example`. Die Konfigurationsdatei darf nicht außerhalb
 des Workspace liegen.
 
+Gegen Key-Flooding begrenzt die Action standardmäßig jeden logischen Key auf
+512 Zeichen und 16 Pfadkomponenten. `cache-name` darf optional über
+`security.allowed_cache_names` beziehungsweise `CACHE_ALLOWED_CACHE_NAMES`
+auf bekannte Cache-Namen beschränkt werden. Die Environment-Variable verwendet
+eine kommagetrennte Liste:
+
+```yaml
+env:
+  CACHE_MAX_LOGICAL_KEY_LENGTH: 512
+  CACHE_MAX_LOGICAL_KEY_COMPONENTS: 16
+  CACHE_ALLOWED_CACHE_NAMES: npm,uv,gradle-java17,docker
+```
+
 ## Cache-Scope
 
 Der `scope`-Input steuert die automatische Namespace-Auswahl:

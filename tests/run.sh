@@ -182,6 +182,12 @@ try {
   try { scopedKey('Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
   if (!invalidKeyRejected) throw new Error('invalid cache-name was accepted');
   process.env['INPUT_CACHE-NAME'] = 'npm';
+  invalidKeyRejected = false;
+  try { scopedKey('a'.repeat(513)); } catch { invalidKeyRejected = true; }
+  if (!invalidKeyRejected) throw new Error('oversized logical cache key was accepted');
+  invalidKeyRejected = false;
+  try { scopedKey('valid/../unsafe'); } catch { invalidKeyRejected = true; }
+  if (!invalidKeyRejected) throw new Error('unsafe logical cache key was accepted');
   process.env.RUNNER_OS = 'Linux';
   process.env.RUNNER_ARCH = 'X64';
   process.env['INPUT_OS'] = 'linux';

@@ -12,6 +12,8 @@ const maxArchiveEntries = Number(process.env.CACHE_MAX_ENTRIES || 200000);
 const maxArchivePathLength = 4096;
 const defaultManifestReferenceLimit = 100000;
 const defaultManifestWritesPerHour = 1000;
+const defaultLogicalKeyLength = 512;
+const defaultLogicalKeyComponents = 16;
 
 function input(name, defaultValue = '') {
   const variable = `INPUT_${name.replace(/ /g, '_').toUpperCase()}`;
@@ -57,15 +59,28 @@ function configuration() {
   return configurationCache;
 }
 
-function configuredLimit(environmentName, configName, fallback) {
+function configuredLimit(environmentName, configName, fallback, section = 'monitoring') {
   const environmentValue = process.env[environmentName];
-  const configValue = configuration().monitoring?.[configName];
+  const configValue = configuration()[section]?.[configName];
   const value = environmentValue ?? configValue ?? fallback;
   const limit = Number(value);
   if (!Number.isInteger(limit) || limit < 1) {
     throw new Error(`${environmentName} must be a positive integer`);
   }
   return limit;
+}
+
+function configuredCacheNames() {
+  const environmentValue = process.env.CACHE_ALLOWED_CACHE_NAMES;
+  const configValue = configuration().security?.allowed_cache_names;
+  const names = environmentValue
+    ? environmentValue.split(',').map((value) => value.trim()).filter(Boolean)
+    : configValue;
+  if (names === undefined) return null;
+  if (!Array.isArray(names) || names.length === 0 || names.some((value) => !/^[a-z][a-z0-9-]{0,31}$/.test(value))) {
+    throw new Error('allowed_cache_names must be a non-empty list of valid cache names');
+  }
+  return names;
 }
 
 async function githubClient() {
@@ -116,6 +131,10 @@ function cacheName() {
   if (!/^[a-z][a-z0-9-]{0,31}$/.test(value)) {
     throw new Error('cache-name is required and must contain only lowercase letters, numbers, or hyphens');
   }
+  const allowed = configuredCacheNames();
+  if (allowed && !allowed.includes(value)) {
+    throw new Error(`cache-name is not allowed by the configured cache-name allowlist: ${value}`);
+  }
   return value;
 }
 
@@ -143,18 +162,39 @@ function runnerPlatform() {
 }
 
 function logicalCacheKey(value, name, includeVersion = true) {
-  const key = value.startsWith(`${name}/`) ? value : `${name}/${value}`;
+  const maxLength = configuredLimit(
+    'CACHE_MAX_LOGICAL_KEY_LENGTH', 'max_logical_key_length', defaultLogicalKeyLength, 'security',
+  );
+  const maxComponents = configuredLimit(
+    'CACHE_MAX_LOGICAL_KEY_COMPONENTS', 'max_logical_key_components', defaultLogicalKeyComponents, 'security',
+  );
+  const raw = String(value).trim();
+  if (!raw || raw.length > maxLength) {
+    throw new Error(`cache key must be between 1 and ${maxLength} characters`);
+  }
+  const rawParts = raw.replace(/\/$/, '').split('/');
+  if (rawParts.length > maxComponents || rawParts.some((part) => !/^[A-Za-z0-9._-]+$/.test(part) || part === '.' || part === '..')) {
+    throw new Error('cache key contains invalid or too many path components');
+  }
+  const key = raw.startsWith(`${name}/`) ? raw : `${name}/${raw}`;
   const platform = runnerPlatform();
   const withoutName = key.slice(name.length + 1);
   const firstPart = withoutName.split('/')[0];
   const hasPlatform = firstPart.toLowerCase() === platform.toLowerCase()
     || (/^[A-Za-z0-9._-]+-[A-Za-z0-9._-]+$/.test(firstPart) && withoutName.split('/').length > 1);
   const withPlatform = hasPlatform ? key : `${name}/${platform}/${withoutName}`;
+  if (withPlatform.length > maxLength) {
+    throw new Error(`cache key must not exceed ${maxLength} characters`);
+  }
   if (!includeVersion) return withPlatform;
   const version = input('version', '1').trim() || '1';
   if (!/^\d+$/.test(version)) throw new Error('version must contain numbers only');
-  return /\/v[A-Za-z0-9._-]+$/.test(withPlatform)
+  const complete = /\/v[A-Za-z0-9._-]+$/.test(withPlatform)
     ? withPlatform : `${withPlatform}/v${version}`;
+  if (complete.length > maxLength) {
+    throw new Error(`cache key must not exceed ${maxLength} characters`);
+  }
+  return complete;
 }
 
 function isPullRequestEvent() {

@@ -86,6 +86,10 @@ fehlendes Objekt, ein ungültiger Hash, eine fehlende Referenz oder ein
 beschädigtes Archiv gilt als Cache-Miss. Bei `strict: true` wird stattdessen
 der Fehler an den Workflow weitergegeben.
 
+Logische Keys werden vor der Namespace-Erzeugung auf Länge, Anzahl und sichere
+Pfadkomponenten geprüft. Dadurch können Workflows nicht beliebig viele
+syntaktisch unterschiedliche oder pfadähnliche Keys erzeugen.
+
 Beim Restore wird zuerst der Hash des heruntergeladenen Assets geprüft. Danach
 wird das Archiv bei Bedarf entschlüsselt, dekomprimiert, auf Pfadüberquerungen,
 Links und spezielle Dateitypen geprüft und erst anschließend in den Workspace
