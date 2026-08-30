@@ -513,7 +513,7 @@ dekomprimiert.
 
 | Output | Beschreibung |
 |---|---|
-| `cache-hit` | `true`, wenn der exakte Key restauriert wurde |
+| `cache-hit` | `true`, wenn ein zulässiger Treffer für denselben logischen Cache restauriert wurde; ein Shared-Treffer zählt auch für Trusted-/Untrusted-Scopes |
 | `matched-key` | Tatsächlich verwendeter Key |
 | `content-hash` | SHA-256 der tatsächlich gespeicherten Objektdatei, einschließlich einer möglichen Verschlüsselung |
 | `asset-name` | Lesbarer physischer Release-Asset-Name mit enthaltenem Content-Hash |

@@ -349,6 +349,9 @@ function assertTrustedRestoreAllowed(keys) {
   if (isPullRequest && keys.some((key) => key.startsWith('trusted/'))) {
     throw new Error('pull requests may not restore trusted cache keys');
   }
+  if (!isPullRequest && keys.some((key) => key.startsWith('untrusted/'))) {
+    throw new Error('default-branch workflows may not restore untrusted cache keys');
+  }
   if (isPullRequest && keys.some((key) => key.startsWith('shared/'))
     && String(input('allow-shared-restore')).toLowerCase() !== 'true') {
     throw new Error('shared cache restore requires allow-shared-restore=true');
