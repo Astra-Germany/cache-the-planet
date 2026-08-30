@@ -67,14 +67,14 @@ function setOutput(name, value) {
       const parts = value.split('/');
       if (parts[0] === 'shared') return parts.slice(3).join('/');
       if (parts[0] === 'trusted') return parts.slice(4).join('/');
-      if (parts[0] === 'untrusted') return parts.slice(5).join('/');
+      // untrusted/<owner>/<repo>/pr-<number>/<cache-name>/...
+      // The logical cache identity starts at <cache-name> (index 4).
+      if (parts[0] === 'untrusted') return parts.slice(4).join('/');
       return value;
     };
     const cacheHit = found[0] === key
       || (found[0].startsWith('shared/') && cacheIdentity(found[0]) === cacheIdentity(key));
     
-    console.log(`Cache ${found[0]}: ${cacheIdentity(found[0])}: ${cacheIdentity(key)}: ${key}`);
-
     setOutput('cache-hit', cacheHit);
     setOutput('matched-key', found[0]);
     setOutput('content-hash', found[1].object);
