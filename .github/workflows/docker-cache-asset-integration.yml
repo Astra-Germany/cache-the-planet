@@ -46,6 +46,7 @@ jobs:
           file: examples/docker-cache/Dockerfile
           tags: cache-the-planet-example:test
           push: false
+          outputs: type=cacheonly
           cache-from: type=local,src=examples/docker-cache/.cache/docker-buildx
           cache-to: type=local,dest=examples/docker-cache/.cache/docker-buildx-new,mode=max
 
@@ -197,4 +198,5 @@ jobs:
           file: examples/docker-cache/Dockerfile
           tags: cache-the-planet-example:restored
           push: false
+          outputs: type=cacheonly
           cache-from: type=local,src=examples/docker-cache/.cache/docker-buildx
