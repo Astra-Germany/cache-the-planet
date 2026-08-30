@@ -4,13 +4,30 @@ on:
 
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
+  FILES_TO_HASH: |
+    examples/java-cache/pom.xml
 
 permissions:
   contents: read
 
 jobs:
+  hash_pr:
+    name: Hash Maven files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      files_hash: ${{ steps.hash.outputs.files_hash }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Hash Maven files
+        id: hash
+        run: |
+          HASH="${{ hashFiles(env.FILES_TO_HASH) }}"
+          echo "files_hash=$HASH" >> "$GITHUB_OUTPUT"
   save-cache:
     name: Build and save Maven cache asset
+    needs: hash_pr
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -30,7 +47,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: maven-java17
-          key: ${{ hashFiles('examples/java-cache/pom.xml') }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/m2
           strict: false
 
@@ -38,17 +55,20 @@ jobs:
         run: mvn -B -Dmaven.repo.local="$PWD/.cache/m2" package --file examples/java-cache/pom.xml
 
       - name: Save Maven cache asset
+        if: success()
         uses: ./save
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: maven-java17
-          key: ${{ hashFiles('examples/java-cache/pom.xml') }}
+          scope: shared
+          token: ${{ github.token }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/m2
-          strict: true
+          strict: false
 
   restore-cache:
     name: Restore Maven cache asset in a fresh job
-    needs: save-cache
+    needs: [save-cache, hash_pr]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -63,21 +83,100 @@ jobs:
           java-version: "17"
           cache-jdk: false
 
-      - name: Restore Maven cache asset
-        id: cache
+      - name: Restore Maven cache asset - auto
+        id: cache-auto
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: maven-java17
-          key: ${{ hashFiles('examples/java-cache/pom.xml') }}
+          scope: auto
+          key: ${{ needs.hash_pr.outputs.files_hash }}
+          allow-shared-restore: true
+          restore-keys: |
+            linux-x64/
           path: .cache/m2
           strict: true
 
-      - name: Assert exact asset cache hit
+      - name: Assert exact asset cache hit - trusted
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'trusted/') }}
         shell: bash
         run: |
-          test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/maven-java17/linux-x64/${{ hashFiles('examples/java-cache/pom.xml') }}/v1"
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/maven-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Assert shared asset cache fallback
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'shared/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "false"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/maven-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Assert exact asset cache hit - untrusted
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'untrusted/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/maven-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Restore Maven cache asset - trusted
+        id: cache-trusted
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: maven-java17
+          scope: trusted
+          key: ${{ needs.hash_pr.outputs.files_hash }}
+          restore-keys: |
+            linux-x64/
+          path: .cache/m2
+          strict: false
+
+      - name: Assert exact asset cache hit - trusted
+        if: ${{ steps.cache-trusted.outputs.matched-key != '' && startsWith(steps.cache-trusted.outputs.matched-key, 'trusted/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-trusted.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-trusted.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/maven-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Restore Maven cache asset - shared
+        id: cache-shared
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: maven-java17
+          scope: shared
+          key: ${{ needs.hash_pr.outputs.files_hash }}
+          restore-keys: |
+            linux-x64/
+          path: .cache/m2
+          strict: false
+
+      - name: Assert exact asset cache hit - shared
+        if: ${{ steps.cache-shared.outputs.matched-key != '' && startsWith(steps.cache-shared.outputs.matched-key, 'shared/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-shared.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-shared.outputs.matched-key }}" = "shared/${{ github.repository }}/maven-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Restore Maven cache asset - untrusted
+        id: cache-untrusted
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: maven-java17
+          scope: untrusted
+          key: ${{ needs.hash_pr.outputs.files_hash }}
+          restore-keys: |
+            linux-x64/
+          path: .cache/m2
+          strict: false
+
+      - name: Assert exact asset cache hit - untrusted
+        if: ${{ steps.cache-untrusted.outputs.matched-key != '' && startsWith(steps.cache-untrusted.outputs.matched-key, 'untrusted/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-untrusted.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-untrusted.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/maven-java17/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
 
       - name: Build offline with restored Maven cache
         run: mvn -B -o -Dmaven.repo.local="$PWD/.cache/m2" package --file examples/java-cache/pom.xml

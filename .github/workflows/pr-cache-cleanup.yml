@@ -31,4 +31,4 @@ jobs:
           CACHE_REPOSITORY: Astra-Germany/cache-the-planet
           PR_REPOSITORY: ${{ github.event.repository.full_name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
