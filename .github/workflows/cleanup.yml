@@ -15,7 +15,7 @@ on:
         description: SHA-256 hash or asset filename when mode is object
         required: false
         type: string
-      dry-run:
+      dry_run:
         { description: Dry run, required: false, default: true, type: boolean }
   schedule: [{ cron: "0 3 * * *" }]
 jobs:
@@ -35,4 +35,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GC_MODE: ${{ inputs.mode || 'orphan' }}
           GC_OBJECT: ${{ inputs.object || '' }}
-          DRY_RUN: ${{ github.event_name == 'schedule' && 'true' || (inputs.dry-run && 'true' || 'false') }}
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'true' || (inputs.dry_run && 'true' || 'false') }}
