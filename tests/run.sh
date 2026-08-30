@@ -200,29 +200,10 @@ try {
     || !`${sharedSaveCheck.stdout}\n${sharedSaveCheck.stderr}`.includes('shared cache keys may only be saved')) {
     throw new Error('shared cache was allowed outside the default branch');
   }
-  const sharedPullRequestSaveCheck = cp.spawnSync(process.execPath, ['./src/save.js'], {
-    env: {
-      ...process.env,
-      INPUT_REPOSITORY: 'example/project',
-      'INPUT_CACHE-NAME': 'npm',
-      INPUT_SCOPE: 'shared',
-      INPUT_KEY: 'Linux-X64/hash/v1',
-      INPUT_PATH: root,
-      INPUT_TOKEN: 'test-token',
-      INPUT_STRICT: 'true',
-      'INPUT_ALLOW-PR-CACHE': 'true',
-      GITHUB_EVENT_NAME: 'pull_request',
-      GITHUB_REF: 'refs/pull/7/merge',
-      GITHUB_REPOSITORY: 'example/project',
-      GITHUB_DEFAULT_BRANCH: 'main',
-      GITHUB_EVENT_PATH: eventFile,
-    },
-    encoding: 'utf8',
-  });
-  if (sharedPullRequestSaveCheck.status !== 0
-    || !`${sharedPullRequestSaveCheck.stdout}\n${sharedPullRequestSaveCheck.stderr}`
-      .includes('shared cache save skipped in pull request')) {
-    throw new Error('shared cache save was not skipped for pull requests');
+  process.env.INPUT_SCOPE = 'shared';
+  if (scopedKey('Linux-X64/hash/v1')
+    !== 'untrusted/example/project/pr-7/npm/linux-x64/hash/v1') {
+    throw new Error('shared scope was not mapped to the isolated PR cache');
   }
   if (scopedRestorePrefix('shared/example/project/npm/Linux-X64/hash/v1/')
     !== 'shared/example/project/npm/Linux-X64/hash/v1/') {

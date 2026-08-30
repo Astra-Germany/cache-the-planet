@@ -7,10 +7,6 @@ const c = require('./common');
     const key = c.scopedKey(c.input('key'));
     const isPullRequest = process.env.GITHUB_REF?.includes('/pull/');
     const requestedScope = c.input('scope', 'auto').trim().toLowerCase();
-    if (isPullRequest && requestedScope === 'shared') {
-      c.log('shared cache save skipped in pull request; shared caches may only be created from the default branch');
-      return;
-    }
     if (isPullRequest && String(c.input('allow-pr-cache')).toLowerCase() !== 'true') {
       c.log('untrusted pull request: save skipped');
       return;
