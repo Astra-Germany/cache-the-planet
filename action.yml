@@ -25,7 +25,7 @@ inputs:
     default: "__runner__"
   version:
     description: "Numeric cache format version, for example 1 or 2"
-    required: true
+    required: false
     default: "1"
   restore-keys:
     description: "Newline separated fallback prefixes"
@@ -34,33 +34,21 @@ inputs:
   path:
     description: "Newline separated files or directories to cache"
     required: true
-  compression-level:
-    description: "zstd compression level"
-    required: false
-    default: "3"
   token:
-    description: "GitHub token or App installation token"
+    description: "GitHub token; defaults to GITHUB_TOKEN"
     required: false
   encryption-key:
     description: "Optional AES-256 encryption key or passphrase for cache contents"
     required: false
     default: ""
-  exclude:
-    description: "Newline separated gitignore-style exclusions"
-    required: false
-    default: ""
   strict:
-    description: "Fail on cache errors"
+    description: "Fail the step on cache errors"
     required: false
     default: "false"
   config-file:
     description: "Optional JSON configuration file; environment variables override its values"
     required: false
     default: ""
-  allow-pr-cache:
-    description: "Allow saving an isolated untrusted cache for a pull request"
-    required: false
-    default: "true"
   allow-shared-restore:
     description: "Allow pull requests to restore explicitly selected shared caches"
     required: false

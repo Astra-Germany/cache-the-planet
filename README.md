@@ -479,23 +479,37 @@ und wird nicht um `/v1` erweitert.
 | `key` | ja | Logischer Key ohne automatisch ergänzten Namespace |
 | `restore-keys` | nein | Mehrere Prefixe, jeweils eine Zeile |
 | `path` | ja | Eine oder mehrere Dateien/Verzeichnisse, jeweils eine Zeile |
-| `compression-level` | nein | zstd-Level, Standard `3` |
+| `encryption-key` | nein | Schlüssel oder Passphrase zum Entschlüsseln verschlüsselter Assets |
 | `token` | nein | Token; alternativ `GITHUB_TOKEN` |
 | `strict` | nein | `true` bricht bei Cache-Fehlern ab, Standard `false` |
 | `config-file` | nein | Optionale JSON-Konfiguration; Umgebungsvariablen haben Vorrang |
+| `allow-shared-restore` | nein | Erlaubt PRs ausdrücklich Shared-Restores; Standard `false` |
 
 ### Save-Inputs
 
-Zusätzlich zu `repository`, `cache-name`, `key`, `path`, `compression-level`,
-`token` und `strict` stehen folgende Inputs zur Verfügung:
+| Input | Pflicht | Beschreibung |
+|---|---:|---|
+| `repository` | ja | Cache-Repository im Format `owner/name` |
+| `cache-name` | ja | Cache-Kategorie, zum Beispiel `npm`, `uv` oder `gradle` |
+| `scope` | nein | `auto`, `shared`, `trusted` oder `untrusted`; Standard: `auto` |
+| `os` | nein | Betriebssystemteil; Standard: `RUNNER_OS`, leer ergibt `unknown` |
+| `arch` | nein | Architekturteil; Standard: `RUNNER_ARCH`, leer ergibt `unknown` |
+| `version` | nein | Numerische Cache-Version; Standard: `1` |
+| `key` | ja | Logischer Key ohne automatisch ergänzten Namespace |
+| `path` | ja | Eine oder mehrere Dateien/Verzeichnisse, jeweils eine Zeile |
+| `compression-level` | nein | zstd-Kompressionsstufe; Standard: `3` |
+| `token` | nein | Token; alternativ `GITHUB_TOKEN` |
+| `encryption-key` | nein | Optionaler AES-256-Schlüssel oder eine Passphrase |
+| `exclude` | nein | Ausschlussmuster, jeweils eine Zeile; zum Beispiel `**/.env` |
+| `strict` | nein | `true` bricht bei Cache-Fehlern ab, Standard `false` |
+| `config-file` | nein | Optionale JSON-Konfiguration; Umgebungsvariablen haben Vorrang |
+| `allow-pr-cache` | nein | Erlaubt das Speichern eines isolierten PR-Caches; Standard `true` |
 
-| Input | Beschreibung |
-|---|---|
-| `exclude` | Ausschlussmuster, jeweils eine Zeile; zum Beispiel `**/.env` |
-| `encryption-key` | Optionaler AES-256-Schlüssel oder eine Passphrase |
-| `allow-pr-cache` | Erlaubt das Speichern eines isolierten PR-Caches; Standard `true` |
+`compression-level` wird ausschließlich von `save` verwendet. Beim Restore wird
+das vorhandene Archiv automatisch mit seinem gespeicherten Kompressionsformat
+dekomprimiert.
 
-### Outputs
+### Restore-Outputs
 
 | Output | Beschreibung |
 |---|---|
@@ -503,6 +517,14 @@ Zusätzlich zu `repository`, `cache-name`, `key`, `path`, `compression-level`,
 | `matched-key` | Tatsächlich verwendeter Key |
 | `content-hash` | SHA-256 der tatsächlich gespeicherten Objektdatei, einschließlich einer möglichen Verschlüsselung |
 | `asset-name` | Lesbarer physischer Release-Asset-Name mit enthaltenem Content-Hash |
+| `cache-size` | Größe des komprimierten Archivs in Bytes |
+
+### Save-Outputs
+
+| Output | Beschreibung |
+|---|---|
+| `content-hash` | SHA-256 des gespeicherten Objekts |
+| `asset-name` | Name des Release-Assets |
 | `cache-size` | Größe des komprimierten Archivs in Bytes |
 
 Beispiel:
