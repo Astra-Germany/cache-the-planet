@@ -94,17 +94,31 @@ jobs:
       contents: write
     secrets: inherit
 
-  gradle:
+  gradle-save-cache:
+    name: Save Gradle cache asset
     needs: [build-dist, java]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/gradle-cache-asset-integration.yml
+    with:
+      save-cache: true
+    permissions:
+      contents: write
+    secrets: inherit
+
+  gradle-restore-cache:
+    name: Restore Gradle cache asset
+    needs: [gradle-save-cache]
+    if: always() && (needs.gradle-save-cache.result == 'success')
+    uses: ./.github/workflows/gradle-cache-asset-integration.yml
+    with:
+      restore-cache: true
     permissions:
       contents: write
     secrets: inherit
 
   docker-save-cache:
     name: Save Docker cache asset
-    needs: [build-dist, gradle]
+    needs: [build-dist, gradle-restore-cache]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/docker-cache-asset-integration.yml
     with:
@@ -115,7 +129,7 @@ jobs:
 
   docker-restore-cache:
     name: Restore Docker cache asset
-    needs: [build-dist, docker-save-cache]
+    needs: [docker-save-cache]
     if: always() && (needs.docker-save-cache.result == 'success')
     uses: ./.github/workflows/docker-cache-asset-integration.yml
     with:
@@ -128,7 +142,7 @@ jobs:
   all-checks-passed:
     name: All checks passed
     if: always()
-    needs: [build-dist, node, uv, uv-python, task, java, gradle, docker-save-cache, docker-restore-cache]
+    needs: [build-dist, node, uv, uv-python, task, java, gradle-save-cache, gradle-restore-cache, docker-save-cache, docker-restore-cache]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -139,12 +153,22 @@ jobs:
 
       - name: Verify every required job passed (or was legitimately skipped)
         env:
-          JOBS: build-dist,node,uv,uv-python,task,java,gradle,docker-save-cache,docker-restore-cache
+          JOB_RESULTS: >-
+            build-dist=${{ needs.build-dist.result }}
+            node=${{ needs.node.result }}
+            uv=${{ needs.uv.result }}
+            uv-python=${{ needs.uv-python.result }}
+            task=${{ needs.task.result }}
+            java=${{ needs.java.result }}
+            gradle-save-cache=${{ needs.gradle-save-cache.result }}
+            gradle-restore-cache=${{ needs.gradle-restore-cache.result }}
+            docker-save-cache=${{ needs.docker-save-cache.result }}
+            docker-restore-cache=${{ needs.docker-restore-cache.result }}
         shell: bash
         run: |
-          for job in $(echo $JOBS | tr "," "\n"); do
-            result="${{ needs[job].result }}"
+          while IFS='=' read -r job result; do
             if [[ "$result" != "success" && "$result" != "skipped" ]]; then
               echo "Job $job did not pass (result: $result)"
               exit 1
             fi
+          done < <(printf '%s\n' "$JOB_RESULTS" | tr ' ' '\n')
