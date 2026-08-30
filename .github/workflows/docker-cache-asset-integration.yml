@@ -29,6 +29,7 @@ jobs:
           echo "dockerfile-hash=$HASH" >> $GITHUB_OUTPUT
   save-cache:
     name: Build and save Docker cache asset
+    needs: hash-pr
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -51,7 +52,7 @@ jobs:
         run: |
           echo "Dockerfile and context hash: ${{ steps.hash.outputs.dockerfile-hash }}"
           echo "Dockerfile and context files hash: ${{ steps.hash.outputs.dockerfile-files-hash }}"
-          echo "Dockerfile and context files hash (from env): ${{ hash-pr.outputs.dockerfile-hash }}"
+          echo "Dockerfile and context files hash (from env): ${{ needs.hash-pr.outputs.dockerfile-hash }}"
 
       - name: Restore Docker cache
         uses: ./
