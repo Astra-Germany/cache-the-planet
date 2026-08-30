@@ -55,6 +55,7 @@ jobs:
         run: mvn -B -Dmaven.repo.local="$PWD/.cache/m2" package --file examples/java-cache/pom.xml
 
       - name: Save Maven cache asset
+        if: success()
         uses: ./save
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
