@@ -3,17 +3,20 @@ run-name: Test - ${{ github.event_name }}${{ github.event_name == 'workflow_run'
 on:
   push:
     paths-ignore:
-      - '.github/**'
-      - 'docs/**'
-      - 'save/**'
-      - 'scripts/**'
-      - 'src/**'
-      - '.gitignore'
-      - '.release-please-manifest.json'
+      - ".github/**"
+      - "docs/**"
+      - "save/**"
+      - "scripts/**"
+      - "src/**"
+      - ".gitignore"
+      - ".release-please-manifest.json"
   workflow_run:
     workflows:
       - Cache integration suite
     types: [completed]
+
+env:
+  CACHE_REPOSITORY: Astra-Germany/cache-the-planet
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref_name || github.ref }}
@@ -31,10 +34,34 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event_name == 'workflow_run' && 'main' || github.ref }}
+
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           package-manager-cache: false
-      - run: npm install
+
+      - name: Restore cache
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: npm
+          scope: shared
+          key: ${{ hashFiles('package-lock.json') }}
+          path: .cache/npm
+
+      - run: npm ci
+
       - run: npm run test
+
       - run: bash tests/run.sh
+
+      - name: Save cache
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: ./save
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: npm
+          scope: shared
+          key: ${{ hashFiles('package-lock.json') }}
+          path: .cache/npm
