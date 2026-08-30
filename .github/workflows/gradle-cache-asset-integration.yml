@@ -95,7 +95,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ github.token }}
           scope: auto
           key: ${{ needs.hash_pr.outputs.files_hash }}
           allow-shared-restore: true
@@ -132,7 +131,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ github.token }}
           scope: auto
           key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |
@@ -144,7 +142,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ github.token }}
           scope: trusted
           key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |
@@ -165,7 +162,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ github.token }}
           scope: shared
           key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |
@@ -186,7 +182,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ github.token }}
           scope: untrusted
           key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |

@@ -95,7 +95,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
-          # token: ${{ github.token }}
           scope: auto
           key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |
@@ -126,7 +125,6 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
-          # token: ${{ github.token }}
           scope: auto
           key: ${{ needs.hash_pr.outputs.files_hash }}
           restore-keys: |

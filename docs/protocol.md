@@ -70,8 +70,14 @@ bestehen.
 `version` ist numerisch und wird als `v<version>` im vollständigen Key
 gespeichert.
 Wird `scope: shared` in einem Pull Request verwendet, wird der Save-Schritt mit
-einem Hinweis übersprungen. Dadurch bleibt der Pull Request ohne Shared-Save;
-auf `main` kann derselbe logische Key als Shared-Key erzeugt werden.
+einem Hinweis in den isolierten `untrusted/pr-<number>/...`-Namespace abgebildet.
+Der Shared-Key bleibt unverändert; auf `main` kann derselbe logische Key als
+Shared-Key erzeugt werden.
+
+Der geplante Cleanup-Lauf entfernt Untrusted-Referenzen nach 24 Stunden. Ein
+manueller `expired`-Lauf kann alle Untrusted-Referenzen sofort entfernen.
+Shared-Referenzen werden nur bei einem manuellen Lauf mit dem Schalter
+`delete_shared` einbezogen.
 
 Für untrusted-Pull-Request-Referenzen gilt pro PR, Cache-Name, Plattform und
 Version ein Ein-Cache-Limit. Bei `strict: true` wird ein weiterer Inhalt

@@ -30,3 +30,8 @@ Fehlt das referenzierte Asset, wird die Referenz als verwaist erkannt. Beim
 nächsten Speichern wird das Objekt neu erstellt und die Referenz aktualisiert.
 Unbekannte JSON-Felder müssen von Clients ignoriert werden, damit das Schema
 später erweitert werden kann.
+
+Untrusted-Referenzen werden im geplanten Cleanup nach 24 Stunden entfernt.
+Ein manueller Cleanup mit `mode: expired` entfernt alle Untrusted-PR-
+Referenzen. Shared-Referenzen werden nur mit `delete_shared: true` in einem
+manuellen Lauf berücksichtigt.

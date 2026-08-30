@@ -47,8 +47,12 @@ werden.
 ## Aufräumen und Erweiterbarkeit
 
 Die Garbage-Collection entfernt nicht mehr referenzierte oder ausreichend alte
-Assets. Verwaiste Manifest-Referenzen werden beim Speichern erkannt und neu
-aufgebaut.
+Assets. Untrusted-PR-Referenzen laufen im geplanten Lauf nach 24 Stunden ab.
+Ein manueller `expired`-Lauf kann alle Untrusted-Referenzen löschen; Shared-
+Referenzen werden nur mit der ausdrücklichen manuellen Option `delete_shared`
+einbezogen. Ein Objekt bleibt erhalten, solange noch eine Trusted- oder
+Shared-Referenz darauf zeigt. Verwaiste Manifest-Referenzen werden beim
+Speichern erkannt und neu aufgebaut.
 
 Ein einzelnes Manifest ist für tausende Keys praktikabel. Sollte es später zu
 groß werden, kann ein zukünftiges Protokoll die Referenzen auf mehrere Dateien

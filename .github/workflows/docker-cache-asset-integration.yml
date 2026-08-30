@@ -126,7 +126,6 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           scope: auto
-          token: ${{ github.token }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
           version: 2
           allow-shared-restore: true
@@ -163,7 +162,6 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           scope: trusted
-          token: ${{ github.token }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
           version: 2
           restore-keys: |
@@ -185,7 +183,6 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           scope: shared
-          token: ${{ github.token }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
           version: 2
           restore-keys: |
@@ -207,7 +204,6 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           scope: untrusted
-          token: ${{ github.token }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
           version: 2
           restore-keys: |
