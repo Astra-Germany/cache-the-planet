@@ -126,8 +126,15 @@
       "updated_at": "2026-08-29T18:58:38.222Z"
     },
     "trusted/Astra-Germany/cache-the-planet/main/npm/linux-x64/a5c449def6e52ab2f87bb3f569202599094927cb45ea0b4c8fd8038271d77cfe/v1": {
-      "object": "sha256:da1e0469d6855fce442074876fee2ffeb7835d354be3feb082119baba3fbe952",
-      "updated_at": "2026-08-29T23:13:29.195Z"
+      "object": "sha256:6f811461ab1a3f9285e64d9e9c4909c09736238d2d5df5c46a2a6b4824a2876b",
+      "updated_at": "2026-08-30T00:38:58.735Z",
+      "source": "Astra-Germany/cache-the-planet",
+      "created_by": "Ludy87",
+      "size": 7002305
     }
+  },
+  "monitoring": {
+    "window_started_at": "2026-08-30T00:38:58.735Z",
+    "writes": 1
   }
 }
