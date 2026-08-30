@@ -79,7 +79,7 @@ jobs:
   restore-cache:
     if: ${{ inputs.restore-cache }}
     name: Restore Maven cache asset in a fresh job
-    needs: [save-cache, hash_pr]
+    needs: [hash_pr]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
