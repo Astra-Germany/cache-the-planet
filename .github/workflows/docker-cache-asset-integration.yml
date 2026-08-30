@@ -25,10 +25,14 @@ jobs:
       - name: hash Dockerfile and context
         id: hash
         run: |
-          echo "dockerfile-files-hash=${{ hashFiles(env.FILES_TO_HASH) }}" >> "$GITHUB_OUTPUT"
+          HASH="${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}"
+          echo "dockerfile-hash=$HASH" >> $GITHUB_OUTPUT
+          HASHA="${{ hashFiles(env.FILES_TO_HASH) }}"
+          echo "dockerfile-files-hash=$HASHA" >> "$GITHUB_OUTPUT"
 
       - name: echo Dockerfile and context hash
         run: |
+          echo "Dockerfile and context hash: ${{ steps.hash.outputs.dockerfile-hash }}"
           echo "Dockerfile and context files hash: ${{ steps.hash.outputs.dockerfile-files-hash }}"
 
       - name: Restore Docker cache
