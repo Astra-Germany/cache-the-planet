@@ -278,6 +278,15 @@ function scopeCounterpartKey(key) {
   return null;
 }
 
+function pullRequestCacheCombination(key) {
+  if (!key.startsWith('untrusted/')) return null;
+  const parts = key.split('/');
+  if (parts.length < 8 || !/^pr-[1-9]\d*$/.test(parts[3]) || !/^v\d+$/.test(parts[parts.length - 1])) {
+    return null;
+  }
+  return `${parts.slice(0, 6).join('/')}/${parts[parts.length - 1]}`;
+}
+
 function scopedRestorePrefix(prefix) {
   const value = prefix.trim();
   if (!value) return value;
@@ -825,7 +834,7 @@ function extract(file) {
 
 module.exports = {
   input, hasInput, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName, cacheScope, runnerPlatform,
-  scopedKey, scopeCounterpartKey, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed,
+  scopedKey, scopeCounterpartKey, pullRequestCacheCombination, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed,
   log, fail, gh,
   upload, entries, refName,
   securityScan, makeArchive, inspectTar, digest, assetName, hashFromAssetName,

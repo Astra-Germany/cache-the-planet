@@ -59,6 +59,19 @@ const c = require('./common');
       }
     }
 
+    if (untrustedKey) {
+      const combination = c.pullRequestCacheCombination(key);
+      const conflictingKey = combination && Object.keys(current.json.references).find((referenceKey) => (
+        referenceKey !== key
+        && c.pullRequestCacheCombination(referenceKey) === combination
+      ));
+      if (conflictingKey) {
+        throw new Error(
+          `pull request cache limit reached: only one cache is allowed for ${combination}; existing key=${conflictingKey}`,
+        );
+      }
+    }
+
     const relatedKey = c.scopeCounterpartKey(key);
     const relatedReference = relatedKey && current.json.references[relatedKey];
     if (relatedReference?.object) {
