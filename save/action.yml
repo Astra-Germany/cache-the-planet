@@ -34,7 +34,7 @@ inputs:
     required: false
     default: "3"
   token:
-    description: "GitHub token or App installation token"
+    description: "GitHub token; defaults to GITHUB_TOKEN"
     required: false
   encryption-key:
     description: "Optional AES-256 encryption key or passphrase for cache contents"
@@ -45,7 +45,7 @@ inputs:
     required: false
     default: ""
   strict:
-    description: "Fail on cache errors"
+    description: "Fail the step on cache errors"
     required: false
     default: "false"
   config-file:
