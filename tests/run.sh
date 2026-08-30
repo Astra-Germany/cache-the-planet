@@ -222,7 +222,7 @@ try {
   }));
   process.env.INPUT_SCOPE = 'shared';
   if (scopedKey('Linux-X64/hash/v1')
-    !== 'untrusted/example/project/pr-7/npm/linux-x64/hash/v1') {
+    !== 'untrusted/example/project/pr-7/npm/Linux-X64/hash/v1') {
     throw new Error('shared scope was not mapped to the isolated PR cache');
   }
   if (scopedRestorePrefix('shared/example/project/npm/Linux-X64/hash/v1/')
