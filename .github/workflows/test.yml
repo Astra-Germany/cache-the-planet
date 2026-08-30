@@ -14,6 +14,7 @@ on:
     workflows:
       - Cache integration suite
     types: [completed]
+    branches: [main]
 
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
