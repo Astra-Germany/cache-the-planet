@@ -73,7 +73,6 @@ jobs:
           restore-keys: |
             linux-x64/
           path: .cache/npm
-          allow-shared-restore: true
           strict: true
 
       - name: Assert exact asset cache hit start with trusted
@@ -92,7 +91,7 @@ jobs:
           test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/npm/linux-x64/${{ hashFiles('package-lock.json') }}/v1"
           test -d .cache/npm
 
-      - name: Restore npm cache asset - auto
+      - name: Restore npm cache asset - auto allow shared restore
         id: cache-auto-allow-shared-restore
         uses: ./
         with:
@@ -108,7 +107,7 @@ jobs:
           strict: true
 
       - name: Assert exact asset cache hit start with shared
-        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'shared/') }}
+        if: ${{ steps.cache-auto-allow-shared-restore.outputs.matched-key != '' && startsWith(steps.cache-auto-allow-shared-restore.outputs.matched-key, 'shared/') }}
         shell: bash
         run: |
           test "${{ steps.cache-auto-allow-shared-restore.outputs.cache-hit }}" = "true"
