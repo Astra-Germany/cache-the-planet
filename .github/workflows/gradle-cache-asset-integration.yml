@@ -96,6 +96,19 @@ jobs:
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
           test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/gradle-java17/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v1"
 
+      - name: Restore Gradle cache asset - auto with restore-keys
+        if: ${{ steps.cache-auto.outputs.cache-hit != 'true' }}
+        id: cache-auto-restore-keys
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: gradle-java17
+          token: ${{ secrets.GITHUB_TOKEN }}
+          scope: auto
+          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          restore-keys: |
+            linux-x64/
+
       - name: Restore Gradle cache asset - trusted
         id: cache-trusted
         uses: ./
