@@ -61,6 +61,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: maven-java17
           scope: shared
+          token: ${{ github.token }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/m2
           strict: false
