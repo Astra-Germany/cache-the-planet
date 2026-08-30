@@ -1,58 +1,23 @@
 {
   "schema_version": 1,
   "references": {
-    "trusted/Astra-Germany/cache-the-planet/main/npm/linux-x64/a5c449def6e52ab2f87bb3f569202599094927cb45ea0b4c8fd8038271d77cfe/v1": {
-      "object": "sha256:ed379d418971a7894d499a7a08a60f2b5127a212daa74e90675bf39ebc1b06dd",
-      "updated_at": "2026-08-30T00:49:33.203Z",
-      "source": "Astra-Germany/cache-the-planet",
-      "created_by": "Ludy87",
-      "size": 7002277
-    },
-    "trusted/Astra-Germany/cache-the-planet/main/gradle-java17/linux-x64/ddfcbf966264893c5721851c7fe2b2a0221f38f0fc5e75e17745b2c632766c4e/v1": {
-      "object": "sha256:3b895e62049af300b5f3eb575ab8191e20abf3a6cb7ea4b18e9dbcf3adc6cd46",
-      "updated_at": "2026-08-30T00:50:23.827Z",
-      "source": "Astra-Germany/cache-the-planet",
-      "created_by": "Ludy87",
-      "size": 1789908
-    },
-    "shared/Astra-Germany/cache-the-planet/npm/linux-x64/a5c449def6e52ab2f87bb3f569202599094927cb45ea0b4c8fd8038271d77cfe/v1": {
-      "object": "sha256:ed379d418971a7894d499a7a08a60f2b5127a212daa74e90675bf39ebc1b06dd",
-      "updated_at": "2026-08-30T01:20:23.203Z",
-      "source": "Astra-Germany/cache-the-planet",
-      "created_by": "Ludy87",
-      "size": 7002277
-    },
-    "shared/Astra-Germany/cache-the-planet/gradle-java17/linux-x64/ddfcbf966264893c5721851c7fe2b2a0221f38f0fc5e75e17745b2c632766c4e/v1": {
-      "object": "sha256:3b895e62049af300b5f3eb575ab8191e20abf3a6cb7ea4b18e9dbcf3adc6cd46",
-      "updated_at": "2026-08-30T01:57:33.313Z",
-      "source": "Astra-Germany/cache-the-planet",
-      "created_by": "Ludy87",
-      "size": 1789908
-    },
-    "untrusted/Astra-Germany/cache-the-planet/pr-5/npm/linux-x64/a5c449def6e52ab2f87bb3f569202599094927cb45ea0b4c8fd8038271d77cfe/v1": {
-      "object": "sha256:98ebe46d98c3208ecbbafd4e0c16de44a427fe98a32fa49f0eddbb114e7599da",
-      "updated_at": "2026-08-30T02:01:06.894Z",
-      "source": "Astra-Germany/cache-the-planet",
-      "created_by": "Ludy87",
-      "size": 7002352
-    },
-    "untrusted/Astra-Germany/cache-the-planet/pr-5/gradle-java17/linux-x64/ddfcbf966264893c5721851c7fe2b2a0221f38f0fc5e75e17745b2c632766c4e/v1": {
-      "object": "sha256:9acfe5de33d5127227e46ae33c321c1f24741b02b23879d3a3eae1806783c24f",
-      "updated_at": "2026-08-30T02:01:50.792Z",
-      "source": "Astra-Germany/cache-the-planet",
-      "created_by": "Ludy87",
-      "size": 1789933
-    },
     "untrusted/Astra-Germany/cache-the-planet/pr-5/docker/linux-x64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v2": {
-      "object": "sha256:390652b25d41472b2bf0d641436094198b5215ffe088aec90b2fe52eedacdcb3",
-      "updated_at": "2026-08-30T09:01:17.124Z",
+      "object": "sha256:2e006d5acbc243ccf48ef88e2a824f9d2174f0946a6807df8912cae49d5f08b7",
+      "updated_at": "2026-08-30T10:47:50.346Z",
       "source": "Astra-Germany/cache-the-planet",
       "created_by": "Ludy87",
-      "size": 4034078
+      "size": 4033828
+    },
+    "trusted/Astra-Germany/cache-the-planet/main/npm/linux-x64/a5c449def6e52ab2f87bb3f569202599094927cb45ea0b4c8fd8038271d77cfe/v1": {
+      "object": "sha256:857e90bc9ddf2503698338e11684562cd27fe42d26fefde1708ff3fe2d485b5c",
+      "updated_at": "2026-08-30T11:17:12.061Z",
+      "source": "Astra-Germany/cache-the-planet",
+      "created_by": "Ludy87",
+      "size": 7002299
     }
   },
   "monitoring": {
-    "window_started_at": "2026-08-30T08:07:43.594Z",
-    "writes": 3
+    "window_started_at": "2026-08-30T10:47:50.346Z",
+    "writes": 2
   }
 }

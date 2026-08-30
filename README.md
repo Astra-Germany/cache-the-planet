@@ -360,6 +360,10 @@ Die Action ergänzt Namespace, Repository und PR-/Default-Branch automatisch.
 Mit `scope` kann der Namespace explizit gewählt werden: `auto` (Standard),
 `shared`, `trusted` oder `untrusted`.
 
+`cache-name` darf nur aus Buchstaben (`A-Z`, `a-z`), Zahlen, `-` und `_`
+bestehen und maximal 32 Zeichen lang sein. Beispiele sind `npm`,
+`gradle-java17` und `uv_python`.
+
 Trusted-Format:
 
 ```text
@@ -380,10 +384,10 @@ shared/<owner>/<repository>/<cache-name>/<os>-<architecture>/<dependency-hash>/v
 ```
 
 `shared` darf nur aus dem konfigurierten Default-Branch gespeichert werden. Wird
-`scope: shared` in einem Pull Request verwendet, wandelt die Action den Scope
-automatisch in `untrusted` um und gibt nur einen Hinweis aus. So bleibt der
-Pull Request isoliert und kann später ohne Key-Anpassung nach `main` gemergt
-werden. Das Schreiben in `shared` aus einem PR ist nicht erlaubt.
+`scope: shared` in einem Pull Request verwendet, wird der Save-Schritt mit einem
+Hinweis übersprungen. Dadurch wird weder ein Shared- noch ein zusätzlicher
+untrusted-Cache erzeugt. Der Restore-Schritt darf Shared-Caches weiterhin nur
+mit `allow-shared-restore: true` verwenden.
 
 Beispiel für den Workflow-Key:
 
@@ -416,8 +420,8 @@ restore-keys: |
   linux-x64/
 ```
 
-Ein `shared`-Scope wird bei Pull Requests nicht aus einem Shared-Cache gelesen,
-sondern automatisch auf den isolierten PR-Namespace umgestellt.
+Ein `shared`-Scope speichert bei Pull Requests nichts. Ein Shared-Restore ist
+nur mit `allow-shared-restore: true` erlaubt.
 
 Sinnvolle Bestandteile:
 
@@ -799,6 +803,7 @@ References werden mit der Contents-SHA gelesen und bei Konflikten bis zu fünfma
 - Ein einzelnes Manifest ist für tausende Keys geeignet; bei sehr vielen zehntausend Keys sollte es nach Namespace geshardet werden.
 - Die Action implementiert keine globale Branch-Policy. Trust-Level müssen über Key-Namespaces und Workflow-Berechtigungen festgelegt werden.
 - Cache-Fehler werden standardmäßig als Miss behandelt. Für reproduzierbare oder sicherheitskritische Builds `strict: true` verwenden.
+- Bei `strict: false` ersetzt ein neuer untrusted-PR-Cache den bisherigen Cache derselben PR/Cache-Name/Plattform/Versions-Kombination; bei `strict: true` wird das Limit als Fehler gemeldet. Shared-Caches werden niemals automatisch ersetzt.
 - Der Cache ersetzt keine Artefaktablage für signierte Releases oder vertrauenswürdige Binärdistributionen.
 
 ## Weitere Dokumentation

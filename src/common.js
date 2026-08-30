@@ -77,7 +77,7 @@ function configuredCacheNames() {
     ? environmentValue.split(',').map((value) => value.trim()).filter(Boolean)
     : configValue;
   if (names === undefined) return null;
-  if (!Array.isArray(names) || names.length === 0 || names.some((value) => !/^[a-z][a-z0-9-]{0,31}$/.test(value))) {
+  if (!Array.isArray(names) || names.length === 0 || names.some((value) => !/^[A-Za-z0-9_-]{1,32}$/.test(value))) {
     throw new Error('allowed_cache_names must be a non-empty list of valid cache names');
   }
   return names;
@@ -128,8 +128,8 @@ function isCompleteCacheKey(key) {
 
 function cacheName() {
   const value = input('cache-name').trim();
-  if (!/^[a-z][a-z0-9-]{0,31}$/.test(value)) {
-    throw new Error('cache-name is required and must contain only lowercase letters, numbers, or hyphens');
+  if (!/^[A-Za-z0-9_-]{1,32}$/.test(value)) {
+    throw new Error('cache-name is required and may contain only letters, numbers, hyphens, and underscores');
   }
   const allowed = configuredCacheNames();
   if (allowed && !allowed.includes(value)) {
@@ -768,7 +768,7 @@ async function updateManifest(repository, message, update) {
   throw new Error(`reference update conflicted after ${maxAttempts} attempts`);
 }
 
-function manifestWriteGuard(manifest) {
+function manifestWriteGuard(manifest, replacingKey = null) {
   const now = Date.now();
   const maxReferences = configuredLimit(
     'CACHE_MAX_MANIFEST_REFERENCES', 'max_manifest_references', defaultManifestReferenceLimit,
@@ -782,7 +782,9 @@ function manifestWriteGuard(manifest) {
   if (Number.isFinite(lockedUntil) && lockedUntil > now) {
     throw new Error(`cache writes are temporarily locked until ${monitoring.locked_until}`);
   }
-  if (Object.keys(manifest.references || {}).length >= maxReferences) {
+  const referenceCount = Object.keys(manifest.references || {}).length
+    - (replacingKey && manifest.references?.[replacingKey] ? 1 : 0);
+  if (referenceCount >= maxReferences) {
     throw new Error(`cache manifest reference limit reached (${maxReferences})`);
   }
   const windowStarted = Date.parse(monitoring.window_started_at || '');
@@ -822,6 +824,35 @@ async function setRef(repository, key, hash, metadata = {}) {
     if (locked) throw new Error('cache writes are temporarily locked: manifest write rate limit exceeded');
     return result;
   });
+}
+
+async function replaceRef(repository, key, hash, removeKey, metadata = {}) {
+  let locked = false;
+  const result = await updateManifest(repository, `cache: replace ${removeKey} with ${key}`, (manifest) => {
+    if (manifest.references[key]?.object === hash) return false;
+    if (!manifestWriteGuard(manifest, removeKey)) {
+      locked = true;
+      return true;
+    }
+    if (removeKey && removeKey !== key) delete manifest.references[removeKey];
+    manifest.references[key] = {
+      object: hash,
+      updated_at: new Date().toISOString(),
+      source: process.env.GITHUB_REPOSITORY || null,
+      created_by: process.env.GITHUB_ACTOR || null,
+      size: Number.isFinite(metadata.size) ? metadata.size : null,
+    };
+    return true;
+  });
+  if (locked) throw new Error('cache writes are temporarily locked: manifest write rate limit exceeded');
+  return result;
+}
+
+async function deleteObject(repository, hash) {
+  const asset = await object(repository, hash);
+  if (!asset) return false;
+  await gh(`/repos/${repository}/releases/assets/${asset.id}`, { method: 'DELETE' });
+  return true;
 }
 
 async function download(repository, hash) {
@@ -871,6 +902,6 @@ module.exports = {
   upload, entries, excludePatterns, refName,
   securityScan, makeArchive, inspectTar, digest, assetName, hashFromAssetName,
   encryptFile, decryptFile,
-  release, assets, object, refs, updateManifest, setRef, manifestWriteGuard,
+  release, assets, object, refs, updateManifest, setRef, replaceRef, deleteObject, manifestWriteGuard,
   download, extract,
 };
