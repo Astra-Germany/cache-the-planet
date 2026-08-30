@@ -235,6 +235,10 @@ try {
   if (sharedRestorePrefix('hash/') !== 'shared/example/project/npm/linux-x64/hash/') {
     throw new Error('automatic shared restore prefix was not generated correctly');
   }
+  process.env.INPUT_SCOPE = 'auto';
+  process.env.GITHUB_EVENT_NAME = 'push';
+  process.env.GITHUB_REF = 'refs/heads/main';
+  fs.writeFileSync(eventFile, JSON.stringify({ repository: { default_branch: 'main' } }));
   let invalidKeyRejected = false;
   try { scopedKey('trusted/example/project/npm/Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
   if (!invalidKeyRejected) throw new Error('invalid trusted cache key was accepted');
