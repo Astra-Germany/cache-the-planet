@@ -1,6 +1,15 @@
 name: Docker cache asset integration
 on:
   workflow_call:
+    inputs:
+      save-cache:
+        required: false
+        type: boolean
+        default: false
+      restore-cache:
+        required: false
+        type: boolean
+        default: false
 
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
@@ -28,6 +37,7 @@ jobs:
           HASH="${{ hashFiles(env.FILES_TO_HASH) }}"
           echo "files_hash=$HASH" >> "$GITHUB_OUTPUT"
   save-cache:
+    if: ${{ inputs.save-cache }}
     name: Build and save Docker cache asset
     needs: hash_pr
     runs-on: ubuntu-latest
@@ -96,6 +106,7 @@ jobs:
           strict: false
 
   restore-cache:
+    if: ${{ inputs.restore-cache }}
     name: Restore Docker cache asset in a fresh job
     needs: [save-cache, hash_pr]
     runs-on: ubuntu-latest

@@ -102,10 +102,24 @@ jobs:
       contents: write
     secrets: inherit
 
-  docker:
+  docker-save-cache:
+    name: Save Docker cache asset
     needs: [build-dist, gradle]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/docker-cache-asset-integration.yml
+    with:
+      save-cache: true
+    permissions:
+      contents: write
+    secrets: inherit
+
+  docker-restore-cache:
+    name: Restore Docker cache asset
+    needs: [build-dist, docker-save-cache]
+    if: always() && (needs.docker-save-cache.result == 'success')
+    uses: ./.github/workflows/docker-cache-asset-integration.yml
+    with:
+      restore-cache: true
     permissions:
       contents: write
     secrets: inherit
@@ -114,7 +128,7 @@ jobs:
   all-checks-passed:
     name: All checks passed
     if: always()
-    needs: [build-dist, node, uv, uv-python, task, java, gradle, docker]
+    needs: [build-dist, node, uv, uv-python, task, java, gradle, docker-save-cache, docker-restore-cache]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -125,7 +139,8 @@ jobs:
 
       - name: Verify every required job passed (or was legitimately skipped)
         env:
-          JOBS: build-dist,node,uv,uv-python,task,java,gradle,docker
+          JOBS: build-dist,node,uv,uv-python,task,java,gradle,docker-save-cache,docker-restore-cache
+        shell: bash
         run: |
           for job in $(echo $JOBS | tr "," "\n"); do
             result="${{ needs[job].result }}"
