@@ -30,7 +30,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           scope: auto
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           version: 2
           allow-shared-restore: true
@@ -68,7 +68,7 @@ jobs:
           # default-branch cache on main; the action creates the shared alias
           # only from the default branch when appropriate.
           scope: auto
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           version: 2
           path: examples/docker-cache/.cache/docker-buildx
@@ -94,7 +94,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           scope: auto
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           version: 2
           allow-shared-restore: true
@@ -131,7 +131,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           scope: trusted
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           version: 2
           restore-keys: |
@@ -153,7 +153,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           scope: shared
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           version: 2
           restore-keys: |
@@ -175,7 +175,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: docker
           scope: untrusted
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           version: 2
           restore-keys: |

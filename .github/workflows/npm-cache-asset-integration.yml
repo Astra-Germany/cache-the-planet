@@ -37,7 +37,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
           scope: shared
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           key: ${{ hashFiles('package-lock.json') }}
           path: .cache/npm
           strict: true
@@ -67,7 +67,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
-          # token: ${{ secrets.GITHUB_TOKEN }}
+          # token: ${{ github.token }}
           scope: auto
           key: ${{ hashFiles('package-lock.json') }}
           restore-keys: |
@@ -98,7 +98,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
-          # token: ${{ secrets.GITHUB_TOKEN }}
+          # token: ${{ github.token }}
           scope: auto
           key: ${{ hashFiles('package-lock.json') }}
           restore-keys: |

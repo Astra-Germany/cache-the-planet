@@ -41,7 +41,7 @@ jobs:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
           scope: shared
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           path: .cache/gradle
           strict: true
@@ -69,7 +69,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           scope: auto
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           allow-shared-restore: true
@@ -106,7 +106,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           scope: auto
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           restore-keys: |
@@ -118,7 +118,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           scope: trusted
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           restore-keys: |
@@ -139,7 +139,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           scope: shared
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           restore-keys: |
@@ -160,7 +160,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           scope: untrusted
           key: ${{ hashFiles(env.FILES_TO_HASH) }}
           restore-keys: |
