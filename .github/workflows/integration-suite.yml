@@ -3,59 +3,257 @@ name: Cache integration suite
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
   # Keep duplicate integration suites from running in parallel without
   # blocking cleanup, release, or distribution workflows.
-  group: cache-integration-${{ github.ref_name }}
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  node:
-    uses: ./.github/workflows/node-cache-integration.yml
+  detect-changes:
+    name: Detect distribution changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      build_dist: ${{ steps.filter.outputs.build_dist || 'false' }}
+    steps:
+      - name: Checkout
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Filter distribution changes
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v3.0.2
+        with:
+          filters: |
+            build_dist:
+              - 'src/**'
+              - 'action.yml'
+              - 'save/action.yml'
+              - 'package.json'
+              - 'package-lock.json'
+
+  build-dist:
+    needs: detect-changes
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')  ||  needs.detect-changes.outputs.build_dist == 'true' }}
+    uses: ./.github/workflows/build-dist.yml
+    with:
+      dry-run: ${{ github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
     permissions:
       contents: write
     secrets: inherit
 
-  uv:
-    needs: node
-    uses: ./.github/workflows/uv-cache-integration.yml
+  node-save-cache:
+    needs: [build-dist]
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    uses: ./.github/workflows/npm-cache-asset-integration.yml
+    with:
+      save-cache: true
     permissions:
       contents: write
     secrets: inherit
 
-  uv-python:
-    needs: uv
-    uses: ./.github/workflows/uv-python-cache-integration.yml
+  node-restore-cache:
+    needs: [node-save-cache]
+    if: always() && (needs.node-save-cache.result == 'success')
+    uses: ./.github/workflows/npm-cache-asset-integration.yml
+    with:
+      restore-cache: true
     permissions:
       contents: write
     secrets: inherit
 
-  task:
-    needs: uv-python
-    uses: ./.github/workflows/task-cache-integration.yml
+  uv-save-cache:
+    name: Save uv cache asset
+    needs: [build-dist, node-save-cache]
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    uses: ./.github/workflows/uv-cache-asset-integration.yml
+    with:
+      save-cache: true
     permissions:
       contents: write
     secrets: inherit
 
-  java:
-    needs: task
-    uses: ./.github/workflows/java-cache-integration.yml
+  uv-restore-cache:
+    name: Restore uv cache asset
+    needs: [uv-save-cache]
+    if: always() && (needs.uv-save-cache.result == 'success')
+    uses: ./.github/workflows/uv-cache-asset-integration.yml
+    with:
+      restore-cache: true
     permissions:
       contents: write
     secrets: inherit
 
-  gradle:
-    needs: java
-    uses: ./.github/workflows/gradle-cache-integration.yml
+  uv-python-save-cache:
+    name: Save uv Python cache asset
+    needs: [build-dist, uv-save-cache]
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    uses: ./.github/workflows/uv-python-cache-asset-integration.yml
+    with:
+      save-cache: true
     permissions:
       contents: write
     secrets: inherit
 
-  docker:
-    needs: gradle
-    uses: ./.github/workflows/docker-cache-integration.yml
+  uv-python-restore-cache:
+    name: Restore uv Python cache asset
+    needs: [uv-python-save-cache]
+    if: always() && (needs.uv-python-save-cache.result == 'success')
+    uses: ./.github/workflows/uv-python-cache-asset-integration.yml
+    with:
+      restore-cache: true
     permissions:
       contents: write
     secrets: inherit
+
+  task-save-cache:
+    name: Save task cache asset
+    needs: [build-dist, uv-python-save-cache]
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    uses: ./.github/workflows/task-cache-asset-integration.yml
+    with:
+      save-cache: true
+    permissions:
+      contents: write
+    secrets: inherit
+
+  task-restore-cache:
+    name: Restore task cache asset
+    needs: [task-save-cache]
+    if: always() && (needs.task-save-cache.result == 'success')
+    uses: ./.github/workflows/task-cache-asset-integration.yml
+    with:
+      restore-cache: true
+    permissions:
+      contents: write
+    secrets: inherit
+
+  java-save-cache:
+    name: Save Maven cache asset
+    needs: [build-dist, task-save-cache]
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    uses: ./.github/workflows/maven-cache-asset-integration.yml
+    with:
+      save-cache: true
+    permissions:
+      contents: write
+    secrets: inherit
+
+  java-restore-cache:
+    name: Restore Maven cache asset
+    needs: [java-save-cache]
+    if: always() && (needs.java-save-cache.result == 'success')
+    uses: ./.github/workflows/maven-cache-asset-integration.yml
+    with:
+      restore-cache: true
+    permissions:
+      contents: write
+    secrets: inherit
+
+  gradle-save-cache:
+    name: Save Gradle cache asset
+    needs: [build-dist, java-save-cache]
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    uses: ./.github/workflows/gradle-cache-asset-integration.yml
+    with:
+      save-cache: true
+    permissions:
+      contents: write
+    secrets: inherit
+
+  gradle-restore-cache:
+    name: Restore Gradle cache asset
+    needs: [gradle-save-cache]
+    if: always() && (needs.gradle-save-cache.result == 'success')
+    uses: ./.github/workflows/gradle-cache-asset-integration.yml
+    with:
+      restore-cache: true
+    permissions:
+      contents: write
+    secrets: inherit
+
+  docker-save-cache:
+    name: Save Docker cache asset
+    needs: [build-dist, gradle-save-cache]
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
+    uses: ./.github/workflows/docker-cache-asset-integration.yml
+    with:
+      save-cache: true
+    permissions:
+      contents: write
+    secrets: inherit
+
+  docker-restore-cache:
+    name: Restore Docker cache asset
+    needs: [docker-save-cache]
+    if: always() && (needs.docker-save-cache.result == 'success')
+    uses: ./.github/workflows/docker-cache-asset-integration.yml
+    with:
+      restore-cache: true
+    permissions:
+      contents: write
+    secrets: inherit
+
+  # when an upstream job fails.
+  all-checks-passed:
+    name: All checks passed
+    if: always()
+    needs: 
+      - build-dist
+      - node-save-cache
+      - node-restore-cache
+      - uv-save-cache
+      - uv-restore-cache
+      - uv-python-save-cache
+      - uv-python-restore-cache
+      - task-save-cache
+      - task-restore-cache
+      - java-save-cache
+      - java-restore-cache
+      - gradle-save-cache
+      - gradle-restore-cache
+      - docker-save-cache
+      - docker-restore-cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: All checks passed
+        run: echo "All checks passed!"
+
+      - name: Verify every required job passed (or was legitimately skipped)
+        env:
+          JOB_RESULTS: >-
+            build-dist=${{ needs.build-dist.result }}
+            node-save-cache=${{ needs.node-save-cache.result }}
+            node-restore-cache=${{ needs.node-restore-cache.result }}
+            uv-save-cache=${{ needs.uv-save-cache.result }}
+            uv-restore-cache=${{ needs.uv-restore-cache.result }}
+            uv-python-save-cache=${{ needs.uv-python-save-cache.result }}
+            uv-python-restore-cache=${{ needs.uv-python-restore-cache.result }}
+            task-save-cache=${{ needs.task-save-cache.result }}
+            task-restore-cache=${{ needs.task-restore-cache.result }}
+            java-save-cache=${{ needs.java-save-cache.result }}
+            java-restore-cache=${{ needs.java-restore-cache.result }}
+            gradle-save-cache=${{ needs.gradle-save-cache.result }}
+            gradle-restore-cache=${{ needs.gradle-restore-cache.result }}
+            docker-save-cache=${{ needs.docker-save-cache.result }}
+            docker-restore-cache=${{ needs.docker-restore-cache.result }}
+        shell: bash
+        run: |
+          while IFS='=' read -r job result; do
+            if [[ "$result" != "success" && "$result" != "skipped" ]]; then
+              echo "Job $job did not pass (result: $result)"
+              exit 1
+            fi
+          done < <(printf '%s\n' "$JOB_RESULTS" | tr ' ' '\n')

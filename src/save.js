@@ -6,6 +6,7 @@ const c = require('./common');
     const repository = c.input('repository');
     const key = c.scopedKey(c.input('key'));
     const isPullRequest = process.env.GITHUB_REF?.includes('/pull/');
+    const requestedScope = c.input('scope', 'auto').trim().toLowerCase();
     if (isPullRequest && String(c.input('allow-pr-cache')).toLowerCase() !== 'true') {
       c.log('untrusted pull request: save skipped');
       return;
@@ -21,24 +22,42 @@ const c = require('./common');
 
     const trustedKey = key.startsWith('trusted/');
     const untrustedKey = key.startsWith('untrusted/');
-    const trustedRef = process.env.GITHUB_REF === 'refs/heads/main'
+    const sharedKey = key.startsWith('shared/');
+    const defaultBranch = c.defaultBranch();
+    const trustedRef = (defaultBranch
+      && process.env.GITHUB_REF === `refs/heads/${defaultBranch}`)
       || process.env.GITHUB_REF_TYPE === 'tag';
-    if (!trustedKey && !untrustedKey) {
-      throw new Error('cache key must start with trusted/ or untrusted/');
+    const sharedRef = defaultBranch
+      && process.env.GITHUB_REF === `refs/heads/${defaultBranch}`;
+    if (!trustedKey && !untrustedKey && !sharedKey) {
+      throw new Error('cache key must start with trusted/, untrusted/, or shared/');
     }
     if (trustedKey && !trustedRef) {
-      throw new Error('trusted cache keys may only be saved from main or tags');
+      throw new Error('trusted cache keys may only be saved from the repository default branch or tags');
     }
     if (untrustedKey && !isPullRequest) {
       throw new Error('untrusted cache keys may only be saved from pull requests');
     }
+    if (sharedKey && !sharedRef) {
+      throw new Error('shared cache keys may only be saved from the repository default branch');
+    }
     const current = await c.refs(repository);
     const existingReference = current.json.references[key];
+    const sharedCounterpart = requestedScope === 'auto' && trustedKey
+      ? c.scopeCounterpartKey(key)
+      : null;
     if (existingReference?.object) {
       const existingAsset = await c.object(repository, existingReference.object);
       if (!existingAsset) {
         c.log(`orphaned cache reference detected for key=${key}; recreating asset`);
       } else {
+        if (sharedCounterpart && !current.json.references[sharedCounterpart]) {
+          await c.setRef(repository, sharedCounterpart, existingReference.object, {
+            size: existingReference.size,
+            source: `linked-from:${key}`,
+          });
+          c.log(`linked shared cache reference: key=${sharedCounterpart}; source=${key}`);
+        }
         const existingAssetName = existingAsset.name;
         c.log(`cache already exists for key=${key}; asset=${existingAssetName}`);
         if (process.env.GITHUB_OUTPUT) {
@@ -50,6 +69,75 @@ const c = require('./common');
         return;
       }
     }
+
+    if (untrustedKey) {
+      const combination = c.pullRequestCacheCombination(key);
+      const conflictingKey = combination && Object.keys(current.json.references).find((referenceKey) => (
+        referenceKey !== key
+        && c.pullRequestCacheCombination(referenceKey) === combination
+      ));
+      if (conflictingKey) {
+        const strict = String(c.input('strict')).toLowerCase() === 'true';
+        if (strict) {
+          throw new Error(
+            `pull request cache limit reached: only one cache is allowed for ${combination}; existing key=${conflictingKey}`,
+          );
+        }
+        c.log(`replacing existing pull request cache: old-key=${conflictingKey}; new-key=${key}`);
+        const archive = await c.makeArchive();
+        const hash = c.digest(archive.file);
+        const existing = await c.object(repository, hash);
+        const name = c.assetName(key, hash);
+        if (!existing) {
+          const release = (await c.assets(repository)).release;
+          const uploadUrl = release.upload_url.replace(
+            '{?name,label}',
+            `?name=${encodeURIComponent(name)}`,
+          );
+          await c.upload(uploadUrl, archive.file, name, 'application/zstd');
+        }
+        const updated = await c.replaceRef(repository, key, hash, conflictingKey, {
+          size: fs.statSync(archive.file).size,
+        });
+        const oldHash = current.json.references[conflictingKey]?.object;
+        const stillReferenced = oldHash && Object.values(updated.references || {})
+          .some((reference) => reference.object === oldHash);
+        if (oldHash && oldHash !== hash && !stillReferenced) {
+          try { await c.deleteObject(repository, oldHash); }
+          catch (error) { c.log(`old cache asset could not be deleted: ${error.message}`); }
+        }
+        if (process.env.GITHUB_OUTPUT) {
+          fs.appendFileSync(
+            process.env.GITHUB_OUTPUT,
+            `content-hash=${hash}\nasset-name=${existing?.name || name}\ncache-size=${fs.statSync(archive.file).size}\n`,
+          );
+        }
+        console.log(`Cache saved: key=${key}; asset=${existing?.name || name}; content-hash=${hash}`);
+        return;
+      }
+    }
+
+    const relatedKey = c.scopeCounterpartKey(key);
+    const relatedReference = relatedKey && current.json.references[relatedKey];
+    if (relatedReference?.object) {
+      const relatedAsset = await c.object(repository, relatedReference.object);
+      if (relatedAsset) {
+        await c.setRef(repository, key, relatedReference.object, {
+          size: relatedReference.size,
+          source: `linked-from:${relatedKey}`,
+        });
+        c.log(`linked existing cache reference: key=${key}; source=${relatedKey}`);
+        if (process.env.GITHUB_OUTPUT) {
+          fs.appendFileSync(
+            process.env.GITHUB_OUTPUT,
+            `content-hash=${relatedReference.object}\nasset-name=${relatedAsset.name}\n`,
+          );
+        }
+        return;
+      }
+      c.log(`orphaned cache reference detected for key=${relatedKey}; creating asset for ${key}`);
+    }
+
     const archive = await c.makeArchive();
     const hash = c.digest(archive.file);
     const existing = await c.object(repository, hash);
@@ -72,7 +160,16 @@ const c = require('./common');
       c.log(`object already exists: ${hash}`);
     }
 
-    await c.setRef(repository, key, hash);
+    await c.setRef(repository, key, hash, {
+      size: fs.statSync(archive.file).size,
+    });
+    if (sharedCounterpart) {
+      await c.setRef(repository, sharedCounterpart, hash, {
+        size: fs.statSync(archive.file).size,
+        source: `linked-from:${key}`,
+      });
+      c.log(`linked shared cache reference: key=${sharedCounterpart}; source=${key}`);
+    }
     if (process.env.GITHUB_OUTPUT) {
       fs.appendFileSync(
         process.env.GITHUB_OUTPUT,

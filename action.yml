@@ -6,11 +6,27 @@ inputs:
     description: "owner/name of cache repository"
     required: true
   key:
-    description: "Logical cache key; trusted/untrusted repository and PR scope are added automatically when omitted"
+    description: "Logical dependency key; namespace and platform are generated from scope, os, arch, and version"
     required: true
   cache-name:
-    description: "Cache namespace such as npm, uv, gradle, or docker"
+    description: "Cache name using only letters, numbers, hyphens, or underscores"
     required: true
+  scope:
+    description: "Cache scope: auto, shared, trusted, or untrusted"
+    required: false
+    default: auto
+  os:
+    description: "Operating system component of the cache key; defaults to RUNNER_OS"
+    required: false
+    default: "__runner__"
+  arch:
+    description: "Architecture component of the cache key; defaults to RUNNER_ARCH"
+    required: false
+    default: "__runner__"
+  version:
+    description: "Numeric cache format version, for example 1 or 2"
+    required: false
+    default: "1"
   restore-keys:
     description: "Newline separated fallback prefixes"
     required: false
@@ -18,29 +34,25 @@ inputs:
   path:
     description: "Newline separated files or directories to cache"
     required: true
-  compression-level:
-    description: "zstd compression level"
-    required: false
-    default: "3"
   token:
-    description: "GitHub token or App installation token"
+    description: "GitHub token; defaults to GITHUB_TOKEN"
     required: false
   encryption-key:
     description: "Optional AES-256 encryption key or passphrase for cache contents"
     required: false
     default: ""
-  exclude:
-    description: "Newline separated gitignore-style exclusions"
-    required: false
-    default: ""
   strict:
-    description: "Fail on cache errors"
+    description: "Fail the step on cache errors"
     required: false
     default: "false"
-  allow-pr-cache:
-    description: "Allow saving an isolated untrusted cache for a pull request"
+  config-file:
+    description: "Optional JSON configuration file; environment variables override its values"
     required: false
-    default: "true"
+    default: ""
+  allow-shared-restore:
+    description: "Allow pull requests to restore explicitly selected shared caches"
+    required: false
+    default: "false"
 outputs:
   cache-hit:
     description: "true when an exact key was restored"

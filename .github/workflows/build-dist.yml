@@ -5,10 +5,21 @@ concurrency:
   group: build-action-distribution-${{ github.ref_name }}
   cancel-in-progress: false
 on:
-  push:
-    branches: [main]
-    paths-ignore: ['dist/**', '**.md']
+  workflow_call:
+    inputs:
+      dry-run:
+        description: Dry run, do not commit generated dist
+        required: false
+        default: true
+        type: boolean
   workflow_dispatch:
+
+env:
+  CACHE_REPOSITORY: Ludy87/cache-the-planet
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,36 +28,43 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           package-manager-cache: false
+
       - name: Configure npm cache directory
         run: npm config set cache "$PWD/.cache/npm" --global
+
       - name: Restore npm cache asset
         id: npm-cache
         uses: ./
         with:
-          repository: Ludy87/cache-the-planet
+          repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
-          token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+          key: ${{ hashFiles('package-lock.json') }}
           path: .cache/npm
           strict: false
         continue-on-error: true
-      - run: npm install
+
+      - run: npm ci ${{ inputs.dry-run && '--dry-run' || '' }}
+
       - name: Save npm cache asset
-        if: success() && steps.npm-cache.outputs.cache-hit != 'true'
+        if: ${{ !inputs.dry-run && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && success() && steps.npm-cache.outputs.cache-hit != 'true' }}
         uses: ./save
         with:
-          repository: Ludy87/cache-the-planet
+          repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
-          token: ${{ secrets.GITHUB_TOKEN }}
-          key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+          key: ${{ hashFiles('package-lock.json') }}
           path: .cache/npm
           strict: false
+          token: ${{ github.token }}
+          allow-pr-cache: false
         continue-on-error: true
+
       - name: Commit generated dist
+        if: ${{ !inputs.dry-run && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         shell: bash
         run: |
           set -euo pipefail

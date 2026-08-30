@@ -73,7 +73,7 @@ Sie wird beim ersten Save automatisch erstellt. Das Manifest enthält nur Metada
 Erstelle ein eigenes Repository, zum Beispiel:
 
 ```text
-Ludy87/cache-the-planet
+  Ludy87/cache-the-planet
 ```
 
 Empfohlene Einstellungen:
@@ -180,11 +180,11 @@ jobs:
         with:
           repository: Ludy87/cache-the-planet
           cache-name: python
-          key: ${{ format('python/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('uv.lock')) }}
+          key: ${{ hashFiles('uv.lock') }}
           restore-keys: |
-            python/${{ runner.os }}-${{ runner.arch }}/
+            linux-x64/
           path: |
-            ~/.cache/pip
+            .cache/pip
             .cache/uv
           token: ${{ secrets.CACHE_APP_TOKEN }}
 
@@ -197,9 +197,9 @@ jobs:
         with:
           repository: Ludy87/cache-the-planet
           cache-name: python
-          key: ${{ format('python/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('uv.lock')) }}
+          key: ${{ hashFiles('uv.lock') }}
           path: |
-            ~/.cache/pip
+            .cache/pip
             .cache/uv
           token: ${{ secrets.CACHE_APP_TOKEN }}
           exclude: |
@@ -290,7 +290,7 @@ Der Secret-Name ist unabhängig vom Namen des PAT. Im Workflow wird er so verwen
 token: ${{ secrets.CACHE_APP_TOKEN }}
 ```
 
-Der PAT selbst muss Zugriff auf `Ludy87/cache-the-planet` haben. Ein `github.token` aus `spdf-cache` reicht für ein separates Cache-Repository normalerweise nicht aus. Verwende keinen Fallback auf `github.token`, weil dadurch bei Pull Requests ein irreführender `403 Resource not accessible by integration` entstehen kann.
+Der PAT selbst muss Zugriff auf `Ludy87/cache-the-planet` haben. Ein `github.token` aus `spdf-cache` reicht für ein separates Cache-Repository normalerweise nicht aus. Verwende in einem separaten Cache-Repository den PAT oder App-Token ausdrücklich als Secret.
 
 Fork-Pull-Requests erhalten aus Sicherheitsgründen normalerweise keine Repository-Secrets. Der Save-Schritt muss dort deaktiviert bleiben. Ein PAT darf niemals in YAML-Dateien, Logs, Cache-Dateien oder den Quellcode geschrieben werden.
 
@@ -346,8 +346,8 @@ Verwende die offizielle Action zum Erzeugen eines kurzlebigen Installation Token
     repository: Ludy87/cache-the-planet
     cache-name: npm
     token: ${{ steps.cache-token.outputs.token }}
-    key: ${{ format('npm/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
-    path: ~/.npm
+    key: ${{ hashFiles('package-lock.json') }}
+    path: .cache/npm
 ```
 
 Installation Tokens sind kurzlebig und sollten nicht als dauerhafte Secrets gespeichert werden. Die App selbst darf nur auf das Cache-Repository installiert sein.
@@ -357,6 +357,12 @@ Installation Tokens sind kurzlebig und sollten nicht als dauerhafte Secrets gesp
 Ein Key ist eine logische Adresse, nicht der Content-Hash. Der Workflow gibt
 normalerweise nur den logischen Teil an; `cache-name` ist eine Pflichtangabe.
 Die Action ergänzt Namespace, Repository und PR-/Default-Branch automatisch.
+Mit `scope` kann der Namespace explizit gewählt werden: `auto` (Standard),
+`shared`, `trusted` oder `untrusted`.
+
+`cache-name` darf nur aus Buchstaben (`A-Z`, `a-z`), Zahlen, `-` und `_`
+bestehen und maximal 32 Zeichen lang sein. Beispiele sind `npm`,
+`gradle-java17` und `uv_python`.
 
 Trusted-Format:
 
@@ -370,12 +376,54 @@ Untrusted-Format für Pull Requests:
 untrusted/<owner>/<repository>/pr-123/<cache-name>/<os>-<architecture>/<dependency-hash>/v1
 ```
 
+Geprüfte Basis-Caches können zusätzlich im Shared-Format veröffentlicht
+werden:
+
+```text
+shared/<owner>/<repository>/<cache-name>/<os>-<architecture>/<dependency-hash>/v1
+```
+
+`shared` darf nur aus dem konfigurierten Default-Branch als Shared-Referenz
+gespeichert werden. Wird `scope: shared` in einem Pull Request verwendet, wird
+der Inhalt automatisch als isolierter `untrusted/pr-<number>/...`-Cache
+gespeichert. So kann der PR testen, ohne einen gemeinsamen Cache zu verändern.
+Nach dem Merge kann derselbe logische Key auf dem Default-Branch als Shared-
+Referenz veröffentlicht werden. Der Restore-Schritt darf Shared-Caches in PRs
+weiterhin nur mit `allow-shared-restore: true` verwenden.
+
 Beispiel für den Workflow-Key:
 
 ```yaml
 cache-name: npm
-key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+key: ${{ hashFiles('package-lock.json') }}
 ```
+
+Ein geprüfter gemeinsamer Cache wird mit demselben kurzen Key gespeichert und
+gelesen:
+
+```yaml
+cache-name: npm
+scope: shared
+key: ${{ hashFiles('package-lock.json') }}
+```
+
+Daraus erzeugt die Action automatisch:
+
+```text
+shared/<owner>/<repository>/npm/<os>-<architecture>/<dependency-hash>/v1
+```
+
+`shared` darf nur aus dem konfigurierten Default-Branch gespeichert werden.
+
+Ein Pull Request kann einen isolierten PR-Cache lesen:
+
+```yaml
+restore-keys: |
+  linux-x64/
+```
+
+Ein `shared`-Scope wird bei Pull Requests in den isolierten PR-Namespace
+abgebildet. Ein Shared-Restore ist nur mit `allow-shared-restore: true` erlaubt.
 
 Sinnvolle Bestandteile:
 
@@ -398,6 +446,30 @@ Die Action sucht in dieser Reihenfolge:
 
 Branch- und Default-Branch-Fallback werden durch die Reihenfolge der Prefixe modelliert. Die Action gibt `matched-key` aus, damit der tatsächlich verwendete Cache sichtbar ist.
 
+Bei `scope: auto` werden unpräfixierte `restore-keys` auf `main` und Tags
+zuerst im `shared`-Namespace und danach im `trusted`-Namespace gesucht. In
+Pull Requests wird zuerst `shared` gesucht, sofern
+`allow-shared-restore: true` gesetzt ist, und danach der isolierte
+`untrusted`-Namespace. Ohne diese Freigabe wird der Shared-Fallback im PR
+übersprungen.
+
+`restore-keys` enthalten normalerweise nur logische Prefixe und niemals
+`trusted/` oder `untrusted/`. Ein `shared/<owner>/<repository>/`-Prefix oder
+ein vollständiger `shared/...`-Prefix ist als expliziter, geprüfter Fallback
+erlaubt. In Pull Requests muss dafür zusätzlich
+`allow-shared-restore: true` gesetzt werden. Beispiel:
+
+```yaml
+cache-name: node
+key: ${{ hashFiles('package-lock.json') }}
+restore-keys: |
+  linux-x64/
+```
+
+Die Action ergänzt Cache-Name, Betriebssystem, Architektur und Scope auch für
+das Prefix automatisch. Ein Prefix mit abschließendem `/` bleibt ein Prefix
+und wird nicht um `/v1` erweitert.
+
 ## Inputs und Outputs
 
 ### Restore-Inputs
@@ -406,32 +478,60 @@ Branch- und Default-Branch-Fallback werden durch die Reihenfolge der Prefixe mod
 |---|---:|---|
 | `repository` | ja | Cache-Repository im Format `owner/name` |
 | `cache-name` | ja | Cache-Kategorie, zum Beispiel `npm`, `uv` oder `gradle` |
+| `scope` | nein | `auto`, `shared`, `trusted` oder `untrusted`; Standard: `auto` |
+| `os` | nein | Betriebssystemteil; Standard: `RUNNER_OS`, leer ergibt `unknown` |
+| `arch` | nein | Architekturteil; Standard: `RUNNER_ARCH`, leer ergibt `unknown` |
+| `version` | nein | Numerische Cache-Version, zum Beispiel `1`; Standard: `1` |
 | `key` | ja | Logischer Key ohne automatisch ergänzten Namespace |
 | `restore-keys` | nein | Mehrere Prefixe, jeweils eine Zeile |
 | `path` | ja | Eine oder mehrere Dateien/Verzeichnisse, jeweils eine Zeile |
-| `compression-level` | nein | zstd-Level, Standard `3` |
+| `encryption-key` | nein | Schlüssel oder Passphrase zum Entschlüsseln verschlüsselter Assets |
 | `token` | nein | Token; alternativ `GITHUB_TOKEN` |
 | `strict` | nein | `true` bricht bei Cache-Fehlern ab, Standard `false` |
+| `config-file` | nein | Optionale JSON-Konfiguration; Umgebungsvariablen haben Vorrang |
+| `allow-shared-restore` | nein | Erlaubt PRs ausdrücklich Shared-Restores; Standard `false` |
 
 ### Save-Inputs
 
-Zusätzlich zu `repository`, `cache-name`, `key`, `path`, `compression-level`,
-`token` und `strict` stehen folgende Inputs zur Verfügung:
+| Input | Pflicht | Beschreibung |
+|---|---:|---|
+| `repository` | ja | Cache-Repository im Format `owner/name` |
+| `cache-name` | ja | Cache-Kategorie, zum Beispiel `npm`, `uv` oder `gradle` |
+| `scope` | nein | `auto`, `shared`, `trusted` oder `untrusted`; Standard: `auto` |
+| `os` | nein | Betriebssystemteil; Standard: `RUNNER_OS`, leer ergibt `unknown` |
+| `arch` | nein | Architekturteil; Standard: `RUNNER_ARCH`, leer ergibt `unknown` |
+| `version` | nein | Numerische Cache-Version; Standard: `1` |
+| `key` | ja | Logischer Key ohne automatisch ergänzten Namespace |
+| `path` | ja | Eine oder mehrere Dateien/Verzeichnisse, jeweils eine Zeile |
+| `compression-level` | nein | zstd-Kompressionsstufe; Standard: `3` |
+| `token` | nein | Token; alternativ `GITHUB_TOKEN` |
+| `encryption-key` | nein | Optionaler AES-256-Schlüssel oder eine Passphrase |
+| `exclude` | nein | Ausschlussmuster, jeweils eine Zeile; zum Beispiel `**/.env` |
+| `exclude-path` | nein | Workspace-relative Dateien mit Ausschlussmustern, jeweils eine Zeile |
+| `strict` | nein | `true` bricht bei Cache-Fehlern ab, Standard `false` |
+| `config-file` | nein | Optionale JSON-Konfiguration; Umgebungsvariablen haben Vorrang |
+| `allow-pr-cache` | nein | Erlaubt das Speichern eines isolierten PR-Caches; Standard `true` |
 
-| Input | Beschreibung |
-|---|---|
-| `exclude` | Ausschlussmuster, jeweils eine Zeile; zum Beispiel `**/.env` |
-| `encryption-key` | Optionaler AES-256-Schlüssel oder eine Passphrase |
-| `allow-pr-cache` | Erlaubt das Speichern eines isolierten PR-Caches; Standard `true` |
+`compression-level` wird ausschließlich von `save` verwendet. Beim Restore wird
+das vorhandene Archiv automatisch mit seinem gespeicherten Kompressionsformat
+dekomprimiert.
 
-### Outputs
+### Restore-Outputs
 
 | Output | Beschreibung |
 |---|---|
-| `cache-hit` | `true`, wenn der exakte Key restauriert wurde |
+| `cache-hit` | `true`, wenn ein zulässiger Treffer für denselben logischen Cache restauriert wurde; ein Shared-Treffer zählt auch für Trusted-/Untrusted-Scopes |
 | `matched-key` | Tatsächlich verwendeter Key |
 | `content-hash` | SHA-256 der tatsächlich gespeicherten Objektdatei, einschließlich einer möglichen Verschlüsselung |
 | `asset-name` | Lesbarer physischer Release-Asset-Name mit enthaltenem Content-Hash |
+| `cache-size` | Größe des komprimierten Archivs in Bytes |
+
+### Save-Outputs
+
+| Output | Beschreibung |
+|---|---|
+| `content-hash` | SHA-256 des gespeicherten Objekts |
+| `asset-name` | Name des Release-Assets |
 | `cache-size` | Größe des komprimierten Archivs in Bytes |
 
 Beispiel:
@@ -481,7 +581,17 @@ exclude: |
   **/*secret*
   **/credentials*
   **/.docker/config.json
+
+exclude-path: |
+  .cache-excludes
+  config/cache-excludes.txt
 ```
+
+`exclude` und `exclude-path` können gemeinsam oder jeweils einzeln verwendet
+werden. Jede Zeile einer `exclude-path`-Datei wird als `tar --exclude`-Muster
+verwendet; leere Zeilen und Zeilen mit `#` am Anfang werden ignoriert. Die
+Dateien müssen innerhalb des Workspace liegen. Die vollständige Git-ignore-
+Semantik, insbesondere Negationsmuster mit `!`, wird nicht ausgewertet.
 
 Beim Restore wird:
 
@@ -490,32 +600,55 @@ Beim Restore wird:
 3. das Tar-Archiv auf absolute und `..`-Pfade geprüft,
 4. erst danach extrahiert.
 
-Fork-Pull-Requests speichern standardmäßig nichts. Für besonders sensible Projekte sollten zusätzlich getrennte `trusted`- und `untrusted`-Namespaces eingesetzt werden. Vor dem Packen verweigert die Action außerdem Symlinks, Pfade außerhalb des Workspace, typische Credential-Dateinamen sowie erkannte Private-Key-/Token-Muster in kleinen Textdateien. Diese Prüfung ist Defense-in-Depth und ersetzt keine engen Cache-Pfade oder `exclude`-Regeln.
+Fork-Pull-Requests speichern standardmäßig nichts, weil ihnen kein Schreib-Secret
+übergeben werden darf. Für besonders sensible Projekte sollten zusätzlich
+getrennte `trusted`- und `untrusted`-Namespaces eingesetzt werden. Vor dem
+Packen verweigert die Action außerdem Symlinks, Pfade außerhalb des Workspace,
+typische Credential-Dateinamen sowie erkannte Private-Key-/Token-Muster in
+kleinen Textdateien. Diese Prüfung ist Defense-in-Depth und ersetzt keine engen
+Cache-Pfade oder `exclude`-Regeln.
 
 Für interne Pull Requests kann ein eigener, automatisch löschbarer PR-Cache aktiviert werden:
 
 ```yaml
 - name: Save PR cache
-  if: success() && github.event_name == 'pull_request'
+  if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
   uses: Ludy87/cache-the-planet/save@v1
   with:
     repository: Ludy87/cache-the-planet
     cache-name: build
     token: ${{ secrets.CACHE_APP_TOKEN }}
     allow-pr-cache: true
-    key: ${{ format('build/{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+    key: ${{ hashFiles('package-lock.json') }}
     path: .cache/build
 ```
 
-Der Key muss mit `untrusted/<repository>/pr-<number>/` beginnen. Beim Event `pull_request: closed` entfernt [pr-cache-cleanup.yml](.github/workflows/pr-cache-cleanup.yml) die PR-References und die dadurch nicht mehr referenzierten Release Assets. Für Fork-Pull-Requests bleibt das Speichern deaktiviert, weil dort keine Schreib-Secrets an untrusted Code gegeben werden sollten.
+Der logische Nutzer-Key enthält keinen Namespace. Die Action ergänzt bei Pull Requests automatisch `untrusted/<repository>/pr-<number>/`. Beim Event `pull_request: closed` entfernt [pr-cache-cleanup.yml](.github/workflows/pr-cache-cleanup.yml) die PR-References und die dadurch nicht mehr referenzierten Release Assets. Für Fork-Pull-Requests bleibt das Speichern deaktiviert, weil dort keine Schreib-Secrets an untrusted Code gegeben werden sollten.
 
-Alternativ kann `key` nur den logischen Teil enthalten, zum Beispiel `npm/Linux-X64/<hash>/v1`. Die Action ergänzt automatisch `untrusted/<repository>/pr-<number>/` bei Pull Requests bzw. `trusted/<repository>/<default-branch>/` bei Pushes und Tags. Vollständige `trusted/...`- oder `untrusted/...`-Keys bleiben kompatibel.
+`key` darf nur den Abhängigkeits-Hash enthalten, zum Beispiel `${{ hashFiles('package-lock.json') }}`. Die Action ergänzt Cache-Name, Betriebssystem, Architektur und Version automatisch. Diese Werte können optional explizit angegeben werden:
+
+```yaml
+scope: auto
+os: linux
+arch: x64
+version: 1
+key: ${{ hashFiles('package-lock.json') }}
+```
+
+`version` darf ausschließlich aus Ziffern bestehen, zum Beispiel `1` oder
+`2`. Die Action stellt automatisch ein `v` voran.
+
+Wird `os` oder `arch` ausdrücklich leer angegeben, verwendet die Action
+`unknown` statt des Runner-Standardwerts. Wird der Input nicht angegeben,
+werden `RUNNER_OS` und `RUNNER_ARCH` verwendet.
+
+Mit `scope: auto` ergänzt sie außerdem `untrusted/<repository>/pr-<number>/` bei Pull Requests bzw. `trusted/<repository>/<default-branch>/` bei Pushes und Tags. Mit `scope: shared`, `scope: trusted` oder `scope: untrusted` wird der gewünschte Namespace automatisch verwendet. Präfixe wie `trusted/` oder `untrusted/` sind in `key` und `restore-keys` nicht erlaubt; ein vollständiger `shared/...`-Prefix ist nur in `restore-keys` als geschützter Fallback zulässig. Fehlen `os`/`arch` und auch `RUNNER_OS`/`RUNNER_ARCH`, verwendet die Action `unknown`.
 
 Der Cache-Typ kann auch separat mit `cache-name` angegeben werden. Dann enthält `key` nur noch Plattform, Hash und Version:
 
 ```yaml
 cache-name: npm
-key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+key: ${{ hashFiles('package-lock.json') }}
 ```
 
 ## Garbage Collection
@@ -524,6 +657,12 @@ Ein Objekt darf entfernt werden, wenn:
 
 - keine Reference mehr darauf zeigt,
 - es älter als die Grace Period ist.
+
+Der geplante Cleanup-Lauf löscht Untrusted-PR-Referenzen und die dadurch
+verwaisten Assets nach 24 Stunden. Ein manueller Lauf mit `mode: expired`
+löscht alle Untrusted-PR-Caches sofort. Shared-Referenzen werden dabei nur
+gelöscht, wenn beim manuellen Lauf zusätzlich `delete_shared: true` gesetzt
+wird. Trusted-Referenzen werden nie durch diesen Modus gelöscht.
 
 Standardmäßig beträgt die Grace Period sieben Tage. Zuerst immer Dry-Run ausführen:
 
@@ -544,7 +683,11 @@ DRY_RUN=false \
 node dist/gc.js
 ```
 
-Der mitgelieferte Workflow `.github/workflows/cleanup.yml` läuft täglich um 03:00 UTC. Vor dem produktiven Aktivieren sollte der Workflow so angepasst werden, dass `DRY_RUN=false` nur nach einer bewussten Freigabe gesetzt wird.
+Der mitgelieferte Workflow `.github/workflows/cleanup.yml` läuft täglich um
+03:00 UTC und löscht abgelaufene Untrusted-Caches automatisch. Manuell kann
+zuerst ein Dry-Run ausgeführt werden; für die Löschung muss `dry_run: false`
+gesetzt werden. Shared-Caches werden manuell mit `delete_shared: true` und
+`mode: expired` einbezogen.
 
 ## Installation und Versionierung
 
@@ -582,7 +725,7 @@ gehört zum Asset-Key der Content-Addressed-Cache-Action.
 | --- | --- | --- | --- |
 | `actions/setup-node` | `npm` | `package-manager-cache: false`, `cache` nicht setzen | `.cache/npm` |
 | `astral-sh/setup-uv` | `uv` | `enable-cache: false`, `cache-local-path: .cache/uv` | `.cache/uv` |
-| `astral-sh/setup-uv` mit uv-managed Python | `uv-python-3-13` | `enable-cache: false`, `UV_CACHE_DIR`, `UV_PYTHON_CACHE_DIR` und `UV_PYTHON_INSTALL_DIR` setzen; nur `.cache/uv` archivieren | `.cache/uv` |
+| `astral-sh/setup-uv` mit uv-managed Python | `uv-python-3-13` | `enable-cache: false`, `UV_CACHE_DIR`, `UV_PYTHON_CACHE_DIR` und `UV_PYTHON_INSTALL_DIR` setzen; nur den Download-Cache `.cache/uv` archivieren; Python pro Job in einem sauberen Installationsverzeichnis installieren | `.cache/uv` |
 | `go-task/setup-task` | `task` | keine Cache-Einstellung vorhanden | Taskfile-Build-Ausgabe, z. B. `.cache/task` |
 | `actions/setup-java` | `maven-java17` / `gradle-java17` | `cache` nicht setzen; Java-Version im `cache-name` berücksichtigen | `.cache/m2` / `.cache/gradle` |
 | `actions/setup-python` | `pip` | `cache` nicht setzen | z. B. `.cache/pip` |
@@ -615,7 +758,7 @@ Ein Cache-Schritt sieht beispielsweise so aus:
   with:
     repository: Ludy87/cache-the-planet
     cache-name: npm
-    key: ${{ format('{0}-{1}/{2}/v1', runner.os, runner.arch, hashFiles('package-lock.json')) }}
+    key: ${{ hashFiles('package-lock.json') }}
     path: .cache/npm
 ```
 
@@ -678,17 +821,18 @@ References werden mit der Contents-SHA gelesen und bei Konflikten bis zu fünfma
 - Ein einzelnes Manifest ist für tausende Keys geeignet; bei sehr vielen zehntausend Keys sollte es nach Namespace geshardet werden.
 - Die Action implementiert keine globale Branch-Policy. Trust-Level müssen über Key-Namespaces und Workflow-Berechtigungen festgelegt werden.
 - Cache-Fehler werden standardmäßig als Miss behandelt. Für reproduzierbare oder sicherheitskritische Builds `strict: true` verwenden.
+- Bei `strict: false` ersetzt ein neuer untrusted-PR-Cache den bisherigen Cache derselben PR/Cache-Name/Plattform/Versions-Kombination; bei `strict: true` wird das Limit als Fehler gemeldet. Shared-Caches werden niemals automatisch ersetzt.
 - Der Cache ersetzt keine Artefaktablage für signierte Releases oder vertrauenswürdige Binärdistributionen.
 
 ## Weitere Dokumentation
 
 - Ein ausführbares Docker-Beispiel befindet sich unter [examples/docker-cache](examples/docker-cache).
-- Der End-to-End-Testworkflow ist [.github/workflows/docker-cache-integration.yml](.github/workflows/docker-cache-integration.yml).
-- Der Node/npm-Asset-Test ist [.github/workflows/node-cache-integration.yml](.github/workflows/node-cache-integration.yml).
-- Der uv-Asset-Test ist [.github/workflows/uv-cache-integration.yml](.github/workflows/uv-cache-integration.yml). Er verwendet `astral-sh/setup-uv` ausschließlich zur Installation und deaktiviert dessen nativen Cache.
-- Der Task-Asset-Test ist [.github/workflows/task-cache-integration.yml](.github/workflows/task-cache-integration.yml). `go-task/setup-task` selbst besitzt keinen nativen Cache; getestet wird der von `task` erzeugte Build-Cache.
-- Der Java/Maven-Asset-Test ist [.github/workflows/java-cache-integration.yml](.github/workflows/java-cache-integration.yml). `actions/setup-java` wird ohne `cache`-Input verwendet; das Maven-Repository wird nach `.cache/m2` umgeleitet und als Release Asset gespeichert.
-- Der Gradle-Asset-Test ist [.github/workflows/gradle-cache-integration.yml](.github/workflows/gradle-cache-integration.yml). `GRADLE_USER_HOME` wird nach `.cache/gradle` umgeleitet; der Build wird in einem frischen Job mit `--offline` aus dem Release Asset wiederholt.
+- Der End-to-End-Testworkflow ist [.github/workflows/docker-cache-asset-integration.yml](.github/workflows/docker-cache-asset-integration.yml).
+- Der npm-Asset-Test ist [.github/workflows/npm-cache-asset-integration.yml](.github/workflows/npm-cache-asset-integration.yml).
+- Der uv-Asset-Test ist [.github/workflows/uv-cache-asset-integration.yml](.github/workflows/uv-cache-asset-integration.yml). Er verwendet `astral-sh/setup-uv` ausschließlich zur Installation und deaktiviert dessen nativen Cache.
+- Der Task-Asset-Test ist [.github/workflows/task-cache-asset-integration.yml](.github/workflows/task-cache-asset-integration.yml). `go-task/setup-task` selbst besitzt keinen nativen Cache; getestet wird der von `task` erzeugte Build-Cache.
+- Der Java/Maven-Asset-Test ist [.github/workflows/maven-cache-asset-integration.yml](.github/workflows/maven-cache-asset-integration.yml). `actions/setup-java` wird ohne `cache`-Input verwendet; das Maven-Repository wird nach `.cache/m2` umgeleitet und als Release Asset gespeichert.
+- Der Gradle-Asset-Test ist [.github/workflows/gradle-cache-asset-integration.yml](.github/workflows/gradle-cache-asset-integration.yml). `GRADLE_USER_HOME` wird nach `.cache/gradle` umgeleitet; der Key basiert nur auf `build.gradle`, `settings.gradle` und den Java-Quellen; der Build wird in einem frischen Job mit `--offline` aus dem Release Asset wiederholt.
 - [Architektur](docs/architecture.md)
 - [Security](docs/security.md)
 - [Protokoll v1](docs/protocol.md)

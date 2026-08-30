@@ -10,14 +10,87 @@ const maxCompressedBytes = Number(process.env.CACHE_MAX_COMPRESSED_BYTES || 2 * 
 const maxTarBytes = Number(process.env.CACHE_MAX_TAR_BYTES || 8 * 1024 ** 3);
 const maxArchiveEntries = Number(process.env.CACHE_MAX_ENTRIES || 200000);
 const maxArchivePathLength = 4096;
+const defaultManifestReferenceLimit = 100000;
+const defaultManifestWritesPerHour = 1000;
+const defaultLogicalKeyLength = 512;
+const defaultLogicalKeyComponents = 16;
 
 function input(name, defaultValue = '') {
   const variable = `INPUT_${name.replace(/ /g, '_').toUpperCase()}`;
   return process.env[variable] ?? defaultValue;
 }
 
+function hasInput(name) {
+  const variable = `INPUT_${name.replace(/ /g, '_').toUpperCase()}`;
+  return Object.prototype.hasOwnProperty.call(process.env, variable);
+}
+
 function token() {
-  return input('token') || process.env.GITHUB_TOKEN || process.env.ACTIONS_RUNTIME_TOKEN;
+  // ACTIONS_RUNTIME_TOKEN is for the Actions service, not the GitHub REST API.
+  return input('token') || process.env.GITHUB_TOKEN;
+}
+
+function authorizationHeaders() {
+  const value = token();
+  return value ? { Authorization: `Bearer ${value}` } : {};
+}
+
+let githubClientPromise;
+let configurationCache;
+
+function configuration() {
+  if (configurationCache) return configurationCache;
+  const configuredFile = input('config-file') || process.env.CACHE_CONFIG_FILE;
+  if (!configuredFile) return (configurationCache = {});
+  const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+  const file = path.resolve(workspace, configuredFile);
+  const relative = path.relative(workspace, file);
+  if (path.isAbsolute(relative) || relative === '..' || relative.startsWith(`..${path.sep}`)) {
+    throw new Error('config-file must be inside the GitHub workspace');
+  }
+  try {
+    configurationCache = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (error) {
+    throw new Error(`could not read config-file: ${error.message}`);
+  }
+  if (!configurationCache || typeof configurationCache !== 'object' || Array.isArray(configurationCache)) {
+    throw new Error('config-file must contain a JSON object');
+  }
+  return configurationCache;
+}
+
+function configuredLimit(environmentName, configName, fallback, section = 'monitoring') {
+  const environmentValue = process.env[environmentName];
+  const configValue = configuration()[section]?.[configName];
+  const value = environmentValue ?? configValue ?? fallback;
+  const limit = Number(value);
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new Error(`${environmentName} must be a positive integer`);
+  }
+  return limit;
+}
+
+function configuredCacheNames() {
+  const environmentValue = process.env.CACHE_ALLOWED_CACHE_NAMES;
+  const configValue = configuration().security?.allowed_cache_names;
+  const names = environmentValue
+    ? environmentValue.split(',').map((value) => value.trim()).filter(Boolean)
+    : configValue;
+  if (names === undefined) return null;
+  if (!Array.isArray(names) || names.length === 0 || names.some((value) => !/^[A-Za-z0-9_-]{1,32}$/.test(value))) {
+    throw new Error('allowed_cache_names must be a non-empty list of valid cache names');
+  }
+  return names;
+}
+
+async function githubClient() {
+  const value = token();
+  if (!value) return null;
+  if (!githubClientPromise) {
+    githubClientPromise = import('@actions/github')
+      .then(({ getOctokit }) => getOctokit(value, { userAgent: 'cache-the-planet' }));
+  }
+  return githubClientPromise;
 }
 
 function eventName() {
@@ -50,15 +123,82 @@ function baseRef() {
 }
 
 function isCompleteCacheKey(key) {
-  return /^(?:trusted\/[^/]+\/[^/]+\/[^/]+|untrusted\/[^/]+\/[^/]+\/pr-[1-9]\d*)\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1$/.test(key);
+  return /^(?:trusted\/[^/]+\/[^/]+\/[^/]+\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1|untrusted\/[^/]+\/[^/]+\/pr-[1-9]\d*\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1|shared\/[^/]+\/[^/]+\/[^/]+\/[^/]+-[^/]+\/[^/]+\/v1)$/.test(key);
 }
 
 function cacheName() {
   const value = input('cache-name').trim();
-  if (!/^[a-z][a-z0-9-]{0,31}$/.test(value)) {
-    throw new Error('cache-name is required and must contain only lowercase letters, numbers, or hyphens');
+  if (!/^[A-Za-z0-9_-]{1,32}$/.test(value)) {
+    throw new Error('cache-name is required and may contain only letters, numbers, hyphens, and underscores');
+  }
+  const allowed = configuredCacheNames();
+  if (allowed && !allowed.includes(value)) {
+    throw new Error(`cache-name is not allowed by the configured cache-name allowlist: ${value}`);
   }
   return value;
+}
+
+function cacheScope() {
+  const value = input('scope', 'auto').trim().toLowerCase();
+  if (!['auto', 'shared', 'trusted', 'untrusted'].includes(value)) {
+    throw new Error('scope must be auto, shared, trusted, or untrusted');
+  }
+  return value;
+}
+
+function runnerPlatform() {
+  // GitHub exposes optional action inputs as INPUT_* even when omitted. The
+  // metadata default distinguishes omission from an explicitly empty value.
+  const osInput = input('os');
+  const archInput = input('arch');
+  const osValue = osInput === '__runner__'
+    ? process.env.RUNNER_OS : (hasInput('os') ? osInput : process.env.RUNNER_OS);
+  const archValue = archInput === '__runner__'
+    ? process.env.RUNNER_ARCH : (hasInput('arch') ? archInput : process.env.RUNNER_ARCH);
+  const osName = (osValue || 'unknown').trim() || 'unknown';
+  const architecture = (archValue || 'unknown').trim() || 'unknown';
+  const safe = (value) => value.replace(/[^A-Za-z0-9._-]/g, '-').toLowerCase();
+  return `${safe(osName)}-${safe(architecture)}`;
+}
+
+function logicalCacheKey(value, name, includeVersion = true) {
+  const maxLength = configuredLimit(
+    'CACHE_MAX_LOGICAL_KEY_LENGTH', 'max_logical_key_length', defaultLogicalKeyLength, 'security',
+  );
+  const maxComponents = configuredLimit(
+    'CACHE_MAX_LOGICAL_KEY_COMPONENTS', 'max_logical_key_components', defaultLogicalKeyComponents, 'security',
+  );
+  const raw = String(value).trim();
+  if (!raw || raw.length > maxLength) {
+    throw new Error(`cache key must be between 1 and ${maxLength} characters`);
+  }
+  const rawParts = raw.replace(/\/$/, '').split('/');
+  if (rawParts.length > maxComponents || rawParts.some((part) => !/^[A-Za-z0-9._-]+$/.test(part) || part === '.' || part === '..')) {
+    throw new Error('cache key contains invalid or too many path components');
+  }
+  const key = raw.startsWith(`${name}/`) ? raw : `${name}/${raw}`;
+  const platform = runnerPlatform();
+  const withoutName = key.slice(name.length + 1);
+  const firstPart = withoutName.split('/')[0];
+  const hasPlatform = firstPart.toLowerCase() === platform.toLowerCase()
+    || (/^[A-Za-z0-9._-]+-[A-Za-z0-9._-]+$/.test(firstPart) && withoutName.split('/').length > 1);
+  const withPlatform = hasPlatform ? key : `${name}/${platform}/${withoutName}`;
+  if (withPlatform.length > maxLength) {
+    throw new Error(`cache key must not exceed ${maxLength} characters`);
+  }
+  if (!includeVersion) return withPlatform;
+  const version = input('version', '1').trim() || '1';
+  if (!/^\d+$/.test(version)) throw new Error('version must contain numbers only');
+  const complete = /\/v[A-Za-z0-9._-]+$/.test(withPlatform)
+    ? withPlatform : `${withPlatform}/v${version}`;
+  if (complete.length > maxLength) {
+    throw new Error(`cache key must not exceed ${maxLength} characters`);
+  }
+  return complete;
+}
+
+function isPullRequestEvent() {
+  return eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/');
 }
 
 function validateRestorePrefix(key) {
@@ -68,8 +208,10 @@ function validateRestorePrefix(key) {
     ? parts.length >= 5 && validPart(parts[1]) && validPart(parts[2]) && validPart(parts[3])
     : parts[0] === 'untrusted'
       && parts.length >= 5 && validPart(parts[1]) && validPart(parts[2]) && /^pr-[1-9]\d*$/.test(parts[3]);
-  if (!validNamespace || parts.some((part) => !validPart(part))) {
-    throw new Error('restore-keys contains a value outside the trusted/untrusted schema');
+  const sharedNamespace = parts[0] === 'shared'
+    && parts.length >= 3 && validPart(parts[1]) && validPart(parts[2]);
+  if ((!validNamespace && !sharedNamespace) || parts.some((part) => !validPart(part))) {
+    throw new Error('restore-keys contains a value outside the trusted/untrusted/shared schema');
   }
   return key;
 }
@@ -95,15 +237,25 @@ function pullRequestNumber() {
 function scopedKey(key) {
   if (!key) return key;
   const name = cacheName();
-  if (key.startsWith('trusted/') || key.startsWith('untrusted/')) {
-    if (!isCompleteCacheKey(key)) {
-      throw new Error('cache key does not match the trusted/untrusted schema');
-    }
-    return key;
+  const scope = cacheScope();
+  if (/^(?:trusted|untrusted|shared)\//.test(key)) {
+    throw new Error('key must not contain a trusted/, untrusted/, or shared/ prefix; use scope');
   }
-  const logicalKey = key.startsWith(`${name}/`) ? key : `${name}/${key}`;
+  const logicalKey = logicalCacheKey(key, name);
   const sourceRepository = repository();
-  if (eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/')) {
+  if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic cache key');
+  const pullRequest = isPullRequestEvent();
+  const selectedScope = scope === 'auto' ? (pullRequest ? 'untrusted' : 'trusted') : scope;
+  if (selectedScope === 'shared') {
+    if (pullRequest) log('scope=shared is mapped to an isolated untrusted PR cache');
+    if (pullRequest) {
+      const number = pullRequestNumber();
+      if (!number) throw new Error('pull request number is required for an automatic PR cache key');
+      return `untrusted/${sourceRepository}/pr-${number}/${logicalKey}`;
+    }
+    return `shared/${sourceRepository}/${logicalKey}`;
+  }
+  if (selectedScope === 'untrusted' || pullRequest && selectedScope === 'untrusted') {
     const number = pullRequestNumber();
     if (!sourceRepository || !number) throw new Error('repository and pull request number are required for an automatic PR cache key');
     return `untrusted/${sourceRepository}/pr-${number}/${logicalKey}`;
@@ -114,19 +266,67 @@ function scopedKey(key) {
   return `trusted/${sourceRepository}/${branch}/${logicalKey}`;
 }
 
+function scopeCounterpartKey(key) {
+  const branch = defaultBranch();
+  const sourceRepository = repository();
+  const defaultRef = branch && process.env.GITHUB_REF === `refs/heads/${branch}`;
+  if (!defaultRef || !sourceRepository) return null;
+  const sharedPrefix = `shared/${sourceRepository}/`;
+  const trustedPrefix = `trusted/${sourceRepository}/${branch}/`;
+  if (key.startsWith(sharedPrefix)) return `${trustedPrefix}${key.slice(sharedPrefix.length)}`;
+  if (key.startsWith(trustedPrefix)) return `${sharedPrefix}${key.slice(trustedPrefix.length)}`;
+  return null;
+}
+
+function pullRequestCacheCombination(key) {
+  if (!key.startsWith('untrusted/')) return null;
+  const parts = key.split('/');
+  if (parts.length < 8 || !/^pr-[1-9]\d*$/.test(parts[3]) || !/^v\d+$/.test(parts[parts.length - 1])) {
+    return null;
+  }
+  return `${parts.slice(0, 6).join('/')}/${parts[parts.length - 1]}`;
+}
+
+function expiredUntrustedReferences(references, now = Date.now(), ttlMs = 24 * 60 * 60 * 1000) {
+  return Object.entries(references || {}).filter(([key, reference]) => {
+    if (!key.startsWith('untrusted/') || !reference?.updated_at) return false;
+    const updatedAt = Date.parse(reference.updated_at);
+    return Number.isFinite(updatedAt) && now - updatedAt >= ttlMs;
+  });
+}
+
 function scopedRestorePrefix(prefix) {
   const value = prefix.trim();
   if (!value) return value;
-  if (value.startsWith('trusted/') || value.startsWith('untrusted/')) return validateRestorePrefix(value);
+  // An explicit shared prefix is a read-only fallback. PR access remains
+  // guarded by assertTrustedRestoreAllowed and allow-shared-restore.
+  if (/^shared\//.test(value)) {
+    return validateRestorePrefix(value);
+  }
+  if (/^(?:trusted|untrusted)\//.test(value)) {
+    throw new Error('restore-keys must not contain a trusted/ or untrusted/ prefix; use scope');
+  }
   const name = cacheName();
-  const logicalKey = value.startsWith(`${name}/`) ? value : `${name}/${value}`;
+  const scope = cacheScope();
+  const logicalKey = logicalCacheKey(value, name, false);
   const logicalParts = logicalKey.replace(/\/$/, '').split('/');
   if (!logicalParts.length || logicalParts.some((part) => !/^[A-Za-z0-9._-]+$/.test(part))) {
     throw new Error('restore-keys contains invalid path components');
   }
   const sourceRepository = repository();
   if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic restore key');
-  if (eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/')) {
+  const pullRequest = isPullRequestEvent();
+  const selectedScope = scope === 'auto' ? (pullRequest ? 'untrusted' : 'trusted') : scope;
+  if (selectedScope === 'shared') {
+    if (pullRequest) log('scope=shared is mapped to an isolated untrusted PR cache');
+    if (pullRequest) {
+      const number = pullRequestNumber();
+      if (!number) throw new Error('pull request number is required for an automatic restore key');
+      return `untrusted/${sourceRepository}/pr-${number}/${logicalKey}`;
+    }
+    return `shared/${sourceRepository}/${logicalKey}`;
+  }
+  if (selectedScope === 'untrusted' || pullRequest && selectedScope === 'untrusted') {
     const number = pullRequestNumber();
     if (!number) throw new Error('pull request number is required for an automatic restore key');
     return `untrusted/${sourceRepository}/pr-${number}/${logicalKey}`;
@@ -136,10 +336,33 @@ function scopedRestorePrefix(prefix) {
   return `trusted/${sourceRepository}/${branch}/${logicalKey}`;
 }
 
+function sharedRestorePrefix(prefix) {
+  const value = prefix.trim();
+  if (!value) return value;
+  if (/^shared\//.test(value)) return validateRestorePrefix(value);
+  if (/^(?:trusted|untrusted)\//.test(value)) {
+    throw new Error('restore-keys must not contain a trusted/ or untrusted/ prefix; use scope');
+  }
+  const logicalKey = logicalCacheKey(value, cacheName(), false);
+  if (logicalKey.replace(/\/$/, '').split('/').some((part) => !/^[A-Za-z0-9._-]+$/.test(part))) {
+    throw new Error('restore-keys contains invalid path components');
+  }
+  const sourceRepository = repository();
+  if (!sourceRepository) throw new Error('GITHUB_REPOSITORY is required for an automatic shared restore key');
+  return `shared/${sourceRepository}/${logicalKey}`;
+}
+
 function assertTrustedRestoreAllowed(keys) {
   const isPullRequest = eventName() === 'pull_request' || process.env.GITHUB_REF?.includes('/pull/');
   if (isPullRequest && keys.some((key) => key.startsWith('trusted/'))) {
     throw new Error('pull requests may not restore trusted cache keys');
+  }
+  if (!isPullRequest && keys.some((key) => key.startsWith('untrusted/'))) {
+    throw new Error('default-branch workflows may not restore untrusted cache keys');
+  }
+  if (isPullRequest && keys.some((key) => key.startsWith('shared/'))
+    && String(input('allow-shared-restore')).toLowerCase() !== 'true') {
+    throw new Error('shared cache restore requires allow-shared-restore=true');
   }
 }
 
@@ -148,20 +371,75 @@ function log(message) {
 }
 
 function fail(error) {
+  const message = error?.message || String(error);
+  const debug = process.env.ACTIONS_STEP_DEBUG === 'true'
+    || process.env.RUNNER_DEBUG === '1';
   if (String(input('strict')).toLowerCase() !== 'true') {
-    console.log(`::warning::cache ignored: ${error.message || error}`);
+    console.log(`::warning::cache ignored: ${message}`);
+    if (debug && error?.stack) console.error(error.stack);
     return false;
   }
-  throw error;
+  console.error(`Cache error: ${message}`);
+  if (debug && error?.stack) console.error(error.stack);
+  process.exitCode = 1;
+  return false;
+}
+
+function githubApiError(status, message) {
+  if (status === 401) {
+    return new Error(
+      'GitHub authentication failed (401 Bad credentials): the cache repository rejected the token. '
+      + 'Pass token: ${{ github.token }} or set GITHUB_TOKEN. For a separate cache repository, '
+      + 'use a PAT or GitHub App token with access to that repository. Fork pull requests cannot '
+      + 'use write-capable secrets; skip saving there or save from a trusted workflow.',
+    );
+  }
+  if (status === 403) {
+    return new Error(
+      `GitHub authorization failed (403): the token is valid but is not allowed to access the cache repository. ${message}`,
+    );
+  }
+  return new Error(`${status} ${message}`);
 }
 
 async function gh(url, options = {}) {
+  const client = await githubClient();
+  if (client) {
+    try {
+      const requestOptions = {
+        ...options,
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': apiVersion,
+          ...(options.headers || {}),
+        },
+      };
+      if (typeof requestOptions.body === 'string') {
+        try { requestOptions.body = JSON.parse(requestOptions.body); } catch { /* non-JSON body */ }
+      }
+      if (requestOptions.body && typeof requestOptions.body === 'object'
+        && !Buffer.isBuffer(requestOptions.body)) {
+        Object.assign(requestOptions, requestOptions.body);
+        delete requestOptions.body;
+      }
+      const response = await client.request(url, {
+        ...requestOptions,
+      });
+      return { body: response.data, headers: response.headers };
+    } catch (error) {
+      const message = error.response?.data?.message || error.message;
+      const apiError = githubApiError(error.status || 500, message);
+      apiError.status = error.status;
+      apiError.headers = error.response?.headers;
+      throw apiError;
+    }
+  }
   const response = await fetch(`https://api.github.com${url}`, {
     ...options,
     headers: {
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': apiVersion,
-      Authorization: `Bearer ${token()}`,
+      ...authorizationHeaders(),
       ...(options.headers || {}),
     },
   });
@@ -169,7 +447,7 @@ async function gh(url, options = {}) {
   let body;
   try { body = JSON.parse(text); } catch { body = text; }
   if (!response.ok) {
-    const error = new Error(`${response.status} ${body.message || text}`);
+    const error = githubApiError(response.status, body.message || text);
     error.status = response.status;
     error.headers = response.headers;
     throw error;
@@ -182,7 +460,7 @@ async function upload(url, file, name, contentType) {
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token()}`,
+      ...authorizationHeaders(),
       'Content-Type': contentType,
       'Content-Length': bytes.length,
       'X-GitHub-Api-Version': apiVersion,
@@ -190,7 +468,10 @@ async function upload(url, file, name, contentType) {
     body: bytes,
   });
   if (response.ok) return JSON.parse(await response.text());
-  const error = new Error(`${response.status} ${await response.text()}`);
+  const text = await response.text();
+  let message;
+  try { message = JSON.parse(text).message || text; } catch { message = text; }
+  const error = githubApiError(response.status, message);
   error.status = response.status;
   throw error;
 }
@@ -205,6 +486,36 @@ function have(command) {
 
 function entries() {
   return input('path').split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
+}
+
+function excludePatterns() {
+  const patterns = input('exclude').split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
+  const files = input('exclude-path').split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
+  const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+  for (const value of files) {
+    const absolute = path.resolve(workspace, value);
+    const relative = path.relative(workspace, absolute);
+    if (path.isAbsolute(relative) || relative === '..' || relative.startsWith(`..${path.sep}`)) {
+      throw new Error(`exclude-path must be inside the GitHub workspace: ${value}`);
+    }
+    let stat;
+    try { stat = fs.lstatSync(absolute); } catch (error) {
+      throw new Error(`could not read exclude-path ${value}: ${error.message}`);
+    }
+    if (stat.isSymbolicLink()) throw new Error(`exclude-path must not be a symbolic link: ${value}`);
+    if (!stat.isFile()) throw new Error(`exclude-path must reference a regular file: ${value}`);
+    if (stat.size > 1024 * 1024) throw new Error(`exclude-path is too large: ${value}`);
+    try {
+      patterns.push(...fs.readFileSync(absolute, 'utf8').split(/\r?\n/)
+        .map((line) => line.trim()).filter((line) => line && !line.startsWith('#')));
+    } catch (error) {
+      throw new Error(`could not read exclude-path ${value}: ${error.message}`);
+    }
+  }
+  if (patterns.some((value) => value.length > 4096 || value.includes('\0'))) {
+    throw new Error('exclude patterns must be at most 4096 characters and contain no NUL bytes');
+  }
+  return patterns;
 }
 
 function encryptionKey() {
@@ -329,8 +640,7 @@ async function makeArchive() {
     else log(`cache path missing: ${value}`);
   }
   if (!paths.length) throw new Error('no cache paths exist');
-  const excludes = input('exclude').split(/\r?\n/).map((value) => value.trim())
-    .filter(Boolean).flatMap((value) => ['--exclude', value]);
+  const excludes = excludePatterns().flatMap((value) => ['--exclude', value]);
   const tar = cp.spawn('tar', [
     '--sort=name', '--mtime=UTC 1970-01-01', '--owner=0', '--group=0',
     '--numeric-owner', '--dereference', '--hard-dereference', '--exclude-vcs', '--format=gnu', '-cf', '-', ...excludes, '-C', workspace, ...paths,
@@ -466,12 +776,91 @@ async function updateManifest(repository, message, update) {
   throw new Error(`reference update conflicted after ${maxAttempts} attempts`);
 }
 
-async function setRef(repository, key, hash) {
+function manifestWriteGuard(manifest, replacingKey = null) {
+  const now = Date.now();
+  const maxReferences = configuredLimit(
+    'CACHE_MAX_MANIFEST_REFERENCES', 'max_manifest_references', defaultManifestReferenceLimit,
+  );
+  const maxWrites = configuredLimit(
+    'CACHE_MAX_MANIFEST_WRITES_PER_HOUR', 'max_manifest_writes_per_hour', defaultManifestWritesPerHour,
+  );
+  const monitoring = manifest.monitoring && typeof manifest.monitoring === 'object'
+    ? manifest.monitoring : {};
+  const lockedUntil = Date.parse(monitoring.locked_until || '');
+  if (Number.isFinite(lockedUntil) && lockedUntil > now) {
+    throw new Error(`cache writes are temporarily locked until ${monitoring.locked_until}`);
+  }
+  const referenceCount = Object.keys(manifest.references || {}).length
+    - (replacingKey && manifest.references?.[replacingKey] ? 1 : 0);
+  if (referenceCount >= maxReferences) {
+    throw new Error(`cache manifest reference limit reached (${maxReferences})`);
+  }
+  const windowStarted = Date.parse(monitoring.window_started_at || '');
+  if (!Number.isFinite(windowStarted) || now - windowStarted >= 60 * 60 * 1000) {
+    monitoring.window_started_at = new Date(now).toISOString();
+    monitoring.writes = 0;
+  }
+  if (Number(monitoring.writes || 0) >= maxWrites) {
+    monitoring.locked_until = new Date(now + 60 * 60 * 1000).toISOString();
+    monitoring.lock_reason = 'manifest write rate limit exceeded';
+    monitoring.locked_at = new Date(now).toISOString();
+    manifest.monitoring = monitoring;
+    return false;
+  }
+  monitoring.writes = Number(monitoring.writes || 0) + 1;
+  manifest.monitoring = monitoring;
+  return true;
+}
+
+async function setRef(repository, key, hash, metadata = {}) {
+  let locked = false;
   return updateManifest(repository, `cache: update ${key}`, (manifest) => {
     if (manifest.references[key]?.object === hash) return false;
-    manifest.references[key] = { object: hash, updated_at: new Date().toISOString() };
+    if (!manifestWriteGuard(manifest)) {
+      locked = true;
+      return true;
+    }
+    manifest.references[key] = {
+      object: hash,
+      updated_at: new Date().toISOString(),
+      source: process.env.GITHUB_REPOSITORY || null,
+      created_by: process.env.GITHUB_ACTOR || null,
+      size: Number.isFinite(metadata.size) ? metadata.size : null,
+    };
+    return true;
+  }).then((result) => {
+    if (locked) throw new Error('cache writes are temporarily locked: manifest write rate limit exceeded');
+    return result;
+  });
+}
+
+async function replaceRef(repository, key, hash, removeKey, metadata = {}) {
+  let locked = false;
+  const result = await updateManifest(repository, `cache: replace ${removeKey} with ${key}`, (manifest) => {
+    if (manifest.references[key]?.object === hash) return false;
+    if (!manifestWriteGuard(manifest, removeKey)) {
+      locked = true;
+      return true;
+    }
+    if (removeKey && removeKey !== key) delete manifest.references[removeKey];
+    manifest.references[key] = {
+      object: hash,
+      updated_at: new Date().toISOString(),
+      source: process.env.GITHUB_REPOSITORY || null,
+      created_by: process.env.GITHUB_ACTOR || null,
+      size: Number.isFinite(metadata.size) ? metadata.size : null,
+    };
     return true;
   });
+  if (locked) throw new Error('cache writes are temporarily locked: manifest write rate limit exceeded');
+  return result;
+}
+
+async function deleteObject(repository, hash) {
+  const asset = await object(repository, hash);
+  if (!asset) return false;
+  await gh(`/repos/${repository}/releases/assets/${asset.id}`, { method: 'DELETE' });
+  return true;
 }
 
 async function download(repository, hash) {
@@ -479,7 +868,7 @@ async function download(repository, hash) {
   if (!asset) throw new Error(`object ${hash} not found`);
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cad-'));
   const file = path.join(directory, asset.name);
-  const response = await fetch(asset.browser_download_url, { headers: { Authorization: `Bearer ${token()}` } });
+  const response = await fetch(asset.browser_download_url, { headers: authorizationHeaders() });
   if (!response.ok) throw new Error(`download failed: ${response.status}`);
   const contentLength = Number(response.headers.get('content-length') || 0);
   if (contentLength > maxCompressedBytes) throw new Error('cache archive exceeds the compressed size limit');
@@ -515,12 +904,12 @@ function extract(file) {
 }
 
 module.exports = {
-  input, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName,
-  scopedKey, scopedRestorePrefix, assertTrustedRestoreAllowed,
+  input, hasInput, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName, cacheScope, runnerPlatform,
+  scopedKey, scopeCounterpartKey, pullRequestCacheCombination, expiredUntrustedReferences, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed,
   log, fail, gh,
-  upload, entries, refName,
+  upload, entries, excludePatterns, refName,
   securityScan, makeArchive, inspectTar, digest, assetName, hashFromAssetName,
   encryptFile, decryptFile,
-  release, assets, object, refs, updateManifest, setRef,
+  release, assets, object, refs, updateManifest, setRef, replaceRef, deleteObject, manifestWriteGuard,
   download, extract,
 };

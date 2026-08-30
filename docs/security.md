@@ -1,4 +1,4 @@
-# Security
+# Sicherheit
 
 ## Token für das Cache-Repository
 
@@ -17,9 +17,80 @@ Im Workflow:
 token: ${{ secrets.CACHE_APP_TOKEN }}
 ```
 
-Wenn `token` nicht angegeben wird, verwendet die Action standardmäßig `GITHUB_TOKEN` beziehungsweise `ACTIONS_RUNTIME_TOKEN`. Ein explizit gesetzter `token` hat immer Vorrang.
+Wenn `token` nicht angegeben wird, verwendet die Action standardmäßig `GITHUB_TOKEN`. Ein explizit gesetzter `token` hat immer Vorrang. `ACTIONS_RUNTIME_TOKEN` wird bewusst nicht verwendet, weil dieser interne Runtime-Token kein GitHub-REST-API-Token ist.
 
-Kein dauerhaft gültiges Token ohne Ablaufdatum und kein Fallback auf `github.token` verwenden. Fork-Pull-Requests dürfen keine Schreib-Secrets erhalten; der Save-Schritt bleibt für sie deaktiviert.
+Kein dauerhaft gültiges Token ohne Ablaufdatum verwenden. Für ein separates
+Cache-Repository reicht der `GITHUB_TOKEN` des aufrufenden Repositories meist
+nicht aus; verwende dafür ein PAT oder ein kurzlebiges GitHub-App-Token.
+Fork-Pull-Requests dürfen keine Schreib-Secrets erhalten; der Save-Schritt
+bleibt für sie deaktiviert.
+
+Das Manifest protokolliert bei neuen Referenzen Quelle, Ersteller und
+komprimierte Archivgröße. Zusätzlich begrenzt die Action standardmäßig das
+Manifest auf 100.000 Referenzen und 1.000 Schreibvorgänge pro Stunde. Wird das
+Schreiblimit überschritten, wird das Manifest für eine Stunde gesperrt.
+Administratoren können die Grenzen mit `CACHE_MAX_MANIFEST_REFERENCES` und
+`CACHE_MAX_MANIFEST_WRITES_PER_HOUR` anpassen.
+
+Alternativ können diese Einstellungen in einer JSON-Datei im Workspace liegen.
+Der Pfad wird mit `config-file` oder `CACHE_CONFIG_FILE` angegeben;
+Umgebungsvariablen überschreiben Werte aus der Datei:
+
+```yaml
+with:
+  config-file: .cache-the-planet.json
+```
+
+Ein Beispiel befindet sich in
+`.cache-the-planet.json.example`. Die Konfigurationsdatei darf nicht außerhalb
+des Workspace liegen.
+
+Gegen Key-Flooding begrenzt die Action standardmäßig jeden logischen Key auf
+512 Zeichen und 16 Pfadkomponenten. `cache-name` darf optional über
+`security.allowed_cache_names` beziehungsweise `CACHE_ALLOWED_CACHE_NAMES`
+auf bekannte Cache-Namen beschränkt werden. Die Environment-Variable verwendet
+eine kommagetrennte Liste:
+
+Ein `cache-name` ist 1 bis 32 Zeichen lang und darf ausschließlich Buchstaben,
+Zahlen, `-` und `_` enthalten. Dadurch können keine zusätzlichen Pfadsegmente
+oder Sonderzeichen in den automatisch erzeugten Manifest-Key gelangen.
+
+```yaml
+env:
+  CACHE_MAX_LOGICAL_KEY_LENGTH: 512
+  CACHE_MAX_LOGICAL_KEY_COMPONENTS: 16
+  CACHE_ALLOWED_CACHE_NAMES: npm,uv,gradle-java17,docker
+```
+
+## Cache-Scope
+
+Der `scope`-Input steuert die automatische Namespace-Auswahl:
+
+| Scope | Zweck | Speichern erlaubt aus |
+|---|---|---|
+| `auto` | `trusted` auf dem Standard-Branch, `untrusted` im Pull Request | abhängig vom Event |
+| `trusted` | stabile, vertrauenswürdige Cache-Referenz | konfigurierter Default-Branch oder Release-Tag |
+| `shared` | geprüfter Cache für mehrere Workflows/Projekte | konfigurierter Default-Branch |
+| `untrusted` | isolierter Pull-Request-Cache | Pull Request |
+
+Für einen Shared-Cache reicht:
+
+```yaml
+cache-name: npm
+scope: shared
+key: ${{ hashFiles('package-lock.json') }}
+```
+
+Wird `scope: shared` in einem Pull Request verwendet, wird der Inhalt mit einem
+Hinweis als isolierter `untrusted/pr-<number>/...`-Cache gespeichert. Dadurch
+verändert der Pull Request keinen Shared-Cache. Nach dem Merge auf `main` kann
+derselbe logische Key als `shared` gespeichert werden.
+
+Für untrusted-Pull-Request-Caches ist pro PR, Cache-Name, Plattform und Version
+maximal ein Cache erlaubt. Mit `strict: true` führt ein zweiter Inhalt zu einem
+Fehler. Mit `strict: false` wird der alte untrusted-Verweis atomar durch den
+neuen ersetzt; das alte Asset wird nur gelöscht, wenn es nicht mehr anderweitig
+referenziert wird. Shared-Caches werden dabei niemals automatisch ersetzt.
 
 ## Optionale Cache-Verschlüsselung
 
@@ -54,3 +125,13 @@ der Workflow stellt ausdrücklich und sicher die erforderliche Berechtigung bzw.
 das erforderliche Token bereit. Ein Cache-Treffer ist kein Herkunftsnachweis;
 Builds dürfen keine beliebigen zwischengespeicherten Binärdateien ohne eigene
 Vertrauensprüfung ausführen.
+
+Der optionale Namespace `shared/` ist ausschließlich für geprüfte Inhalte aus
+dem konfigurierten Default-Branch vorgesehen. Ein `shared/<owner>/<repository>/`-
+Prefix oder ein vollständiger `shared/...`-Prefix darf in `restore-keys` als
+Fallback verwendet werden. Bei Pull Requests wird ein Save mit
+`scope: shared` in den isolierten Untrusted-PR-Namespace abgebildet. Ein
+angeforderter Shared-Restore bleibt dagegen
+durch `allow-shared-restore: true` ausdrücklich freischaltbar. Shared-Caches
+müssen trotzdem frei von Geheimnissen bleiben, weil andere Workflows die
+gelesenen Daten verarbeiten können.

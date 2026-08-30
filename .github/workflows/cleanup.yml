@@ -5,8 +5,23 @@ concurrency:
 on:
   workflow_dispatch:
     inputs:
-      dry-run:
+      mode:
+        description: Cleanup mode
+        required: true
+        default: orphan
+        type: choice
+        options: [expired, orphan, all, object]
+      object:
+        description: SHA-256 hash or asset filename when mode is object
+        required: false
+        type: string
+      dry_run:
         { description: Dry run, required: false, default: true, type: boolean }
+      delete_shared:
+        description: Delete all shared cache references and unused shared assets (manual expired mode only)
+        required: false
+        default: false
+        type: boolean
   schedule: [{ cron: "0 3 * * *" }]
 jobs:
   gc:
@@ -19,8 +34,13 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
-      - run: node dist/gc.js --dry-run
+      - run: node dist/gc.js
         env:
           CACHE_REPOSITORY: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DRY_RUN: ${{ inputs.dry-run || 'true' }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GC_MODE: ${{ github.event_name == 'schedule' && 'expired' || inputs.mode || 'expired' }}
+          GC_EXPIRE_ALL_UNTRUSTED: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'expired' && 'true' || 'false' }}
+          GC_DELETE_SHARED: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'expired' && inputs.delete_shared && 'true' || 'false' }}
+          UNTRUSTED_TTL_HOURS: 24
+          GC_OBJECT: ${{ inputs.object || '' }}
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || (inputs.dry_run && 'true' || 'false') }}
