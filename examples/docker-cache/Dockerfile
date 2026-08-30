@@ -1,7 +1,7 @@
 FROM docker.stirlingpdf.com/stirlingtools/stirling-pdf:latest as builder
 
-RUN ls -la /usr/local/bin/stirling-pdf
-RUN /usr/local/bin/stirling-pdf --version
+RUN test -f /scripts/init.sh
+RUN java -version
 
 FROM alpine:3.22
 
