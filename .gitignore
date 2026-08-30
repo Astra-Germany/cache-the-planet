@@ -63,3 +63,6 @@ test-results/
 dist/
 !dist/
 !dist/*.js
+
+.codex/
+AGENTS.md
