@@ -4,6 +4,9 @@ on:
 
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
+  FILES_TO_HASH: |
+    examples/docker-cache/Dockerfile
+    examples/docker-cache/hello.txt
 
 permissions:
   contents: read
@@ -20,6 +23,17 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
+
+      - name: hash Dockerfile and context
+        id: hash
+        run: |
+          echo "dockerfile-hash=$(hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt'))" >> $GITHUB_OUTPUT
+          echo "dockerfile-files-hash=$(hashFiles(env.FILES_TO_HASH))" >> $GITHUB_OUTPUT
+
+      - name: echo Dockerfile and context hash
+        run: |
+          echo "Dockerfile and context hash: ${{ steps.hash.outputs.dockerfile-hash }}"
+          echo "Dockerfile and context files hash: ${{ steps.hash.outputs.dockerfile-files-hash }}"
 
       - name: Restore Docker cache
         uses: ./
