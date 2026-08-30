@@ -62,9 +62,14 @@ jobs:
           scope: shared
           token: ${{ github.token }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
-          version: 3
+          version: 4
           path: .cache/uv
           strict: false
+
+      - name: Verify uv cache directory
+        run: |
+          test "$(uv cache dir)" = "$UV_CACHE_DIR"
+          test -d "$UV_CACHE_DIR"
 
   restore-cache:
     name: Restore uv Python asset cache in a fresh job
@@ -90,7 +95,7 @@ jobs:
           token: ${{ github.token }}
           scope: auto
           key: ${{ needs.hash_pr.outputs.files_hash }}
-          version: 3
+          version: 4
           allow-shared-restore: true
           restore-keys: |
             linux-x64/
@@ -103,21 +108,21 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v3"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v4"
 
       - name: Assert shared asset cache fallback
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'shared/') }}
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v3"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v4"
 
       - name: Assert exact asset cache hit - untrusted
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'untrusted/') }}
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v3"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v4"
 
       - name: Restore uv and Python asset cache - trusted
         id: cache-trusted
@@ -128,7 +133,7 @@ jobs:
           token: ${{ github.token }}
           scope: trusted
           key: ${{ needs.hash_pr.outputs.files_hash }}
-          version: 3
+          version: 4
           restore-keys: |
             linux-x64/
           path: .cache/uv
@@ -139,7 +144,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-trusted.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-trusted.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v3"
+          test "${{ steps.cache-trusted.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v4"
 
       - name: Restore uv and Python asset cache - shared
         id: cache-shared
@@ -150,7 +155,7 @@ jobs:
           token: ${{ github.token }}
           scope: shared
           key: ${{ needs.hash_pr.outputs.files_hash }}
-          version: 3
+          version: 4
           restore-keys: |
             linux-x64/
           path: .cache/uv
@@ -161,7 +166,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-shared.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-shared.outputs.matched-key }}" = "shared/${{ github.repository }}/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v3"
+          test "${{ steps.cache-shared.outputs.matched-key }}" = "shared/${{ github.repository }}/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v4"
 
       - name: Restore uv and Python asset cache - untrusted
         id: cache-untrusted
@@ -172,7 +177,7 @@ jobs:
           token: ${{ github.token }}
           scope: untrusted
           key: ${{ needs.hash_pr.outputs.files_hash }}
-          version: 3
+          version: 4
           restore-keys: |
             linux-x64/
           path: .cache/uv
@@ -183,7 +188,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-untrusted.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-untrusted.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v3"
+          test "${{ steps.cache-untrusted.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v4"
 
       - name: Install managed Python from restored download cache
         run: |
