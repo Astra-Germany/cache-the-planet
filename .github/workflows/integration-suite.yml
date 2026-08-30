@@ -86,17 +86,31 @@ jobs:
       contents: write
     secrets: inherit
 
-  java:
+  java-save-cache:
+    name: Save Maven cache asset
     needs: [build-dist, task]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/maven-cache-asset-integration.yml
+    with:
+      save-cache: true
+    permissions:
+      contents: write
+    secrets: inherit
+
+  java-restore-cache:
+    name: Restore Maven cache asset
+    needs: [java-save-cache]
+    if: always() && (needs.java-save-cache.result == 'success')
+    uses: ./.github/workflows/maven-cache-asset-integration.yml
+    with:
+      restore-cache: true
     permissions:
       contents: write
     secrets: inherit
 
   gradle-save-cache:
     name: Save Gradle cache asset
-    needs: [build-dist, java]
+    needs: [build-dist, java-restore-cache]
     if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/gradle-cache-asset-integration.yml
     with:
