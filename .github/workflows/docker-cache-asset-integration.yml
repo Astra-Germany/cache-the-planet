@@ -4,7 +4,7 @@ on:
 
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
-  FILES_TO_HASH: |
+  FILES_TO_HASH: 
     examples/docker-cache/Dockerfile
     examples/docker-cache/hello.txt
 
@@ -12,13 +12,13 @@ permissions:
   contents: read
 
 jobs:
-  hash-pr:
+  hash_pr:
     name: Hash PR Docker files
     runs-on: ubuntu-latest
     permissions:
       contents: read
     outputs:
-      dockerfile-hash: ${{ steps.hash.outputs.value }}
+      dockerfile_hash: ${{ steps.hash.outputs.dockerfile_hash }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -29,7 +29,7 @@ jobs:
           echo "dockerfile-hash=$HASH" >> $GITHUB_OUTPUT
   save-cache:
     name: Build and save Docker cache asset
-    needs: hash-pr
+    needs: hash_pr
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -52,7 +52,7 @@ jobs:
         run: |
           echo "Dockerfile and context hash: ${{ steps.hash.outputs.dockerfile-hash }}"
           echo "Dockerfile and context files hash: ${{ steps.hash.outputs.dockerfile-files-hash }}"
-          echo "Dockerfile and context files hash (from env): ${{ needs.hash-pr.outputs.dockerfile-hash }}"
+          echo "Dockerfile and context files hash (from env): ${{ needs.hash_pr.outputs.dockerfile_hash }}"
 
       - name: Restore Docker cache
         uses: ./
@@ -107,7 +107,7 @@ jobs:
 
   restore-cache:
     name: Restore Docker cache asset in a fresh job
-    needs: save-cache
+    needs: [save-cache, hash_pr]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -139,21 +139,21 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/docker/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v2"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/docker/linux-x64/${{ needs.hash_pr.outputs.dockerfile_hash }}/v2"
 
       - name: Assert shared asset cache fallback
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'shared/') }}
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "false"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/docker/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v2"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/docker/linux-x64/${{ needs.hash_pr.outputs.dockerfile_hash }}/v2"
 
       - name: Assert exact asset cache hit - untrusted
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'untrusted/') }}
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/docker/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v2"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/docker/linux-x64/${{ needs.hash_pr.outputs.dockerfile_hash }}/v2"
 
       - name: Restore Docker cache asset - trusted
         id: cache-trusted
@@ -175,7 +175,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-trusted.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-trusted.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/docker/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v2"
+          test "${{ steps.cache-trusted.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/docker/linux-x64/${{ needs.hash_pr.outputs.dockerfile_hash }}/v2"
 
       - name: Restore Docker cache asset - shared
         id: cache-shared
@@ -185,7 +185,7 @@ jobs:
           cache-name: docker
           scope: shared
           token: ${{ github.token }}
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.dockerfile_hash }}
           version: 2
           restore-keys: |
             linux-x64/
@@ -197,7 +197,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-shared.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-shared.outputs.matched-key }}" = "shared/${{ github.repository }}/docker/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v2"
+          test "${{ steps.cache-shared.outputs.matched-key }}" = "shared/${{ github.repository }}/docker/linux-x64/${{ needs.hash_pr.outputs.dockerfile_hash }}/v2"
 
       - name: Restore Docker cache asset - untrusted
         id: cache-untrusted
@@ -207,7 +207,7 @@ jobs:
           cache-name: docker
           scope: untrusted
           token: ${{ github.token }}
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.dockerfile_hash }}
           version: 2
           restore-keys: |
             linux-x64/
@@ -219,7 +219,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-untrusted.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-untrusted.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/docker/linux-x64/${{ hashFiles(env.FILES_TO_HASH) }}/v2"
+          test "${{ steps.cache-untrusted.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/docker/linux-x64/${{ needs.hash_pr.outputs.dockerfile_hash }}/v2"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
