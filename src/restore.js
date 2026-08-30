@@ -12,10 +12,24 @@ function setOutput(name, value) {
     const repository = c.input('repository');
     const key = c.scopedKey(c.input('key'));
     const manifest = await c.refs(repository);
-    const candidates = [
-      key,
-      ...c.input('restore-keys').split(/\r?\n/).map(c.scopedRestorePrefix).filter(Boolean),
-    ];
+    const candidates = [];
+    if (c.cacheScope() === 'auto'
+      && (String(c.input('allow-shared-restore')).toLowerCase() === 'true'
+        || c.eventName() !== 'pull_request')) {
+      candidates.push(c.sharedRestorePrefix(c.input('key')));
+    }
+    candidates.push(key);
+    for (const prefix of c.input('restore-keys').split(/\r?\n/).map((value) => value.trim()).filter(Boolean)) {
+      if (c.cacheScope() === 'auto' && !prefix.startsWith('shared/')) {
+        // On auto, prefer a verified shared cache, then use the normal
+        // trusted (main/tag) or isolated untrusted (PR) namespace.
+        if (String(c.input('allow-shared-restore')).toLowerCase() === 'true'
+          || c.eventName() !== 'pull_request') {
+          candidates.push(c.sharedRestorePrefix(prefix));
+        }
+      }
+      candidates.push(c.scopedRestorePrefix(prefix));
+    }
     c.assertTrustedRestoreAllowed(candidates);
     let found = null;
 
@@ -49,12 +63,29 @@ function setOutput(name, value) {
 
     const archive = await c.download(repository, found[1].object);
     c.extract(archive);
-    setOutput('cache-hit', found[0] === key);
+    const cacheIdentity = (value) => {
+      const parts = value.split('/');
+      if (parts[0] === 'shared') return parts.slice(3).join('/');
+      if (parts[0] === 'trusted') return parts.slice(4).join('/');
+      // untrusted/<owner>/<repo>/pr-<number>/<cache-name>/...
+      // The logical cache identity starts at <cache-name> (index 4).
+      if (parts[0] === 'untrusted') return parts.slice(4).join('/');
+      return value;
+    };
+    const cacheHit = found[0] === key
+      || (found[0].startsWith('shared/') && cacheIdentity(found[0]) === cacheIdentity(key));
+    
+    setOutput('cache-hit', cacheHit);
     setOutput('matched-key', found[0]);
     setOutput('content-hash', found[1].object);
     setOutput('asset-name', asset.name);
     setOutput('cache-size', fs.statSync(archive).size);
-    console.log(`Cache found: requested-key=${key}; matched-key=${found[0]}; asset=${asset.name}; exact-hit=${found[0] === key}`);
+    console.log(`Cache found:`);
+    console.log(`requested-key=${key};`);
+    console.log(`matched-key=${found[0]};`);
+    console.log(`asset=${asset.name};`);
+    console.log(`exact-hit=${found[0] === key};`);
+    console.log(`cache-hit=${cacheHit}`);
   } catch (error) {
     c.fail(error);
   }

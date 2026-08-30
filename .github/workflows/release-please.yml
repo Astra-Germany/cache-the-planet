@@ -1,11 +1,6 @@
 name: Release Please
 
 on:
-  # workflow_run:
-  #   workflows:
-  #     - Build action distribution
-  #   types:
-  #     - completed
   workflow_dispatch:
 
 concurrency:
@@ -17,7 +12,7 @@ concurrency:
 jobs:
   release-please:
     name: Create release PR or GitHub release
-    if: github.event_name == 'workflow_dispatch' # || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -29,7 +24,6 @@ jobs:
         id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
