@@ -12,7 +12,13 @@ function setOutput(name, value) {
     const repository = c.input('repository');
     const key = c.scopedKey(c.input('key'));
     const manifest = await c.refs(repository);
-    const candidates = [key];
+    const candidates = [];
+    if (c.cacheScope() === 'auto'
+      && (String(c.input('allow-shared-restore')).toLowerCase() === 'true'
+        || c.eventName() !== 'pull_request')) {
+      candidates.push(c.sharedRestorePrefix(c.input('key')));
+    }
+    candidates.push(key);
     for (const prefix of c.input('restore-keys').split(/\r?\n/).map((value) => value.trim()).filter(Boolean)) {
       if (c.cacheScope() === 'auto' && !prefix.startsWith('shared/')) {
         // On auto, prefer a verified shared cache, then use the normal
