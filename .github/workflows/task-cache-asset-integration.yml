@@ -107,11 +107,11 @@ jobs:
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
           test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/task/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
 
-      - name: Assert shared asset cache fallback
+      - name: Assert exact asset cache hit start with shared
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'shared/') }}
         shell: bash
         run: |
-          test "${{ steps.cache-auto.outputs.cache-hit }}" = "false"
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
           test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/task/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
 
       - name: Assert exact asset cache hit - untrusted
