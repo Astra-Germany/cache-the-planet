@@ -47,11 +47,21 @@ const c = require('./common');
     }
     const current = await c.refs(repository);
     const existingReference = current.json.references[key];
+    const sharedCounterpart = requestedScope === 'auto' && trustedKey
+      ? c.scopeCounterpartKey(key)
+      : null;
     if (existingReference?.object) {
       const existingAsset = await c.object(repository, existingReference.object);
       if (!existingAsset) {
         c.log(`orphaned cache reference detected for key=${key}; recreating asset`);
       } else {
+        if (sharedCounterpart && !current.json.references[sharedCounterpart]) {
+          await c.setRef(repository, sharedCounterpart, existingReference.object, {
+            size: existingReference.size,
+            source: `linked-from:${key}`,
+          });
+          c.log(`linked shared cache reference: key=${sharedCounterpart}; source=${key}`);
+        }
         const existingAssetName = existingAsset.name;
         c.log(`cache already exists for key=${key}; asset=${existingAssetName}`);
         if (process.env.GITHUB_OUTPUT) {
@@ -157,6 +167,13 @@ const c = require('./common');
     await c.setRef(repository, key, hash, {
       size: fs.statSync(archive.file).size,
     });
+    if (sharedCounterpart) {
+      await c.setRef(repository, sharedCounterpart, hash, {
+        size: fs.statSync(archive.file).size,
+        source: `linked-from:${key}`,
+      });
+      c.log(`linked shared cache reference: key=${sharedCounterpart}; source=${key}`);
+    }
     if (process.env.GITHUB_OUTPUT) {
       fs.appendFileSync(
         process.env.GITHUB_OUTPUT,
