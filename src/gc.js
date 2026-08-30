@@ -11,6 +11,8 @@ const c = require('./common');
     const gracePeriod = Number(process.env.GRACE_DAYS || 7) * 86400000;
     const untrustedTtl = Number(process.env.UNTRUSTED_TTL_HOURS || 24) * 3600000;
     const expireAllUntrusted = process.env.GC_EXPIRE_ALL_UNTRUSTED === 'true';
+    const deleteShared = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch'
+      && process.env.GC_DELETE_SHARED === 'true';
     const manifest = await c.refs(repository);
     const references = manifest.json.references;
     const liveObjects = new Set(
@@ -21,15 +23,17 @@ const c = require('./common');
     const cacheAssets = allAssets.filter((item) => item.name.endsWith('.tar.zst'));
 
     if (mode === 'expired') {
+      const isDeletableKey = (key) => key.startsWith('untrusted/')
+        || (deleteShared && key.startsWith('shared/'));
       const expired = expireAllUntrusted
-        ? Object.entries(references).filter(([key]) => key.startsWith('untrusted/'))
+        ? Object.entries(references).filter(([key]) => isDeletableKey(key))
         : c.expiredUntrustedReferences(references, now, untrustedTtl);
       const expiredHashes = new Set(expired.map(([, reference]) => reference.object));
       if (expired.length && !dryRun) {
         await c.updateManifest(repository, 'cache: expire untrusted references', (current) => {
           let changed = false;
           const candidates = expireAllUntrusted
-            ? Object.entries(current.references).filter(([key]) => key.startsWith('untrusted/'))
+            ? Object.entries(current.references).filter(([key]) => isDeletableKey(key))
             : c.expiredUntrustedReferences(current.references, Date.now(), untrustedTtl);
           for (const [key] of candidates) {
             delete current.references[key];
@@ -44,8 +48,10 @@ const c = require('./common');
       for (const asset of cacheAssets) {
         const hash = c.hashFromAssetName(asset.name);
         const isUntrustedAsset = asset.name.startsWith('untrusted-');
+        const isSharedAsset = asset.name.startsWith('shared-');
         if (!hash || liveAfterExpiry.has(hash)
-          || (!expiredHashes.has(hash) && !(expireAllUntrusted && isUntrustedAsset))) continue;
+          || (!expiredHashes.has(hash)
+            && !(expireAllUntrusted && (isUntrustedAsset || deleteShared && isSharedAsset)))) continue;
         console.log(`${dryRun ? 'would delete' : 'delete'} ${asset.name}`);
         if (!dryRun) await c.gh(`/repos/${repository}/releases/assets/${asset.id}`, { method: 'DELETE' });
       }

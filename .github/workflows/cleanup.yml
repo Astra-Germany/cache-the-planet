@@ -17,6 +17,11 @@ on:
         type: string
       dry_run:
         { description: Dry run, required: false, default: true, type: boolean }
+      delete_shared:
+        description: Delete all shared cache references and unused shared assets (manual expired mode only)
+        required: false
+        default: false
+        type: boolean
   schedule: [{ cron: "0 3 * * *" }]
 jobs:
   gc:
@@ -35,6 +40,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GC_MODE: ${{ github.event_name == 'schedule' && 'expired' || inputs.mode || 'expired' }}
           GC_EXPIRE_ALL_UNTRUSTED: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'expired' && 'true' || 'false' }}
+          GC_DELETE_SHARED: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'expired' && inputs.delete_shared && 'true' || 'false' }}
           UNTRUSTED_TTL_HOURS: 24
           GC_OBJECT: ${{ inputs.object || '' }}
           DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || (inputs.dry_run && 'true' || 'false') }}
