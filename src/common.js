@@ -287,6 +287,14 @@ function pullRequestCacheCombination(key) {
   return `${parts.slice(0, 6).join('/')}/${parts[parts.length - 1]}`;
 }
 
+function expiredUntrustedReferences(references, now = Date.now(), ttlMs = 24 * 60 * 60 * 1000) {
+  return Object.entries(references || {}).filter(([key, reference]) => {
+    if (!key.startsWith('untrusted/') || !reference?.updated_at) return false;
+    const updatedAt = Date.parse(reference.updated_at);
+    return Number.isFinite(updatedAt) && now - updatedAt >= ttlMs;
+  });
+}
+
 function scopedRestorePrefix(prefix) {
   const value = prefix.trim();
   if (!value) return value;
@@ -897,7 +905,7 @@ function extract(file) {
 
 module.exports = {
   input, hasInput, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName, cacheScope, runnerPlatform,
-  scopedKey, scopeCounterpartKey, pullRequestCacheCombination, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed,
+  scopedKey, scopeCounterpartKey, pullRequestCacheCombination, expiredUntrustedReferences, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed,
   log, fail, gh,
   upload, entries, excludePatterns, refName,
   securityScan, makeArchive, inspectTar, digest, assetName, hashFromAssetName,
