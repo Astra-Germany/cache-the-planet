@@ -1,13 +1,6 @@
 {
   "schema_version": 1,
   "references": {
-    "untrusted/Astra-Germany/cache-the-planet/pr-5/docker/linux-x64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v2": {
-      "object": "sha256:2e006d5acbc243ccf48ef88e2a824f9d2174f0946a6807df8912cae49d5f08b7",
-      "updated_at": "2026-08-30T10:47:50.346Z",
-      "source": "Astra-Germany/cache-the-planet",
-      "created_by": "Ludy87",
-      "size": 4033828
-    },
     "trusted/Astra-Germany/cache-the-planet/main/npm/linux-x64/a5c449def6e52ab2f87bb3f569202599094927cb45ea0b4c8fd8038271d77cfe/v1": {
       "object": "sha256:857e90bc9ddf2503698338e11684562cd27fe42d26fefde1708ff3fe2d485b5c",
       "updated_at": "2026-08-30T11:17:12.061Z",
@@ -28,10 +21,17 @@
       "source": "Astra-Germany/cache-the-planet",
       "created_by": "Ludy87",
       "size": 7002299
+    },
+    "untrusted/Astra-Germany/cache-the-planet/pr-5/docker/linux-x64/271ddca8fdd4e4167da82bd3866d728c6f508bc582ca613e2ed7170f0297c3fe/v2": {
+      "object": "sha256:2e006d5acbc243ccf48ef88e2a824f9d2174f0946a6807df8912cae49d5f08b7",
+      "updated_at": "2026-08-30T11:24:41.064Z",
+      "source": "Astra-Germany/cache-the-planet",
+      "created_by": "Ludy87",
+      "size": 4033828
     }
   },
   "monitoring": {
     "window_started_at": "2026-08-30T10:47:50.346Z",
-    "writes": 4
+    "writes": 5
   }
 }
