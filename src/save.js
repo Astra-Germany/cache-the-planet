@@ -58,6 +58,28 @@ const c = require('./common');
         return;
       }
     }
+
+    const relatedKey = c.scopeCounterpartKey(key);
+    const relatedReference = relatedKey && current.json.references[relatedKey];
+    if (relatedReference?.object) {
+      const relatedAsset = await c.object(repository, relatedReference.object);
+      if (relatedAsset) {
+        await c.setRef(repository, key, relatedReference.object, {
+          size: relatedReference.size,
+          source: `linked-from:${relatedKey}`,
+        });
+        c.log(`linked existing cache reference: key=${key}; source=${relatedKey}`);
+        if (process.env.GITHUB_OUTPUT) {
+          fs.appendFileSync(
+            process.env.GITHUB_OUTPUT,
+            `content-hash=${relatedReference.object}\nasset-name=${relatedAsset.name}\n`,
+          );
+        }
+        return;
+      }
+      c.log(`orphaned cache reference detected for key=${relatedKey}; creating asset for ${key}`);
+    }
+
     const archive = await c.makeArchive();
     const hash = c.digest(archive.file);
     const existing = await c.object(repository, hash);
