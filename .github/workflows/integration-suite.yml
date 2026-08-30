@@ -156,7 +156,7 @@ jobs:
   all-checks-passed:
     name: All checks passed
     if: always()
-    needs: [build-dist, node, uv, uv-python, task, java, gradle-save-cache, gradle-restore-cache, docker-save-cache, docker-restore-cache]
+    needs: [build-dist, node, uv, uv-python, task, java-save-cache, java-restore-cache, gradle-save-cache, gradle-restore-cache, docker-save-cache, docker-restore-cache]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -173,7 +173,8 @@ jobs:
             uv=${{ needs.uv.result }}
             uv-python=${{ needs.uv-python.result }}
             task=${{ needs.task.result }}
-            java=${{ needs.java.result }}
+            java-save-cache=${{ needs.java-save-cache.result }}
+            java-restore-cache=${{ needs.java-restore-cache.result }}
             gradle-save-cache=${{ needs.gradle-save-cache.result }}
             gradle-restore-cache=${{ needs.gradle-restore-cache.result }}
             docker-save-cache=${{ needs.docker-save-cache.result }}
