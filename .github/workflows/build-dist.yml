@@ -73,7 +73,7 @@ jobs:
           key: ${{ hashFiles('package-lock.json') }}
           path: .cache/npm
           strict: false
-          token: ${{ github.token }}
+          token: ${{ steps.bot-token.outputs.token || github.token }}
           allow-pr-cache: false
         continue-on-error: true
 
