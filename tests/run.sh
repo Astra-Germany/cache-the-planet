@@ -15,7 +15,7 @@ const os = require('os');
 const path = require('path');
 const cp = require('child_process');
 const { securityScan: sourceSecurityScan } = require('./src/common');
-const { scopedKey, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName, manifestWriteGuard } = require('./src/common');
+const { scopedKey, scopeCounterpartKey, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName, manifestWriteGuard } = require('./src/common');
 const { inspectTar } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
@@ -116,8 +116,18 @@ try {
   }
   const sharedKey = 'shared/example/project/npm/Linux-X64/hash/v1';
   process.env['INPUT_SCOPE'] = 'shared';
+  process.env.GITHUB_REF = 'refs/heads/main';
   if (scopedKey('Linux-X64/hash/v1') !== sharedKey) {
     throw new Error('shared scope did not generate the shared cache key');
+  }
+  const trustedKey = 'trusted/example/project/main/npm/Linux-X64/hash/v1';
+  if (scopeCounterpartKey(sharedKey) !== trustedKey
+    || scopeCounterpartKey(trustedKey) !== sharedKey) {
+    throw new Error('trusted/shared counterpart mapping was not generated correctly');
+  }
+  process.env.GITHUB_REF = 'refs/heads/feature';
+  if (scopeCounterpartKey(sharedKey) !== null || scopeCounterpartKey(trustedKey) !== null) {
+    throw new Error('trusted/shared counterpart mapping was allowed outside the default branch');
   }
   process.env.GITHUB_EVENT_NAME = 'pull_request';
   fs.writeFileSync(eventFile, JSON.stringify({ pull_request: { number: 7 } }));

@@ -266,6 +266,18 @@ function scopedKey(key) {
   return `trusted/${sourceRepository}/${branch}/${logicalKey}`;
 }
 
+function scopeCounterpartKey(key) {
+  const branch = defaultBranch();
+  const sourceRepository = repository();
+  const defaultRef = branch && process.env.GITHUB_REF === `refs/heads/${branch}`;
+  if (!defaultRef || !sourceRepository) return null;
+  const sharedPrefix = `shared/${sourceRepository}/`;
+  const trustedPrefix = `trusted/${sourceRepository}/${branch}/`;
+  if (key.startsWith(sharedPrefix)) return `${trustedPrefix}${key.slice(sharedPrefix.length)}`;
+  if (key.startsWith(trustedPrefix)) return `${sharedPrefix}${key.slice(trustedPrefix.length)}`;
+  return null;
+}
+
 function scopedRestorePrefix(prefix) {
   const value = prefix.trim();
   if (!value) return value;
@@ -808,7 +820,7 @@ function extract(file) {
 
 module.exports = {
   input, hasInput, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName, cacheScope, runnerPlatform,
-  scopedKey, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed,
+  scopedKey, scopeCounterpartKey, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed,
   log, fail, gh,
   upload, entries, refName,
   securityScan, makeArchive, inspectTar, digest, assetName, hashFromAssetName,
