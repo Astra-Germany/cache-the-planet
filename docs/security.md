@@ -7,7 +7,7 @@ Bei einem separaten Cache-Repository benötigt der Workflow ein Token mit minima
 ```text
 Secret-Name: CACHE_APP_TOKEN
 Repository: spdf-cache → Settings → Secrets and variables → Actions
-PAT-Zugriff: Astra-Germany/cache-the-planet
+PAT-Zugriff: Ludy87/cache-the-planet
 PAT-Rechte: Contents/Code Read and write, Metadata Read-only
 ```
 
