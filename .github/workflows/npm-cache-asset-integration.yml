@@ -36,6 +36,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
+          scope: shared
           token: ${{ secrets.GITHUB_TOKEN }}
           key: ${{ hashFiles('package-lock.json') }}
           path: .cache/npm
