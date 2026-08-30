@@ -77,7 +77,12 @@ function setOutput(name, value) {
     setOutput('content-hash', found[1].object);
     setOutput('asset-name', asset.name);
     setOutput('cache-size', fs.statSync(archive).size);
-    console.log(`Cache found: requested-key=${key}; matched-key=${found[0]}; asset=${asset.name}; exact-hit=${found[0] === key}; cache-hit=${cacheHit}`);
+    console.log(`Cache found:`);
+    console.log(`requested-key=${key};`);
+    console.log(`matched-key=${found[0]};`);
+    console.log(`asset=${asset.name};`);
+    console.log(`exact-hit=${found[0] === key};`);
+    console.log(`cache-hit=${cacheHit}`);
   } catch (error) {
     c.fail(error);
   }
