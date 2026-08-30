@@ -64,7 +64,7 @@ jobs:
 
   uv:
     needs: [build-dist, node]
-    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/uv-cache-asset-integration.yml
     permissions:
       contents: write
@@ -72,7 +72,7 @@ jobs:
 
   uv-python:
     needs: [build-dist, uv]
-    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/uv-python-cache-asset-integration.yml
     permissions:
       contents: write
@@ -80,7 +80,7 @@ jobs:
 
   task:
     needs: [build-dist, uv-python]
-    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/task-cache-asset-integration.yml
     permissions:
       contents: write
@@ -88,7 +88,7 @@ jobs:
 
   java:
     needs: [build-dist, task]
-    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/maven-cache-asset-integration.yml
     permissions:
       contents: write
@@ -104,7 +104,7 @@ jobs:
 
   docker:
     needs: [build-dist, gradle]
-    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped') && false
+    if: always() && (needs.build-dist.result == 'success' || needs.build-dist.result == 'skipped')
     uses: ./.github/workflows/docker-cache-asset-integration.yml
     permissions:
       contents: write

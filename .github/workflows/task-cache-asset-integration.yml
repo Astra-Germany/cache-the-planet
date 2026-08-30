@@ -5,13 +5,31 @@ on:
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
   TASK_TEMP_DIR: ${{ github.workspace }}/examples/task-cache/.cache/task-state
+  FILES_TO_HASH: |
+    examples/task-cache/Taskfile.yml
+    examples/task-cache/src/**
 
 permissions:
   contents: read
 
 jobs:
+  hash_pr:
+    name: Hash Task files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      files_hash: ${{ steps.hash.outputs.files_hash }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Hash Task files
+        id: hash
+        run: |
+          HASH="${{ hashFiles(env.FILES_TO_HASH) }}"
+          echo "files_hash=$HASH" >> "$GITHUB_OUTPUT"
   save-cache:
     name: Run task and save asset cache
+    needs: hash_pr
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -29,7 +47,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: task
-          key: ${{ hashFiles('examples/task-cache/Taskfile.yml', 'examples/task-cache/src/**') }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: |
             examples/task-cache/.cache/task
             examples/task-cache/.cache/task-state
@@ -43,15 +61,17 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: task
-          key: ${{ hashFiles('examples/task-cache/Taskfile.yml', 'examples/task-cache/src/**') }}
+          scope: shared
+          token: ${{ github.token }}
+          key: ${{ needs.hash_pr.outputs.files_hash }}
           path: |
             examples/task-cache/.cache/task
             examples/task-cache/.cache/task-state
-          strict: true
+          strict: false
 
   restore-cache:
     name: Restore task cache asset in a fresh job
-    needs: save-cache
+    needs: [save-cache, hash_pr]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -64,23 +84,108 @@ jobs:
         with:
           version: 3.x
 
-      - name: Restore task build cache asset
-        id: cache
+      - name: Restore task build cache asset - auto
+        id: cache-auto
         uses: ./
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: task
-          key: ${{ hashFiles('examples/task-cache/Taskfile.yml', 'examples/task-cache/src/**') }}
+          scope: auto
+          key: ${{ needs.hash_pr.outputs.files_hash }}
+          allow-shared-restore: true
+          restore-keys: |
+            linux-x64/
           path: |
             examples/task-cache/.cache/task
             examples/task-cache/.cache/task-state
           strict: true
 
-      - name: Assert exact asset cache hit
+      - name: Assert exact asset cache hit - trusted
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'trusted/') }}
         shell: bash
         run: |
-          test "${{ steps.cache.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache.outputs.matched-key }}" = "trusted/${{ github.repository }}/${{ github.event.repository.default_branch }}/task/linux-x64/${{ hashFiles('examples/task-cache/Taskfile.yml', 'examples/task-cache/src/**') }}/v1"
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/task/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Assert shared asset cache fallback
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'shared/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "false"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/task/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Assert exact asset cache hit - untrusted
+        if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'untrusted/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/task/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Restore task build cache asset - trusted
+        id: cache-trusted
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: task
+          scope: trusted
+          key: ${{ needs.hash_pr.outputs.files_hash }}
+          restore-keys: |
+            linux-x64/
+          path: |
+            examples/task-cache/.cache/task
+            examples/task-cache/.cache/task-state
+          strict: false
+
+      - name: Assert exact asset cache hit - trusted
+        if: ${{ steps.cache-trusted.outputs.matched-key != '' && startsWith(steps.cache-trusted.outputs.matched-key, 'trusted/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-trusted.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-trusted.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/task/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Restore task build cache asset - shared
+        id: cache-shared
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: task
+          scope: shared
+          key: ${{ needs.hash_pr.outputs.files_hash }}
+          restore-keys: |
+            linux-x64/
+          path: |
+            examples/task-cache/.cache/task
+            examples/task-cache/.cache/task-state
+          strict: false
+
+      - name: Assert exact asset cache hit - shared
+        if: ${{ steps.cache-shared.outputs.matched-key != '' && startsWith(steps.cache-shared.outputs.matched-key, 'shared/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-shared.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-shared.outputs.matched-key }}" = "shared/${{ github.repository }}/task/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+
+      - name: Restore task build cache asset - untrusted
+        id: cache-untrusted
+        uses: ./
+        with:
+          repository: ${{ env.CACHE_REPOSITORY }}
+          cache-name: task
+          scope: untrusted
+          key: ${{ needs.hash_pr.outputs.files_hash }}
+          restore-keys: |
+            linux-x64/
+          path: |
+            examples/task-cache/.cache/task
+            examples/task-cache/.cache/task-state
+          strict: false
+
+      - name: Assert exact asset cache hit - untrusted
+        if: ${{ steps.cache-untrusted.outputs.matched-key != '' && startsWith(steps.cache-untrusted.outputs.matched-key, 'untrusted/') }}
+        shell: bash
+        run: |
+          test "${{ steps.cache-untrusted.outputs.cache-hit }}" = "true"
+          test "${{ steps.cache-untrusted.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/task/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
 
       - name: Verify restored task cache
         run: task --taskfile examples/task-cache/Taskfile.yml verify
