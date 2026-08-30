@@ -1,4 +1,4 @@
-# Security
+# Sicherheit
 
 ## Token für das Cache-Repository
 
@@ -7,7 +7,7 @@ Bei einem separaten Cache-Repository benötigt der Workflow ein Token mit minima
 ```text
 Secret-Name: CACHE_APP_TOKEN
 Repository: spdf-cache → Settings → Secrets and variables → Actions
-PAT-Zugriff: Ludy87/cache-the-planet
+PAT-Zugriff: Astra-Germany/cache-the-planet
 PAT-Rechte: Contents/Code Read and write, Metadata Read-only
 ```
 
@@ -19,7 +19,11 @@ token: ${{ secrets.CACHE_APP_TOKEN }}
 
 Wenn `token` nicht angegeben wird, verwendet die Action standardmäßig `GITHUB_TOKEN`. Ein explizit gesetzter `token` hat immer Vorrang. `ACTIONS_RUNTIME_TOKEN` wird bewusst nicht verwendet, weil dieser interne Runtime-Token kein GitHub-REST-API-Token ist.
 
-Kein dauerhaft gültiges Token ohne Ablaufdatum und kein Fallback auf `github.token` verwenden. Fork-Pull-Requests dürfen keine Schreib-Secrets erhalten; der Save-Schritt bleibt für sie deaktiviert.
+Kein dauerhaft gültiges Token ohne Ablaufdatum verwenden. Für ein separates
+Cache-Repository reicht der `GITHUB_TOKEN` des aufrufenden Repositories meist
+nicht aus; verwende dafür ein PAT oder ein kurzlebiges GitHub-App-Token.
+Fork-Pull-Requests dürfen keine Schreib-Secrets erhalten; der Save-Schritt
+bleibt für sie deaktiviert.
 
 Das Manifest protokolliert bei neuen Referenzen Quelle, Ersteller und
 komprimierte Archivgröße. Zusätzlich begrenzt die Action standardmäßig das
@@ -77,9 +81,9 @@ scope: shared
 key: ${{ hashFiles('package-lock.json') }}
 ```
 
-Wird `scope: shared` in einem Pull Request verwendet, wird der Save-Schritt mit
-einem Hinweis übersprungen. Dadurch schreibt der Pull Request weder einen
-Shared- noch einen zusätzlichen untrusted-Cache. Nach dem Merge auf `main` kann
+Wird `scope: shared` in einem Pull Request verwendet, wird der Inhalt mit einem
+Hinweis als isolierter `untrusted/pr-<number>/...`-Cache gespeichert. Dadurch
+verändert der Pull Request keinen Shared-Cache. Nach dem Merge auf `main` kann
 derselbe logische Key als `shared` gespeichert werden.
 
 Für untrusted-Pull-Request-Caches ist pro PR, Cache-Name, Plattform und Version
@@ -126,7 +130,8 @@ Der optionale Namespace `shared/` ist ausschließlich für geprüfte Inhalte aus
 dem konfigurierten Default-Branch vorgesehen. Ein `shared/<owner>/<repository>/`-
 Prefix oder ein vollständiger `shared/...`-Prefix darf in `restore-keys` als
 Fallback verwendet werden. Bei Pull Requests wird ein Save mit
-`scope: shared` übersprungen. Ein angeforderter Shared-Restore bleibt dagegen
+`scope: shared` in den isolierten Untrusted-PR-Namespace abgebildet. Ein
+angeforderter Shared-Restore bleibt dagegen
 durch `allow-shared-restore: true` ausdrücklich freischaltbar. Shared-Caches
 müssen trotzdem frei von Geheimnissen bleiben, weil andere Workflows die
 gelesenen Daten verarbeiten können.

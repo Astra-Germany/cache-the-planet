@@ -2,7 +2,7 @@
 
 ![Cache the Planet – secure content-addressed GitHub Actions cache](docs/assets/cache-the-planet-banner.png)
 
-Ein zentraler, content-addressed Cache für GitHub Actions. Dieses Repository `Ludy87/cache-the-planet` enthält sowohl die wiederverwendbare Action als auch den zentralen Cache-Speicher und kann von mehreren Anwendungs-Repositories verwendet werden.
+Ein zentraler, content-addressed Cache für GitHub Actions. Dieses Repository `Astra-Germany/cache-the-planet` enthält sowohl die wiederverwendbare Action als auch den zentralen Cache-Speicher und kann von mehreren Anwendungs-Repositories verwendet werden.
 
 Die eigentlichen Cache-Dateien werden nicht in Git-Commits gespeichert. Stattdessen liegen sie als immutable GitHub-Release-Assets vor. Eine kleine Manifest-Datei verwaltet die veränderlichen logischen Cache-Keys.
 
@@ -73,7 +73,7 @@ Sie wird beim ersten Save automatisch erstellt. Das Manifest enthält nur Metada
 Erstelle ein eigenes Repository, zum Beispiel:
 
 ```text
-  Ludy87/cache-the-planet
+  Astra-Germany/cache-the-planet
 ```
 
 Empfohlene Einstellungen:
@@ -92,7 +92,7 @@ Das Repository mit dieser Action muss nicht in jedem Anwendungs-Repository ausge
 Dieses Repository selbst sollte beispielsweise unter folgendem Namen veröffentlicht werden:
 
 ```text
-Ludy87/cache-the-planet
+Astra-Germany/cache-the-planet
 ```
 
 Die Struktur muss erhalten bleiben:
@@ -176,9 +176,9 @@ jobs:
 
       - name: Restore cache
         id: cache
-        uses: Ludy87/cache-the-planet@v1
+        uses: Astra-Germany/cache-the-planet@v1
         with:
-          repository: Ludy87/cache-the-planet
+          repository: Astra-Germany/cache-the-planet
           cache-name: python
           key: ${{ hashFiles('uv.lock') }}
           restore-keys: |
@@ -193,9 +193,9 @@ jobs:
 
       - name: Save cache
         if: success() && github.event_name != 'pull_request'
-        uses: Ludy87/cache-the-planet/save@v1
+        uses: Astra-Germany/cache-the-planet/save@v1
         with:
-          repository: Ludy87/cache-the-planet
+          repository: Astra-Germany/cache-the-planet
           cache-name: python
           key: ${{ hashFiles('uv.lock') }}
           path: |
@@ -267,7 +267,7 @@ Empfohlene Einstellungen:
 Token name: cache-the-planet
 Expiration: 90 Tage oder kürzer
 Repository access: Only select repositories
-Repository: Ludy87/cache-the-planet
+Repository: Astra-Germany/cache-the-planet
 Metadata: Read-only
 Contents/Code: Read and write
 ```
@@ -290,7 +290,7 @@ Der Secret-Name ist unabhängig vom Namen des PAT. Im Workflow wird er so verwen
 token: ${{ secrets.CACHE_APP_TOKEN }}
 ```
 
-Der PAT selbst muss Zugriff auf `Ludy87/cache-the-planet` haben. Ein `github.token` aus `spdf-cache` reicht für ein separates Cache-Repository normalerweise nicht aus. Verwende keinen Fallback auf `github.token`, weil dadurch bei Pull Requests ein irreführender `403 Resource not accessible by integration` entstehen kann.
+Der PAT selbst muss Zugriff auf `Astra-Germany/cache-the-planet` haben. Ein `github.token` aus `spdf-cache` reicht für ein separates Cache-Repository normalerweise nicht aus. Verwende in einem separaten Cache-Repository den PAT oder App-Token ausdrücklich als Secret.
 
 Fork-Pull-Requests erhalten aus Sicherheitsgründen normalerweise keine Repository-Secrets. Der Save-Schritt muss dort deaktiviert bleiben. Ein PAT darf niemals in YAML-Dateien, Logs, Cache-Dateien oder den Quellcode geschrieben werden.
 
@@ -312,7 +312,7 @@ Setze:
 - `Metadata: Read-only`.
 - Installation nur in der eigenen Organisation.
 
-Installiere die App anschließend ausschließlich auf `Ludy87/cache-the-planet`.
+Installiere die App anschließend ausschließlich auf `Astra-Germany/cache-the-planet`.
 
 ### 2. Private Key und IDs hinterlegen
 
@@ -337,13 +337,13 @@ Verwende die offizielle Action zum Erzeugen eines kurzlebigen Installation Token
   with:
     app-id: ${{ secrets.CACHE_APP_ID }}
     private-key: ${{ secrets.CACHE_APP_PRIVATE_KEY }}
-    owner: Ludy87
+    owner: Astra-Germany
     repositories: cache-the-planet
 
 - name: Restore cache
-  uses: Ludy87/cache-the-planet@v1
+  uses: Astra-Germany/cache-the-planet@v1
   with:
-    repository: Ludy87/cache-the-planet
+    repository: Astra-Germany/cache-the-planet
     cache-name: npm
     token: ${{ steps.cache-token.outputs.token }}
     key: ${{ hashFiles('package-lock.json') }}
@@ -383,11 +383,13 @@ werden:
 shared/<owner>/<repository>/<cache-name>/<os>-<architecture>/<dependency-hash>/v1
 ```
 
-`shared` darf nur aus dem konfigurierten Default-Branch gespeichert werden. Wird
-`scope: shared` in einem Pull Request verwendet, wird der Save-Schritt mit einem
-Hinweis übersprungen. Dadurch wird weder ein Shared- noch ein zusätzlicher
-untrusted-Cache erzeugt. Der Restore-Schritt darf Shared-Caches weiterhin nur
-mit `allow-shared-restore: true` verwenden.
+`shared` darf nur aus dem konfigurierten Default-Branch als Shared-Referenz
+gespeichert werden. Wird `scope: shared` in einem Pull Request verwendet, wird
+der Inhalt automatisch als isolierter `untrusted/pr-<number>/...`-Cache
+gespeichert. So kann der PR testen, ohne einen gemeinsamen Cache zu verändern.
+Nach dem Merge kann derselbe logische Key auf dem Default-Branch als Shared-
+Referenz veröffentlicht werden. Der Restore-Schritt darf Shared-Caches in PRs
+weiterhin nur mit `allow-shared-restore: true` verwenden.
 
 Beispiel für den Workflow-Key:
 
@@ -420,8 +422,8 @@ restore-keys: |
   linux-x64/
 ```
 
-Ein `shared`-Scope speichert bei Pull Requests nichts. Ein Shared-Restore ist
-nur mit `allow-shared-restore: true` erlaubt.
+Ein `shared`-Scope wird bei Pull Requests in den isolierten PR-Namespace
+abgebildet. Ein Shared-Restore ist nur mit `allow-shared-restore: true` erlaubt.
 
 Sinnvolle Bestandteile:
 
@@ -598,16 +600,22 @@ Beim Restore wird:
 3. das Tar-Archiv auf absolute und `..`-Pfade geprüft,
 4. erst danach extrahiert.
 
-Fork-Pull-Requests speichern standardmäßig nichts. Für besonders sensible Projekte sollten zusätzlich getrennte `trusted`- und `untrusted`-Namespaces eingesetzt werden. Vor dem Packen verweigert die Action außerdem Symlinks, Pfade außerhalb des Workspace, typische Credential-Dateinamen sowie erkannte Private-Key-/Token-Muster in kleinen Textdateien. Diese Prüfung ist Defense-in-Depth und ersetzt keine engen Cache-Pfade oder `exclude`-Regeln.
+Fork-Pull-Requests speichern standardmäßig nichts, weil ihnen kein Schreib-Secret
+übergeben werden darf. Für besonders sensible Projekte sollten zusätzlich
+getrennte `trusted`- und `untrusted`-Namespaces eingesetzt werden. Vor dem
+Packen verweigert die Action außerdem Symlinks, Pfade außerhalb des Workspace,
+typische Credential-Dateinamen sowie erkannte Private-Key-/Token-Muster in
+kleinen Textdateien. Diese Prüfung ist Defense-in-Depth und ersetzt keine engen
+Cache-Pfade oder `exclude`-Regeln.
 
 Für interne Pull Requests kann ein eigener, automatisch löschbarer PR-Cache aktiviert werden:
 
 ```yaml
 - name: Save PR cache
-  if: success() && github.event_name == 'pull_request'
-  uses: Ludy87/cache-the-planet/save@v1
+  if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+  uses: Astra-Germany/cache-the-planet/save@v1
   with:
-    repository: Ludy87/cache-the-planet
+    repository: Astra-Germany/cache-the-planet
     cache-name: build
     token: ${{ secrets.CACHE_APP_TOKEN }}
     allow-pr-cache: true
@@ -650,10 +658,16 @@ Ein Objekt darf entfernt werden, wenn:
 - keine Reference mehr darauf zeigt,
 - es älter als die Grace Period ist.
 
+Der geplante Cleanup-Lauf löscht Untrusted-PR-Referenzen und die dadurch
+verwaisten Assets nach 24 Stunden. Ein manueller Lauf mit `mode: expired`
+löscht alle Untrusted-PR-Caches sofort. Shared-Referenzen werden dabei nur
+gelöscht, wenn beim manuellen Lauf zusätzlich `delete_shared: true` gesetzt
+wird. Trusted-Referenzen werden nie durch diesen Modus gelöscht.
+
 Standardmäßig beträgt die Grace Period sieben Tage. Zuerst immer Dry-Run ausführen:
 
 ```bash
-CACHE_REPOSITORY=Ludy87/cache-the-planet \
+CACHE_REPOSITORY=Astra-Germany/cache-the-planet \
 GITHUB_TOKEN="$TOKEN" \
 GRACE_DAYS=7 \
 node dist/gc.js --dry-run
@@ -662,27 +676,31 @@ node dist/gc.js --dry-run
 Ein tatsächlicher Lauf:
 
 ```bash
-CACHE_REPOSITORY=Ludy87/cache-the-planet \
+CACHE_REPOSITORY=Astra-Germany/cache-the-planet \
 GITHUB_TOKEN="$TOKEN" \
 GRACE_DAYS=7 \
 DRY_RUN=false \
 node dist/gc.js
 ```
 
-Der mitgelieferte Workflow `.github/workflows/cleanup.yml` läuft täglich um 03:00 UTC. Vor dem produktiven Aktivieren sollte der Workflow so angepasst werden, dass `DRY_RUN=false` nur nach einer bewussten Freigabe gesetzt wird.
+Der mitgelieferte Workflow `.github/workflows/cleanup.yml` läuft täglich um
+03:00 UTC und löscht abgelaufene Untrusted-Caches automatisch. Manuell kann
+zuerst ein Dry-Run ausgeführt werden; für die Löschung muss `dry_run: false`
+gesetzt werden. Shared-Caches werden manuell mit `delete_shared: true` und
+`mode: expired` einbezogen.
 
 ## Installation und Versionierung
 
 Im Client-Repository genügt die Referenz auf den Release-Tag:
 
 ```yaml
-uses: Ludy87/cache-the-planet@v1
+uses: Astra-Germany/cache-the-planet@v1
 ```
 
 Für die Save-Action:
 
 ```yaml
-uses: Ludy87/cache-the-planet/save@v1
+uses: Astra-Germany/cache-the-planet/save@v1
 ```
 
 Bei inkompatiblen Protokolländerungen wird ein neuer Namespace wie `cache-v2` und eine neue Major-Version wie `@v2` verwendet. V1-Clients können alte V1-Objekte weiter lesen, solange das Manifest und das Release bestehen bleiben.
@@ -736,9 +754,9 @@ kann. Für diese Actions ist keine künstliche Cache-Konfiguration nötig.
 Ein Cache-Schritt sieht beispielsweise so aus:
 
 ```yaml
-- uses: Ludy87/cache-the-planet@v1
+- uses: Astra-Germany/cache-the-planet@v1
   with:
-    repository: Ludy87/cache-the-planet
+    repository: Astra-Germany/cache-the-planet
     cache-name: npm
     key: ${{ hashFiles('package-lock.json') }}
     path: .cache/npm
