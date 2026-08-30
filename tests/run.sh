@@ -154,6 +154,7 @@ try {
       INPUT_KEY: 'Linux-X64/hash/v1',
       INPUT_PATH: root,
       INPUT_TOKEN: 'test-token',
+      INPUT_STRICT: 'true',
       GITHUB_EVENT_NAME: 'push',
       GITHUB_REF: 'refs/heads/feature',
       GITHUB_DEFAULT_BRANCH: 'main',
