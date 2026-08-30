@@ -28,10 +28,17 @@
       "source": "Astra-Germany/cache-the-planet",
       "created_by": "Ludy87",
       "size": 4033828
+    },
+    "untrusted/Astra-Germany/cache-the-planet/pr-5/npm/linux-x64/a5c449def6e52ab2f87bb3f569202599094927cb45ea0b4c8fd8038271d77cfe/v1": {
+      "object": "sha256:ef403d05a2f45fb56ba6e331dc2eabd225f96e9a7dc06408c7ab928794039c0c",
+      "updated_at": "2026-08-30T14:36:18.241Z",
+      "source": "Astra-Germany/cache-the-planet",
+      "created_by": "Ludy87",
+      "size": 7002314
     }
   },
   "monitoring": {
-    "window_started_at": "2026-08-30T10:47:50.346Z",
-    "writes": 5
+    "window_started_at": "2026-08-30T14:36:18.241Z",
+    "writes": 1
   }
 }
