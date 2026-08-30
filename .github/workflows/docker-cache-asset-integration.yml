@@ -136,7 +136,7 @@ jobs:
         shell: bash
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/docker/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+          test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/docker/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v2"
 
       - name: Assert exact asset cache hit - untrusted
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'untrusted/') }}
