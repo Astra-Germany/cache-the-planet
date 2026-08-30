@@ -55,7 +55,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: gradle-java17
-          scope: auto
+          scope: shared
           token: ${{ github.token }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/gradle

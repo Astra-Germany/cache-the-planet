@@ -88,7 +88,7 @@ jobs:
           # auto saves an isolated PR cache on pull requests and a trusted
           # default-branch cache on main; the action creates the shared alias
           # only from the default branch when appropriate.
-          scope: auto
+          scope: shared
           token: ${{ github.token }}
           key: ${{ needs.hash_pr.outputs.dockerfile_hash }}
           version: 2

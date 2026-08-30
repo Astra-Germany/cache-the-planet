@@ -59,7 +59,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: uv-python-3-13
-          scope: auto
+          scope: shared
           token: ${{ github.token }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
           version: 3

@@ -61,6 +61,7 @@ jobs:
         with:
           repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: task
+          scope: shared
           key: ${{ needs.hash_pr.outputs.files_hash }}
           path: |
             examples/task-cache/.cache/task
