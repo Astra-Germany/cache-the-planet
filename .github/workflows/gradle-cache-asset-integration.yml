@@ -10,6 +10,9 @@ env:
     examples/gradle-cache/settings.gradle
     examples/gradle-cache/src/**/*.java
 
+permissions:
+  contents: read
+
 jobs:
   save-cache:
     name: Build and save Gradle cache asset
