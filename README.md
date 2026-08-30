@@ -501,6 +501,7 @@ und wird nicht um `/v1` erweitert.
 | `token` | nein | Token; alternativ `GITHUB_TOKEN` |
 | `encryption-key` | nein | Optionaler AES-256-Schlüssel oder eine Passphrase |
 | `exclude` | nein | Ausschlussmuster, jeweils eine Zeile; zum Beispiel `**/.env` |
+| `exclude-path` | nein | Workspace-relative Dateien mit Ausschlussmustern, jeweils eine Zeile |
 | `strict` | nein | `true` bricht bei Cache-Fehlern ab, Standard `false` |
 | `config-file` | nein | Optionale JSON-Konfiguration; Umgebungsvariablen haben Vorrang |
 | `allow-pr-cache` | nein | Erlaubt das Speichern eines isolierten PR-Caches; Standard `true` |
@@ -574,7 +575,17 @@ exclude: |
   **/*secret*
   **/credentials*
   **/.docker/config.json
+
+exclude-path: |
+  .cache-excludes
+  config/cache-excludes.txt
 ```
+
+`exclude` und `exclude-path` können gemeinsam oder jeweils einzeln verwendet
+werden. Jede Zeile einer `exclude-path`-Datei wird als `tar --exclude`-Muster
+verwendet; leere Zeilen und Zeilen mit `#` am Anfang werden ignoriert. Die
+Dateien müssen innerhalb des Workspace liegen. Die vollständige Git-ignore-
+Semantik, insbesondere Negationsmuster mit `!`, wird nicht ausgewertet.
 
 Beim Restore wird:
 
