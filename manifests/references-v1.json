@@ -35,10 +35,17 @@
       "source": "Astra-Germany/cache-the-planet",
       "created_by": "Ludy87",
       "size": 7002302
+    },
+    "shared/Astra-Germany/cache-the-planet/uv-python-3-13/linux-x64/48a4c60a0e26ab9ee85cb50c1c71b3ee0016e0687c7fb4725dd8cf8a30704de3/v4": {
+      "object": "sha256:a73de3a91cb590ca4f77c7d92ca109353d815031784c209b9b3389ae30de967e",
+      "updated_at": "2026-08-30T15:03:10.127Z",
+      "source": "Astra-Germany/cache-the-planet",
+      "created_by": "Ludy87",
+      "size": 36252783
     }
   },
   "monitoring": {
     "window_started_at": "2026-08-30T14:36:18.241Z",
-    "writes": 8
+    "writes": 9
   }
 }
