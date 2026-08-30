@@ -62,7 +62,7 @@ jobs:
     secrets: inherit
 
   node-restore-cache:
-    needs: [build-dist]
+    needs: [node-save-cache]
     if: always() && (needs.node-save-cache.result == 'success')
     uses: ./.github/workflows/npm-cache-asset-integration.yml
     with:
