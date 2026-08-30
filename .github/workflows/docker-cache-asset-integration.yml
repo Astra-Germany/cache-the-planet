@@ -4,7 +4,7 @@ on:
 
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
-  FILES_TO_HASH: 
+  FILES_TO_HASH: |
     examples/docker-cache/Dockerfile
     examples/docker-cache/hello.txt
 
@@ -26,7 +26,7 @@ jobs:
         id: hash
         run: |
           HASH="${{ hashFiles(env.FILES_TO_HASH) }}"
-          echo "dockerfile-hash=$HASH" >> $GITHUB_OUTPUT
+          echo "dockerfile_hash=$HASH" >> "$GITHUB_OUTPUT"
   save-cache:
     name: Build and save Docker cache asset
     needs: hash_pr
@@ -40,19 +40,9 @@ jobs:
         with:
           ref: main
 
-      - name: hash Dockerfile and context
-        id: hash
-        run: |
-          HASH="${{ hashFiles('examples/docker-cache/Dockerfile', 'examples/docker-cache/hello.txt') }}"
-          echo "dockerfile-hash=$HASH" >> $GITHUB_OUTPUT
-          HASHA="${{ hashFiles(env.FILES_TO_HASH) }}"
-          echo "dockerfile-files-hash=$HASHA" >> "$GITHUB_OUTPUT"
-
       - name: echo Dockerfile and context hash
         run: |
-          echo "Dockerfile and context hash: ${{ steps.hash.outputs.dockerfile-hash }}"
-          echo "Dockerfile and context files hash: ${{ steps.hash.outputs.dockerfile-files-hash }}"
-          echo "Dockerfile and context files hash (from env): ${{ needs.hash_pr.outputs.dockerfile_hash }}"
+          echo "Dockerfile and context hash: ${{ needs.hash_pr.outputs.dockerfile_hash }}"
 
       - name: Restore Docker cache
         uses: ./
@@ -61,7 +51,7 @@ jobs:
           cache-name: docker
           scope: auto
           token: ${{ github.token }}
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.dockerfile_hash }}
           version: 2
           allow-shared-restore: true
           restore-keys: |
@@ -100,7 +90,7 @@ jobs:
           # only from the default branch when appropriate.
           scope: auto
           token: ${{ github.token }}
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.dockerfile_hash }}
           version: 2
           path: examples/docker-cache/.cache/docker-buildx
           strict: true
@@ -126,7 +116,7 @@ jobs:
           cache-name: docker
           scope: auto
           token: ${{ github.token }}
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.dockerfile_hash }}
           version: 2
           allow-shared-restore: true
           restore-keys: |
@@ -163,7 +153,7 @@ jobs:
           cache-name: docker
           scope: trusted
           token: ${{ github.token }}
-          key: ${{ hashFiles(env.FILES_TO_HASH) }}
+          key: ${{ needs.hash_pr.outputs.dockerfile_hash }}
           version: 2
           restore-keys: |
             linux-x64/
