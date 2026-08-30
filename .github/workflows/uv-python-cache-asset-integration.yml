@@ -8,6 +8,9 @@ env:
   UV_PYTHON_CACHE_DIR: ${{ github.workspace }}/.cache/uv/python
   UV_PYTHON_INSTALL_DIR: ${{ github.workspace }}/.cache/uv-python
 
+permissions:
+  contents: read
+
 jobs:
   save-cache:
     name: Install and save uv Python asset cache

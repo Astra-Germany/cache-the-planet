@@ -6,6 +6,9 @@ env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
   TASK_TEMP_DIR: ${{ github.workspace }}/examples/task-cache/.cache/task-state
 
+permissions:
+  contents: read
+
 jobs:
   save-cache:
     name: Run task and save asset cache

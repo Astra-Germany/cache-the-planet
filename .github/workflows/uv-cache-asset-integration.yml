@@ -5,6 +5,9 @@ on:
 env:
   CACHE_REPOSITORY: Astra-Germany/cache-the-planet
 
+permissions:
+  contents: read
+
 jobs:
   save-cache:
     name: Install and save uv cache asset
