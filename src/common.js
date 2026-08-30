@@ -397,6 +397,11 @@ async function gh(url, options = {}) {
       if (typeof requestOptions.body === 'string') {
         try { requestOptions.body = JSON.parse(requestOptions.body); } catch { /* non-JSON body */ }
       }
+      if (requestOptions.body && typeof requestOptions.body === 'object'
+        && !Buffer.isBuffer(requestOptions.body)) {
+        Object.assign(requestOptions, requestOptions.body);
+        delete requestOptions.body;
+      }
       const response = await client.request(url, {
         ...requestOptions,
       });
