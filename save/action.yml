@@ -44,6 +44,10 @@ inputs:
     description: "Newline separated exclusions"
     required: false
     default: ""
+  exclude-path:
+    description: "Newline separated workspace-relative files containing exclusion patterns"
+    required: false
+    default: ""
   strict:
     description: "Fail the step on cache errors"
     required: false

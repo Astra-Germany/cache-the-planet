@@ -480,6 +480,36 @@ function entries() {
   return input('path').split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
 }
 
+function excludePatterns() {
+  const patterns = input('exclude').split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
+  const files = input('exclude-path').split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
+  const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+  for (const value of files) {
+    const absolute = path.resolve(workspace, value);
+    const relative = path.relative(workspace, absolute);
+    if (path.isAbsolute(relative) || relative === '..' || relative.startsWith(`..${path.sep}`)) {
+      throw new Error(`exclude-path must be inside the GitHub workspace: ${value}`);
+    }
+    let stat;
+    try { stat = fs.lstatSync(absolute); } catch (error) {
+      throw new Error(`could not read exclude-path ${value}: ${error.message}`);
+    }
+    if (stat.isSymbolicLink()) throw new Error(`exclude-path must not be a symbolic link: ${value}`);
+    if (!stat.isFile()) throw new Error(`exclude-path must reference a regular file: ${value}`);
+    if (stat.size > 1024 * 1024) throw new Error(`exclude-path is too large: ${value}`);
+    try {
+      patterns.push(...fs.readFileSync(absolute, 'utf8').split(/\r?\n/)
+        .map((line) => line.trim()).filter((line) => line && !line.startsWith('#')));
+    } catch (error) {
+      throw new Error(`could not read exclude-path ${value}: ${error.message}`);
+    }
+  }
+  if (patterns.some((value) => value.length > 4096 || value.includes('\0'))) {
+    throw new Error('exclude patterns must be at most 4096 characters and contain no NUL bytes');
+  }
+  return patterns;
+}
+
 function encryptionKey() {
   const value = input('encryption-key');
   if (!value) return null;
@@ -602,8 +632,7 @@ async function makeArchive() {
     else log(`cache path missing: ${value}`);
   }
   if (!paths.length) throw new Error('no cache paths exist');
-  const excludes = input('exclude').split(/\r?\n/).map((value) => value.trim())
-    .filter(Boolean).flatMap((value) => ['--exclude', value]);
+  const excludes = excludePatterns().flatMap((value) => ['--exclude', value]);
   const tar = cp.spawn('tar', [
     '--sort=name', '--mtime=UTC 1970-01-01', '--owner=0', '--group=0',
     '--numeric-owner', '--dereference', '--hard-dereference', '--exclude-vcs', '--format=gnu', '-cf', '-', ...excludes, '-C', workspace, ...paths,
@@ -839,7 +868,7 @@ module.exports = {
   input, hasInput, token, eventName, repository, defaultBranch, headRef, baseRef, pullRequestNumber, cacheName, cacheScope, runnerPlatform,
   scopedKey, scopeCounterpartKey, pullRequestCacheCombination, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed,
   log, fail, gh,
-  upload, entries, refName,
+  upload, entries, excludePatterns, refName,
   securityScan, makeArchive, inspectTar, digest, assetName, hashFromAssetName,
   encryptFile, decryptFile,
   release, assets, object, refs, updateManifest, setRef, manifestWriteGuard,

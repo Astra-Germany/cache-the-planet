@@ -72,6 +72,9 @@ function setOutput(name, value) {
     };
     const cacheHit = found[0] === key
       || (found[0].startsWith('shared/') && cacheIdentity(found[0]) === cacheIdentity(key));
+    
+    console.log(`Cache ${found[0]}: ${cacheIdentity(found[0])}: ${cacheIdentity(key)}`);
+
     setOutput('cache-hit', cacheHit);
     setOutput('matched-key', found[0]);
     setOutput('content-hash', found[1].object);

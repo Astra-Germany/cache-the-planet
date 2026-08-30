@@ -15,7 +15,7 @@ const os = require('os');
 const path = require('path');
 const cp = require('child_process');
 const { securityScan: sourceSecurityScan } = require('./src/common');
-const { scopedKey, scopeCounterpartKey, pullRequestCacheCombination, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName, manifestWriteGuard } = require('./src/common');
+const { scopedKey, scopeCounterpartKey, pullRequestCacheCombination, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName, manifestWriteGuard, excludePatterns } = require('./src/common');
 const { inspectTar } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
@@ -25,6 +25,20 @@ const securityScan = (directory) => {
 };
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cache-security-'));
 try {
+  const originalWorkspace = process.env.GITHUB_WORKSPACE;
+  process.env.GITHUB_WORKSPACE = root;
+  const excludeFile = path.join(root, 'cache-excludes.txt');
+  fs.writeFileSync(excludeFile, '# generated files\n**/.env\n\n**/node_modules/**\n');
+  process.env['INPUT_EXCLUDE'] = '**/.npmrc\n';
+  process.env['INPUT_EXCLUDE-PATH'] = 'cache-excludes.txt';
+  const combinedExcludes = excludePatterns();
+  if (combinedExcludes.join('|') !== '**/.npmrc|**/.env|**/node_modules/**') {
+    throw new Error('exclude and exclude-path patterns were not combined correctly');
+  }
+  delete process.env['INPUT_EXCLUDE'];
+  delete process.env['INPUT_EXCLUDE-PATH'];
+  if (originalWorkspace === undefined) delete process.env.GITHUB_WORKSPACE;
+  else process.env.GITHUB_WORKSPACE = originalWorkspace;
   const secret = path.join(root, '.env');
   fs.writeFileSync(secret, 'DATABASE_PASSWORD=should-not-be-cached\n');
   let rejected = false;
