@@ -6,6 +6,11 @@ const c = require('./common');
     const repository = c.input('repository');
     const key = c.scopedKey(c.input('key'));
     const isPullRequest = process.env.GITHUB_REF?.includes('/pull/');
+    const requestedScope = c.input('scope', 'auto').trim().toLowerCase();
+    if (isPullRequest && requestedScope === 'shared') {
+      c.log('shared cache save skipped in pull request; shared caches may only be created from the default branch');
+      return;
+    }
     if (isPullRequest && String(c.input('allow-pr-cache')).toLowerCase() !== 'true') {
       c.log('untrusted pull request: save skipped');
       return;
@@ -66,9 +71,43 @@ const c = require('./common');
         && c.pullRequestCacheCombination(referenceKey) === combination
       ));
       if (conflictingKey) {
-        throw new Error(
-          `pull request cache limit reached: only one cache is allowed for ${combination}; existing key=${conflictingKey}`,
-        );
+        const strict = String(c.input('strict')).toLowerCase() === 'true';
+        if (strict) {
+          throw new Error(
+            `pull request cache limit reached: only one cache is allowed for ${combination}; existing key=${conflictingKey}`,
+          );
+        }
+        c.log(`replacing existing pull request cache: old-key=${conflictingKey}; new-key=${key}`);
+        const archive = await c.makeArchive();
+        const hash = c.digest(archive.file);
+        const existing = await c.object(repository, hash);
+        const name = c.assetName(key, hash);
+        if (!existing) {
+          const release = (await c.assets(repository)).release;
+          const uploadUrl = release.upload_url.replace(
+            '{?name,label}',
+            `?name=${encodeURIComponent(name)}`,
+          );
+          await c.upload(uploadUrl, archive.file, name, 'application/zstd');
+        }
+        const updated = await c.replaceRef(repository, key, hash, conflictingKey, {
+          size: fs.statSync(archive.file).size,
+        });
+        const oldHash = current.json.references[conflictingKey]?.object;
+        const stillReferenced = oldHash && Object.values(updated.references || {})
+          .some((reference) => reference.object === oldHash);
+        if (oldHash && oldHash !== hash && !stillReferenced) {
+          try { await c.deleteObject(repository, oldHash); }
+          catch (error) { c.log(`old cache asset could not be deleted: ${error.message}`); }
+        }
+        if (process.env.GITHUB_OUTPUT) {
+          fs.appendFileSync(
+            process.env.GITHUB_OUTPUT,
+            `content-hash=${hash}\nasset-name=${existing?.name || name}\ncache-size=${fs.statSync(archive.file).size}\n`,
+          );
+        }
+        console.log(`Cache saved: key=${key}; asset=${existing?.name || name}; content-hash=${hash}`);
+        return;
       }
     }
 

@@ -200,6 +200,30 @@ try {
     || !`${sharedSaveCheck.stdout}\n${sharedSaveCheck.stderr}`.includes('shared cache keys may only be saved')) {
     throw new Error('shared cache was allowed outside the default branch');
   }
+  const sharedPullRequestSaveCheck = cp.spawnSync(process.execPath, ['./src/save.js'], {
+    env: {
+      ...process.env,
+      INPUT_REPOSITORY: 'example/project',
+      'INPUT_CACHE-NAME': 'npm',
+      INPUT_SCOPE: 'shared',
+      INPUT_KEY: 'Linux-X64/hash/v1',
+      INPUT_PATH: root,
+      INPUT_TOKEN: 'test-token',
+      INPUT_STRICT: 'true',
+      'INPUT_ALLOW-PR-CACHE': 'true',
+      GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_REF: 'refs/pull/7/merge',
+      GITHUB_REPOSITORY: 'example/project',
+      GITHUB_DEFAULT_BRANCH: 'main',
+      GITHUB_EVENT_PATH: eventFile,
+    },
+    encoding: 'utf8',
+  });
+  if (sharedPullRequestSaveCheck.status !== 0
+    || !`${sharedPullRequestSaveCheck.stdout}\n${sharedPullRequestSaveCheck.stderr}`
+      .includes('shared cache save skipped in pull request')) {
+    throw new Error('shared cache save was not skipped for pull requests');
+  }
   if (scopedRestorePrefix('shared/example/project/npm/Linux-X64/hash/v1/')
     !== 'shared/example/project/npm/Linux-X64/hash/v1/') {
     throw new Error('explicit shared restore prefix was not preserved');
@@ -215,6 +239,10 @@ try {
   if (!invalidKeyRejected) throw new Error('invalid trusted cache key was accepted');
   process.env['INPUT_CACHE-NAME'] = 'NPM_CACHE';
   invalidKeyRejected = false;
+  if (scopedKey('Linux-X64/hash/v1') !== 'trusted/example/project/main/NPM_CACHE/Linux-X64/hash/v1') {
+    throw new Error('uppercase and underscore cache-name was rejected');
+  }
+  process.env['INPUT_CACHE-NAME'] = 'npm.cache';
   try { scopedKey('Linux-X64/hash/v1'); } catch { invalidKeyRejected = true; }
   if (!invalidKeyRejected) throw new Error('invalid cache-name was accepted');
   process.env['INPUT_CACHE-NAME'] = 'npm';
