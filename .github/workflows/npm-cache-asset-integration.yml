@@ -72,6 +72,7 @@ jobs:
           restore-keys: |
             linux-x64/
           path: .cache/npm
+          allow-shared-restore: true
           strict: true
 
       - name: Assert exact asset cache hit start with trusted
