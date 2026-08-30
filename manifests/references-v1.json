@@ -21,10 +21,24 @@
       "source": "Astra-Germany/cache-the-planet",
       "created_by": "Ludy87",
       "size": 7002277
+    },
+    "untrusted/Astra-Germany/cache-the-planet/pr-4/npm/linux-x64/a5c449def6e52ab2f87bb3f569202599094927cb45ea0b4c8fd8038271d77cfe/v1": {
+      "object": "sha256:c8fface73129b42332494fc9b2ffe7dd3cc7ecdb93c72e328debd043f2da3493",
+      "updated_at": "2026-08-30T01:41:55.009Z",
+      "source": "Astra-Germany/cache-the-planet",
+      "created_by": "Ludy87",
+      "size": 7002281
+    },
+    "untrusted/Astra-Germany/cache-the-planet/pr-4/gradle-java17/linux-x64/ddfcbf966264893c5721851c7fe2b2a0221f38f0fc5e75e17745b2c632766c4e/v1": {
+      "object": "sha256:f73262880bc88ee50e8c312585900c74d7a47886970fd215016b430ad86f7f83",
+      "updated_at": "2026-08-30T01:42:45.334Z",
+      "source": "Astra-Germany/cache-the-planet",
+      "created_by": "Ludy87",
+      "size": 1790144
     }
   },
   "monitoring": {
-    "window_started_at": "2026-08-30T00:38:58.735Z",
-    "writes": 7
+    "window_started_at": "2026-08-30T01:41:55.009Z",
+    "writes": 2
   }
 }
