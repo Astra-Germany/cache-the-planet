@@ -90,7 +90,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
     secrets: inherit
 
   uv-python-save-cache:
