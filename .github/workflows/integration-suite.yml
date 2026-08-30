@@ -207,7 +207,22 @@ jobs:
   all-checks-passed:
     name: All checks passed
     if: always()
-    needs: [build-dist, node-save-cache, uv-save-cache, uv-python-save-cache, task-save-cache, java-save-cache, java-restore-cache, gradle-save-cache, gradle-restore-cache, docker-save-cache, docker-restore-cache]
+    needs: 
+      - build-dist
+      - node-save-cache
+      - node-restore-cache
+      - uv-save-cache
+      - uv-restore-cache
+      - uv-python-save-cache
+      - uv-python-restore-cache
+      - task-save-cache
+      - task-restore-cache
+      - java-save-cache
+      - java-restore-cache
+      - gradle-save-cache
+      - gradle-restore-cache
+      - docker-save-cache
+      - docker-restore-cache
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
