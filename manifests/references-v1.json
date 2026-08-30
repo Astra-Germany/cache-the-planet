@@ -1,8 +1,16 @@
 {
   "schema_version": 1,
-  "references": {},
+  "references": {
+    "untrusted/Astra-Germany/cache-the-planet/pr-5/docker/linux-x64/372d5f47608fd9510a272d7a8f918d00b903bb2e23217327dd68e262d6bc07ee/v2": {
+      "object": "sha256:2e006d5acbc243ccf48ef88e2a824f9d2174f0946a6807df8912cae49d5f08b7",
+      "updated_at": "2026-08-30T10:47:50.346Z",
+      "source": "Astra-Germany/cache-the-planet",
+      "created_by": "Ludy87",
+      "size": 4033828
+    }
+  },
   "monitoring": {
-    "window_started_at": "2026-08-30T08:07:43.594Z",
-    "writes": 3
+    "window_started_at": "2026-08-30T10:47:50.346Z",
+    "writes": 1
   }
 }
