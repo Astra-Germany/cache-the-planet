@@ -57,7 +57,7 @@ jobs:
           restore-keys: |
             linux-x64/
           path: examples/docker-cache/.cache/docker-buildx
-          strict: false
+          strict: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
