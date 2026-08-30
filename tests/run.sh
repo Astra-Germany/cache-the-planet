@@ -215,6 +215,11 @@ try {
     || !`${sharedSaveCheck.stdout}\n${sharedSaveCheck.stderr}`.includes('shared cache keys may only be saved')) {
     throw new Error('shared cache was allowed outside the default branch');
   }
+  process.env.GITHUB_EVENT_NAME = 'pull_request';
+  fs.writeFileSync(eventFile, JSON.stringify({
+    repository: { default_branch: 'main' },
+    pull_request: { number: 7 },
+  }));
   process.env.INPUT_SCOPE = 'shared';
   if (scopedKey('Linux-X64/hash/v1')
     !== 'untrusted/example/project/pr-7/npm/linux-x64/hash/v1') {
