@@ -9,6 +9,7 @@ const c = require('./common');
     const objectValue = process.env.GC_OBJECT || '';
     const dryRun = process.argv.includes('--dry-run') || process.env.DRY_RUN !== 'false';
     const gracePeriod = Number(process.env.GRACE_DAYS || 7) * 86400000;
+    const untrustedTtl = Number(process.env.UNTRUSTED_TTL_HOURS || 24) * 3600000;
     const manifest = await c.refs(repository);
     const references = manifest.json.references;
     const liveObjects = new Set(
@@ -17,6 +18,31 @@ const c = require('./common');
     const allAssets = (await c.assets(repository)).assets;
     const now = Date.now();
     const cacheAssets = allAssets.filter((item) => item.name.endsWith('.tar.zst'));
+
+    if (mode === 'expired') {
+      const expired = c.expiredUntrustedReferences(references, now, untrustedTtl);
+      const expiredHashes = new Set(expired.map(([, reference]) => reference.object));
+      if (expired.length && !dryRun) {
+        await c.updateManifest(repository, 'cache: expire untrusted references', (current) => {
+          let changed = false;
+          for (const [key] of c.expiredUntrustedReferences(current.references, Date.now(), untrustedTtl)) {
+            delete current.references[key];
+            changed = true;
+          }
+          return changed;
+        });
+      }
+      if (dryRun && expired.length) console.log(`would remove ${expired.length} expired untrusted reference(s)`);
+      const liveAfterExpiry = new Set(Object.values((dryRun ? references : (await c.refs(repository)).json.references))
+        .map((reference) => reference.object));
+      for (const asset of cacheAssets) {
+        const hash = c.hashFromAssetName(asset.name);
+        if (!hash || liveAfterExpiry.has(hash) || !expiredHashes.has(hash)) continue;
+        console.log(`${dryRun ? 'would delete' : 'delete'} ${asset.name}`);
+        if (!dryRun) await c.gh(`/repos/${repository}/releases/assets/${asset.id}`, { method: 'DELETE' });
+      }
+      return;
+    }
 
     if (mode === 'all') {
       for (const asset of cacheAssets) {

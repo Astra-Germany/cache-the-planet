@@ -15,7 +15,7 @@ const os = require('os');
 const path = require('path');
 const cp = require('child_process');
 const { securityScan: sourceSecurityScan } = require('./src/common');
-const { scopedKey, scopeCounterpartKey, pullRequestCacheCombination, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName, manifestWriteGuard, excludePatterns } = require('./src/common');
+const { scopedKey, scopeCounterpartKey, pullRequestCacheCombination, expiredUntrustedReferences, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName, manifestWriteGuard, excludePatterns } = require('./src/common');
 const { inspectTar } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
@@ -161,6 +161,21 @@ try {
   }
   if (pullRequestCacheCombination('trusted/example/project/main/npm/linux-x64/hash-a/v1') !== null) {
     throw new Error('trusted cache was incorrectly treated as a PR cache');
+  }
+  const expiryNow = Date.parse('2026-08-30T12:00:00.000Z');
+  const expiredReferences = expiredUntrustedReferences({
+    'untrusted/example/project/pr-7/npm/linux-x64/old/v1': {
+      object: 'sha256:old', updated_at: '2026-08-29T11:59:59.000Z',
+    },
+    'untrusted/example/project/pr-7/npm/linux-x64/fresh/v1': {
+      object: 'sha256:fresh', updated_at: '2026-08-30T11:00:01.000Z',
+    },
+    'trusted/example/project/main/npm/linux-x64/old/v1': {
+      object: 'sha256:trusted', updated_at: '2026-08-29T00:00:00.000Z',
+    },
+  }, expiryNow);
+  if (expiredReferences.length !== 1 || expiredReferences[0][1].object !== 'sha256:old') {
+    throw new Error('untrusted cache expiry did not enforce the 24-hour TTL');
   }
   process.env['INPUT_SCOPE'] = 'auto';
   process.env.GITHUB_EVENT_NAME = 'push';
