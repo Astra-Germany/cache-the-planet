@@ -49,10 +49,17 @@
       "source": "Astra-Germany/cache-the-planet",
       "created_by": "Ludy87",
       "size": 1790090
+    },
+    "shared/Astra-Germany/cache-the-planet/docker/linux-x64/271ddca8fdd4e4167da82bd3866d728c6f508bc582ca613e2ed7170f0297c3fe/v2": {
+      "object": "sha256:59537137766185e80e8615e2a3903e09117493ec583fc5b3b9beca83fe3a15fc",
+      "updated_at": "2026-08-30T18:32:04.210Z",
+      "source": "Astra-Germany/cache-the-planet",
+      "created_by": "Ludy87",
+      "size": 4033768
     }
   },
   "monitoring": {
     "window_started_at": "2026-08-30T18:29:16.759Z",
-    "writes": 6
+    "writes": 7
   }
 }
