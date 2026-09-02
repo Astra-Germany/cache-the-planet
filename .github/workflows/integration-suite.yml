@@ -46,6 +46,7 @@ jobs:
               - 'package.json'
               - 'package-lock.json'
               - '.github/workflows/build-dist.yml'
+              - '.github/workflows/integration-suite.yml'
             dist_changes:
               - 'dist/**'
 
