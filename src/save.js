@@ -4,9 +4,26 @@ const c = require('./common');
 (async () => {
   try {
     const repository = c.input('repository');
+    const isFork = c.isForkPullRequest();
+    const setOutput = (name, value) => {
+      if (process.env.GITHUB_OUTPUT) {
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${value}\n`);
+      }
+    };
+    setOutput('is_fork', isFork ? 'true' : 'false');
+    setOutput('read_only', isFork ? 'true' : 'false');
     const key = c.scopedKey(c.input('key'));
-    const isPullRequest = process.env.GITHUB_REF?.includes('/pull/');
+    const isPullRequest = c.isPullRequestEvent();
     const requestedScope = c.input('scope', 'auto').trim().toLowerCase();
+    if (isFork) {
+      c.summary('Cache Save', {
+        Status: 'SKIPPED',
+        Reason: 'Fork pull request is read-only',
+        'Is fork': 'true',
+      });
+      c.log('fork pull request: save skipped because write-capable secrets are unavailable');
+      return;
+    }
     if (isPullRequest && String(c.input('allow-pr-cache')).toLowerCase() !== 'true') {
       c.log('untrusted pull request: save skipped');
       return;
@@ -46,6 +63,20 @@ const c = require('./common');
     const sharedCounterpart = requestedScope === 'auto' && trustedKey
       ? c.scopeCounterpartKey(key)
       : null;
+    const sharedEquivalent = c.sharedEquivalentKey(key);
+    if (sharedEquivalent && current.json.references[sharedEquivalent]?.object) {
+      const sharedAsset = await c.object(repository, current.json.references[sharedEquivalent].object);
+      if (sharedAsset) {
+        c.log(`shared cache already exists; isolated PR cache publish skipped: key=${sharedEquivalent}`);
+        if (process.env.GITHUB_OUTPUT) {
+          fs.appendFileSync(
+            process.env.GITHUB_OUTPUT,
+            `content-hash=${current.json.references[sharedEquivalent].object}\nasset-name=${sharedAsset.name}\n`,
+          );
+        }
+        return;
+      }
+    }
     if (existingReference?.object) {
       const existingAsset = await c.object(repository, existingReference.object);
       if (!existingAsset) {
