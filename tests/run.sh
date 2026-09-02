@@ -15,7 +15,7 @@ const os = require('os');
 const path = require('path');
 const cp = require('child_process');
 const { securityScan: sourceSecurityScan } = require('./src/common');
-const { scopedKey, scopeCounterpartKey, pullRequestCacheCombination, expiredUntrustedReferences, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName, manifestWriteGuard, excludePatterns } = require('./src/common');
+const { scopedKey, scopeCounterpartKey, pullRequestCacheCombination, sharedEquivalentKey, expiredUntrustedReferences, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName, manifestWriteGuard, excludePatterns, isForkPullRequest, summary } = require('./src/common');
 const { inspectTar } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
@@ -93,6 +93,13 @@ try {
     throw new Error('encrypted cache round-trip failed');
   }
   console.log('encryption test passed');
+  const summaryFile = path.join(root, 'step-summary.md');
+  process.env.GITHUB_STEP_SUMMARY = summaryFile;
+  summary('Cache Restore', { Status: 'HIT', 'Matched key': 'shared/example/project/npm/v1' });
+  if (!fs.readFileSync(summaryFile, 'utf8').includes('| Status | HIT |')) {
+    throw new Error('cache step summary was not generated correctly');
+  }
+  delete process.env.GITHUB_STEP_SUMMARY;
   fs.mkdirSync(path.join(root, '.ssh'));
   fs.writeFileSync(path.join(root, '.ssh', 'config'), 'Host example\n');
   rejected = false;
@@ -114,10 +121,46 @@ try {
   process.env.GITHUB_EVENT_NAME = 'pull_request';
   process.env.GITHUB_REF = 'refs/pull/7/merge';
   const eventFile = path.join(root, 'event.json');
-  fs.writeFileSync(eventFile, JSON.stringify({ pull_request: { number: 7 } }));
+  fs.writeFileSync(eventFile, JSON.stringify({
+    repository: { full_name: 'example/project' },
+    pull_request: {
+      number: 7,
+      head: { repo: { full_name: 'example/project' } },
+    },
+  }));
   process.env.GITHUB_EVENT_PATH = eventFile;
+  if (isForkPullRequest()) throw new Error('same-repository pull request was treated as a fork');
   if (scopedKey('npm/Linux-X64/hash/v1') !== 'untrusted/example/project/pr-7/npm/Linux-X64/hash/v1') {
     throw new Error('automatic PR cache key was not generated correctly');
+  }
+  fs.writeFileSync(eventFile, JSON.stringify({
+    repository: { full_name: 'example/project' },
+    pull_request: {
+      number: 7,
+      head: { repo: { full_name: 'contributor/project' } },
+    },
+  }));
+  if (!isForkPullRequest()) throw new Error('fork pull request was not detected');
+  const forkOutput = path.join(root, 'fork-save-output.txt');
+  const forkSave = cp.spawnSync(process.execPath, [path.join(process.cwd(), 'src', 'save.js')], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      INPUT_REPOSITORY: 'example/project',
+      INPUT_KEY: 'hash/v1',
+      'INPUT_CACHE-NAME': 'npm',
+      INPUT_SCOPE: 'auto',
+      INPUT_ALLOW_PR_CACHE: 'true',
+      GITHUB_TOKEN: '',
+      GITHUB_OUTPUT: forkOutput,
+    },
+  });
+  if (forkSave.status !== 0 || !`${forkSave.stdout}\n${forkSave.stderr}`.includes('save skipped')) {
+    throw new Error('fork save was not skipped before API access');
+  }
+  const forkOutputs = fs.readFileSync(forkOutput, 'utf8');
+  if (!forkOutputs.includes('is_fork=true\n') || !forkOutputs.includes('read_only=true\n')) {
+    throw new Error('fork save outputs were not generated correctly');
   }
   process.env.GITHUB_EVENT_NAME = 'push';
   delete process.env.GITHUB_REF;
@@ -158,6 +201,9 @@ try {
   }
   if (pullRequestCacheCombination(prCacheKey) !== 'untrusted/example/project/pr-7/npm/linux-x64/v1') {
     throw new Error('PR cache combination does not include the expected dimensions');
+  }
+  if (sharedEquivalentKey(prCacheKey) !== 'shared/example/project/npm/linux-x64/hash-a/v1') {
+    throw new Error('shared equivalent key was not generated correctly');
   }
   if (pullRequestCacheCombination('trusted/example/project/main/npm/linux-x64/hash-a/v1') !== null) {
     throw new Error('trusted cache was incorrectly treated as a PR cache');
