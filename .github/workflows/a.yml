@@ -1,4 +1,4 @@
-name: A-A
+name: A
 
 on:
   pull_request:
