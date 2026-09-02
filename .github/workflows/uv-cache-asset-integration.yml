@@ -165,7 +165,6 @@ jobs:
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
           test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/uv/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v2"
-        continue-on-error: true
 
       - name: Assert exact asset cache hit - untrusted
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'untrusted/') }}
@@ -240,4 +239,3 @@ jobs:
 
       - name: Verify uv can use restored cache
         run: uv pip install --python .venv/bin/python --offline -r examples/uv-cache/requirements.txt
-        continue-on-error: true
