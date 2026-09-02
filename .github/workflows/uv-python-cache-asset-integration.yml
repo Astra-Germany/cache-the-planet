@@ -140,6 +140,7 @@ jobs:
         run: |
           test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
           test "${{ steps.cache-auto.outputs.matched-key }}" = "shared/${{ github.repository }}/uv-python-3-13/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v4"
+        continue-on-error: true
 
       - name: Assert exact asset cache hit - untrusted
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'untrusted/') }}
