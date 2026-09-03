@@ -1,6 +1,28 @@
 const fs = require("fs");
 const c = require("./common");
 
+async function cleanupDuplicateAssets(repository, key, keepHash, manifest) {
+  if (!key.startsWith("shared/") && !key.startsWith("trusted/")) return;
+  const liveHashes = new Set(
+    Object.values(manifest.references || {})
+      .map((reference) => reference?.object)
+      .filter(Boolean),
+  );
+  const prefix = c.assetNamePrefix(key);
+  const { assets } = await c.assets(repository);
+  for (const asset of assets) {
+    if (!asset.name.startsWith(prefix) || !asset.name.endsWith(".tar.zst")) continue;
+    const hash = c.hashFromAssetName(asset.name);
+    if (!hash || hash === keepHash || liveHashes.has(hash)) continue;
+    try {
+      await c.deleteObject(repository, hash);
+      c.log(`removed duplicate cache asset: key=${key}; content-hash=${hash}`);
+    } catch (error) {
+      c.log(`duplicate cache asset could not be deleted: ${error.message}`);
+    }
+  }
+}
+
 (async () => {
   try {
     const repository = c.input("repository");
@@ -110,7 +132,7 @@ const c = require("./common");
         );
       } else {
         if (sharedCounterpart && !current.json.references[sharedCounterpart]) {
-          await c.setRef(
+          const updated = await c.setRef(
             repository,
             sharedCounterpart,
             existingReference.object,
@@ -118,6 +140,12 @@ const c = require("./common");
               size: existingReference.size,
               source: `linked-from:${key}`,
             },
+          );
+          await cleanupDuplicateAssets(
+            repository,
+            sharedCounterpart,
+            existingReference.object,
+            updated,
           );
           c.log(
             `linked shared cache reference: key=${sharedCounterpart}; source=${key}`,
@@ -133,6 +161,7 @@ const c = require("./common");
             `content-hash=${existingReference.object}\nasset-name=${existingAssetName}\n`,
           );
         }
+        await cleanupDuplicateAssets(repository, key, existingReference.object, current.json);
         return;
       }
     }
@@ -208,10 +237,11 @@ const c = require("./common");
     if (relatedReference?.object) {
       const relatedAsset = await c.object(repository, relatedReference.object);
       if (relatedAsset) {
-        await c.setRef(repository, key, relatedReference.object, {
+        const updated = await c.setRef(repository, key, relatedReference.object, {
           size: relatedReference.size,
           source: `linked-from:${relatedKey}`,
         });
+        await cleanupDuplicateAssets(repository, key, relatedReference.object, updated);
         c.log(
           `linked existing cache reference: key=${key}; source=${relatedKey}`,
         );
@@ -250,18 +280,20 @@ const c = require("./common");
       c.log(`object already exists: ${hash}`);
     }
 
-    await c.setRef(repository, key, hash, {
+    let updated = await c.setRef(repository, key, hash, {
       size: fs.statSync(archive.file).size,
     });
     if (sharedCounterpart) {
-      await c.setRef(repository, sharedCounterpart, hash, {
+      updated = await c.setRef(repository, sharedCounterpart, hash, {
         size: fs.statSync(archive.file).size,
         source: `linked-from:${key}`,
       });
+      await cleanupDuplicateAssets(repository, sharedCounterpart, hash, updated);
       c.log(
         `linked shared cache reference: key=${sharedCounterpart}; source=${key}`,
       );
     }
+    await cleanupDuplicateAssets(repository, key, hash, updated);
     if (process.env.GITHUB_OUTPUT) {
       fs.appendFileSync(
         process.env.GITHUB_OUTPUT,

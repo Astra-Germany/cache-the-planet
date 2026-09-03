@@ -1081,12 +1081,16 @@ async function object(repository, hash) {
   );
 }
 
-function assetName(key, hash) {
+function assetNamePrefix(key) {
   const slug = key
     .replace(/[^A-Za-z0-9._-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 120);
-  return `${slug}--${hash.slice(7)}.tar.zst`;
+  return `${slug}--`;
+}
+
+function assetName(key, hash) {
+  return `${assetNamePrefix(key)}${hash.slice(7)}.tar.zst`;
 }
 
 function hashFromAssetName(name) {
@@ -1383,6 +1387,7 @@ module.exports = {
   makeArchive,
   inspectTar,
   digest,
+  assetNamePrefix,
   assetName,
   hashFromAssetName,
   encryptFile,
