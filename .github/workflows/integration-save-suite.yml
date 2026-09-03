@@ -120,7 +120,7 @@ jobs:
 
       - name: Verify every required job passed (or was legitimately skipped)
         env:
-          JOB_RESULTS: >-
+          JOB_RESULTS: |
             build-dist=${{ needs.build-dist.result }}
             node-save-cache=${{ needs.node-save-cache.result }}
             uv-save-cache=${{ needs.uv-save-cache.result }}
