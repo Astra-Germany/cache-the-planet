@@ -97,7 +97,7 @@ jobs:
 
       - name: Verify every required job passed (or was legitimately skipped)
         env:
-          JOB_RESULTS: >-
+          JOB_RESULTS: |
             node-restore-cache=${{ needs.node-restore-cache.result }}
             uv-restore-cache=${{ needs.uv-restore-cache.result }}
             uv-python-restore-cache=${{ needs.uv-python-restore-cache.result }}
