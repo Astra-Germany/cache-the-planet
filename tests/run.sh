@@ -15,7 +15,7 @@ const os = require('os');
 const path = require('path');
 const cp = require('child_process');
 const { securityScan: sourceSecurityScan } = require('./src/common');
-const { scopedKey, scopeCounterpartKey, pullRequestCacheCombination, sharedEquivalentKey, expiredUntrustedReferences, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, hashFromAssetName, manifestWriteGuard, excludePatterns, isForkPullRequest, summary } = require('./src/common');
+const { scopedKey, scopeCounterpartKey, pullRequestCacheCombination, sharedEquivalentKey, expiredUntrustedReferences, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, assetNamePrefix, hashFromAssetName, manifestWriteGuard, excludePatterns, isForkPullRequest, summary } = require('./src/common');
 const { inspectTar } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
@@ -409,6 +409,14 @@ try {
   if (!namedAsset.startsWith('untrusted-Ludy87-spdf-cache-pr-6-buildx-Linux-X64-unoserver-v1--')
     || hashFromAssetName(namedAsset) !== `sha256:${'a'.repeat(64)}`) {
     throw new Error('descriptive asset name was not generated correctly');
+  }
+  if (assetNamePrefix('shared/Ludy87/cache-the-planet/npm/linux-x64/key/v1')
+    !== 'shared-Ludy87-cache-the-planet-npm-linux-x64-key-v1--') {
+    throw new Error('asset name prefix was not generated correctly');
+  }
+  if (assetNamePrefix('trusted/Ludy87/cache-the-planet/main/npm/linux-x64/key/v1')
+    !== 'trusted-Ludy87-cache-the-planet-main-npm-linux-x64-key-v1--') {
+    throw new Error('trusted asset name prefix was not generated correctly');
   }
   console.log('security scan test passed');
 } finally {
