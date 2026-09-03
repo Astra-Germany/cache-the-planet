@@ -1,4 +1,5 @@
 name: Publish PR cache artifacts
+run-name: "Publish PR cache artifacts - ${{ github.event.workflow_run.display_title || format('run #{0}', github.event.workflow_run.id) }}"
 
 on:
   workflow_run:
