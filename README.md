@@ -707,10 +707,6 @@ Bei inkompatiblen Protokolländerungen wird ein neuer Namespace wie `cache-v2` u
 
 ## Lokale Entwicklung und Tests
 
-Für die lokale Entwicklung werden Node.js 22 oder höher sowie für den
-reproduzierbaren Action-Build Node.js 24 verwendet. Zusätzlich benötigt der
-Archivtest GNU `tar` und `zstd`.
-
 Für lokale Tests und den Build der Action:
 
 ```bash
@@ -769,7 +765,7 @@ Ein Cache-Schritt sieht beispielsweise so aus:
 Voraussetzungen auf dem Runner:
 
 ```text
-Node.js 22 oder höher (für den Build Node.js 24)
+Node.js 24
 GNU tar
 zstd
 ```
