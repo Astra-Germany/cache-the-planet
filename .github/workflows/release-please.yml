@@ -21,7 +21,6 @@ jobs:
       pull-requests: write
     steps:
       - name: Create AstraGermany-Bot token
-        if: ${{ !inputs.dry-run }}
         id: bot-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
@@ -29,6 +28,9 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: Ludy87
           repositories: cache-the-planet
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
 
       - name: Release Please
         id: release
@@ -43,19 +45,23 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ steps.release.outputs.sha }}
+          persist-credentials: false
 
       - name: Update floating major and minor tags
         if: steps.release.outputs.release_created == 'true'
+        env:
+          RELEASE_MAJOR: ${{ steps.release.outputs.major }}
+          RELEASE_MINOR: ${{ steps.release.outputs.minor }}
         run: |
           set -euo pipefail
 
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git tag -d v${{ steps.release.outputs.major }} || true
-          git tag -d v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
-          git push origin :v${{ steps.release.outputs.major }} || true
-          git push origin :v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
-          git tag -a v${{ steps.release.outputs.major }} -m "Release v${{ steps.release.outputs.major }}"
-          git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} -m "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
-          git push origin v${{ steps.release.outputs.major }}
-          git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
+          git tag -d "v$RELEASE_MAJOR" || true
+          git tag -d "v$RELEASE_MAJOR.$RELEASE_MINOR" || true
+          git push origin ":v$RELEASE_MAJOR" || true
+          git push origin ":v$RELEASE_MAJOR.$RELEASE_MINOR" || true
+          git tag -a "v$RELEASE_MAJOR" -m "Release v$RELEASE_MAJOR"
+          git tag -a "v$RELEASE_MAJOR.$RELEASE_MINOR" -m "Release v$RELEASE_MAJOR.$RELEASE_MINOR"
+          git push origin "v$RELEASE_MAJOR"
+          git push origin "v$RELEASE_MAJOR.$RELEASE_MINOR"
