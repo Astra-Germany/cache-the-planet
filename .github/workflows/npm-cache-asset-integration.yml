@@ -32,10 +32,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - name: Hash npm files
         id: hash
+        env:
+          FILES_HASH: ${{ hashFiles(env.FILES_TO_HASH) }}
         run: |
-          HASH="${{ hashFiles(env.FILES_TO_HASH) }}"
+          HASH="$FILES_HASH"
           echo "files_hash=$HASH" >> "$GITHUB_OUTPUT"
   save-cache:
     if: ${{ inputs.save-cache }}
@@ -49,6 +52,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || 'main' }}
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
@@ -94,6 +98,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
@@ -119,17 +124,28 @@ jobs:
       - name: Assert exact asset cache hit start with trusted
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'trusted/') }}
         shell: bash
+        env:
+          CACHE_HIT: ${{ steps.cache-auto.outputs.cache-hit }}
+          MATCHED_KEY: ${{ steps.cache-auto.outputs.matched-key }}
+          CACHE_REPOSITORY: ${{ github.repository }}
+          FILES_HASH: ${{ needs.hash_pr.outputs.files_hash }}
         run: |
-          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/npm/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+          test "$CACHE_HIT" = "true"
+          test "$MATCHED_KEY" = "trusted/$CACHE_REPOSITORY/main/npm/linux-x64/$FILES_HASH/v1"
           test -d .cache/npm
 
       - name: Assert exact asset cache hit start with untrusted
         if: ${{ steps.cache-auto.outputs.matched-key != '' && startsWith(steps.cache-auto.outputs.matched-key, 'untrusted/') }}
         shell: bash
+        env:
+          CACHE_HIT: ${{ steps.cache-auto.outputs.cache-hit }}
+          MATCHED_KEY: ${{ steps.cache-auto.outputs.matched-key }}
+          CACHE_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          FILES_HASH: ${{ needs.hash_pr.outputs.files_hash }}
         run: |
-          test "${{ steps.cache-auto.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/npm/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+          test "$CACHE_HIT" = "true"
+          test "$MATCHED_KEY" = "untrusted/$CACHE_REPOSITORY/pr-$PR_NUMBER/npm/linux-x64/$FILES_HASH/v1"
           test -d .cache/npm
 
       - name: Restore npm cache asset - auto allow shared restore
@@ -149,9 +165,14 @@ jobs:
       - name: Assert exact asset cache hit start with shared
         if: ${{ steps.cache-auto-allow-shared-restore.outputs.matched-key != '' && startsWith(steps.cache-auto-allow-shared-restore.outputs.matched-key, 'shared/') }}
         shell: bash
+        env:
+          CACHE_HIT: ${{ steps.cache-auto-allow-shared-restore.outputs.cache-hit }}
+          MATCHED_KEY: ${{ steps.cache-auto-allow-shared-restore.outputs.matched-key }}
+          CACHE_REPOSITORY: ${{ github.repository }}
+          FILES_HASH: ${{ needs.hash_pr.outputs.files_hash }}
         run: |
-          test "${{ steps.cache-auto-allow-shared-restore.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-auto-allow-shared-restore.outputs.matched-key }}" = "shared/${{ github.repository }}/npm/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+          test "$CACHE_HIT" = "true"
+          test "$MATCHED_KEY" = "shared/$CACHE_REPOSITORY/npm/linux-x64/$FILES_HASH/v1"
           test -d .cache/npm
 
       - name: Restore npm cache asset - trusted
@@ -170,9 +191,14 @@ jobs:
       - name: Assert exact asset cache hit - trusted
         if: ${{ steps.cache-trusted.outputs.matched-key != '' && startsWith(steps.cache-trusted.outputs.matched-key, 'trusted/') }}
         shell: bash
+        env:
+          CACHE_HIT: ${{ steps.cache-trusted.outputs.cache-hit }}
+          MATCHED_KEY: ${{ steps.cache-trusted.outputs.matched-key }}
+          CACHE_REPOSITORY: ${{ github.repository }}
+          FILES_HASH: ${{ needs.hash_pr.outputs.files_hash }}
         run: |
-          test "${{ steps.cache-trusted.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-trusted.outputs.matched-key }}" = "trusted/${{ github.repository }}/main/npm/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+          test "$CACHE_HIT" = "true"
+          test "$MATCHED_KEY" = "trusted/$CACHE_REPOSITORY/main/npm/linux-x64/$FILES_HASH/v1"
 
       - name: Restore npm cache asset - shared
         id: cache-shared
@@ -190,9 +216,14 @@ jobs:
       - name: Assert exact asset cache hit - shared
         if: ${{ steps.cache-shared.outputs.matched-key != '' && startsWith(steps.cache-shared.outputs.matched-key, 'shared/') }}
         shell: bash
+        env:
+          CACHE_HIT: ${{ steps.cache-shared.outputs.cache-hit }}
+          MATCHED_KEY: ${{ steps.cache-shared.outputs.matched-key }}
+          CACHE_REPOSITORY: ${{ github.repository }}
+          FILES_HASH: ${{ needs.hash_pr.outputs.files_hash }}
         run: |
-          test "${{ steps.cache-shared.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-shared.outputs.matched-key }}" = "shared/${{ github.repository }}/npm/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+          test "$CACHE_HIT" = "true"
+          test "$MATCHED_KEY" = "shared/$CACHE_REPOSITORY/npm/linux-x64/$FILES_HASH/v1"
 
       - name: Restore npm cache asset - untrusted
         id: cache-untrusted
@@ -210,9 +241,15 @@ jobs:
       - name: Assert exact asset cache hit - untrusted
         if: ${{ steps.cache-untrusted.outputs.matched-key != '' && startsWith(steps.cache-untrusted.outputs.matched-key, 'untrusted/') }}
         shell: bash
+        env:
+          CACHE_HIT: ${{ steps.cache-untrusted.outputs.cache-hit }}
+          MATCHED_KEY: ${{ steps.cache-untrusted.outputs.matched-key }}
+          CACHE_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          FILES_HASH: ${{ needs.hash_pr.outputs.files_hash }}
         run: |
-          test "${{ steps.cache-untrusted.outputs.cache-hit }}" = "true"
-          test "${{ steps.cache-untrusted.outputs.matched-key }}" = "untrusted/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/npm/linux-x64/${{ needs.hash_pr.outputs.files_hash }}/v1"
+          test "$CACHE_HIT" = "true"
+          test "$MATCHED_KEY" = "untrusted/$CACHE_REPOSITORY/pr-$PR_NUMBER/npm/linux-x64/$FILES_HASH/v1"
 
       - name: Verify npm can use restored cache
         run: npm ci --prefer-offline
