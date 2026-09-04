@@ -1,13 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Chore
-
-* Paketmetadaten aktualisiert, Node.js 22 als Mindestversion festgelegt und
-  npm-Abhängigkeiten für reproduzierbare Installationen exakt gepinnt.
-* Nicht mehr benötigte `license-checker`-Abhängigkeit entfernt.
-
 ## [1.1.0](https://github.com/Ludy87/cache-the-planet/compare/v1.0.0...v1.1.0) (2026-08-28)
 
 
