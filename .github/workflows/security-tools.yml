@@ -29,6 +29,9 @@ jobs:
       - name: Check workflows and shell scripts
         shell: bash
         run: actionlint -color
+      - name: Check standalone shell scripts
+        shell: bash
+        run: shellcheck scripts/*.sh tests/run.sh
 
   zizmor:
     name: Zizmor
