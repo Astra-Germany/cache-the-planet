@@ -24,7 +24,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
 
   uv-restore-cache:
     needs: [node-restore-cache]
@@ -33,7 +33,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
 
   uv-python-restore-cache:
     needs: [uv-restore-cache]
@@ -42,7 +42,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
 
   task-restore-cache:
     needs: [uv-python-restore-cache]
@@ -51,7 +51,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
 
   java-restore-cache:
     needs: [task-restore-cache]
@@ -60,7 +60,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
 
   gradle-restore-cache:
     needs: [java-restore-cache]
@@ -69,7 +69,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
 
   docker-restore-cache:
     needs: [gradle-restore-cache]
@@ -78,7 +78,7 @@ jobs:
     with:
       restore-cache: true
     permissions:
-      contents: read
+      contents: write
 
   all-restore-checks-passed:
     name: All restore checks passed
