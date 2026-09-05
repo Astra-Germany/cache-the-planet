@@ -12,7 +12,7 @@ concurrency:
 jobs:
   release-please:
     name: Create release PR or GitHub release
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
