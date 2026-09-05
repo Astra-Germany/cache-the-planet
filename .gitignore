@@ -63,6 +63,8 @@ test-results/
 # Local agent instructions and skills (never commit or push).
 AGENTS.md
 .codex/
+.agents/
+mcp/
 
 dist/
 !dist/

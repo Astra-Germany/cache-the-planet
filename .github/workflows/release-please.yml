@@ -45,23 +45,30 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ steps.release.outputs.sha }}
-          persist-credentials: false
+          token: ${{ steps.bot-token.outputs.token || github.token }}
+          persist-credentials: true
 
       - name: Update floating major and minor tags
         if: steps.release.outputs.release_created == 'true'
         env:
           RELEASE_MAJOR: ${{ steps.release.outputs.major }}
           RELEASE_MINOR: ${{ steps.release.outputs.minor }}
+          RELEASE_TOKEN: ${{ steps.bot-token.outputs.token || github.token }}
         run: |
           set -euo pipefail
 
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git tag -d "v$RELEASE_MAJOR" || true
-          git tag -d "v$RELEASE_MAJOR.$RELEASE_MINOR" || true
-          git push origin ":v$RELEASE_MAJOR" || true
-          git push origin ":v$RELEASE_MAJOR.$RELEASE_MINOR" || true
+          if git show-ref --verify --quiet "refs/tags/v$RELEASE_MAJOR"; then
+            git tag -d "v$RELEASE_MAJOR"
+          fi
           git tag -a "v$RELEASE_MAJOR" -m "Release v$RELEASE_MAJOR"
+          git -c http.extraheader="AUTHORIZATION: bearer $RELEASE_TOKEN" \
+            push --force origin "v$RELEASE_MAJOR"
+
+          if git show-ref --verify --quiet "refs/tags/v$RELEASE_MAJOR.$RELEASE_MINOR"; then
+            git tag -d "v$RELEASE_MAJOR.$RELEASE_MINOR"
+          fi
           git tag -a "v$RELEASE_MAJOR.$RELEASE_MINOR" -m "Release v$RELEASE_MAJOR.$RELEASE_MINOR"
-          git push origin "v$RELEASE_MAJOR"
-          git push origin "v$RELEASE_MAJOR.$RELEASE_MINOR"
+          git -c http.extraheader="AUTHORIZATION: bearer $RELEASE_TOKEN" \
+            push --force origin "v$RELEASE_MAJOR.$RELEASE_MINOR"

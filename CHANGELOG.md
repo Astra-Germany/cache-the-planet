@@ -8,6 +8,37 @@
   npm-Abhängigkeiten für reproduzierbare Installationen exakt gepinnt.
 * Nicht mehr benötigte `license-checker`-Abhängigkeit entfernt.
 
+## [1.2.3](https://github.com/Ludy87/cache-the-planet/compare/v1.2.2...v1.2.3) (2026-09-05)
+
+
+### Bug Fixes
+
+* create missing floating release tags ([#54](https://github.com/Ludy87/cache-the-planet/issues/54)) ([cdbc992](https://github.com/Ludy87/cache-the-planet/commit/cdbc9923def4f4373d219818b0cb79328bdb54c8))
+
+## [1.2.2](https://github.com/Ludy87/cache-the-planet/compare/v1.2.1...v1.2.2) (2026-09-05)
+
+
+### Bug Fixes
+
+* authenticate floating release tag pushes ([#52](https://github.com/Ludy87/cache-the-planet/issues/52)) ([a3008c9](https://github.com/Ludy87/cache-the-planet/commit/a3008c9d8d052b428389c775364f3a2c6f1a0e5f))
+
+## [1.2.1](https://github.com/Ludy87/cache-the-planet/compare/v1.2.0...v1.2.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* update .gitignore to exclude local agent instructions and skills ([d561ad5](https://github.com/Ludy87/cache-the-planet/commit/d561ad573e2eb90df8ba50f565c3c33096ba8b67))
+
+
+### Documentation
+
+* streamline README and move maintainer guides ([#49](https://github.com/Ludy87/cache-the-planet/issues/49)) ([4050c70](https://github.com/Ludy87/cache-the-planet/commit/4050c708e2513ce06ba3d8b16445c1499d3f0ea4))
+
+
+### Security
+
+* use trusted cache-name configuration for PR publishing ([#48](https://github.com/Ludy87/cache-the-planet/issues/48)) ([29398ee](https://github.com/Ludy87/cache-the-planet/commit/29398ee423b61709a7faa84b844d04f03e4e3e87))
+
 ## [1.2.0](https://github.com/Ludy87/cache-the-planet/compare/v1.1.0...v1.2.0) (2026-09-05)
 
 
