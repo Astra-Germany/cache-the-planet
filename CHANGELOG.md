@@ -8,6 +8,32 @@
   npm-Abhängigkeiten für reproduzierbare Installationen exakt gepinnt.
 * Nicht mehr benötigte `license-checker`-Abhängigkeit entfernt.
 
+## [1.3.0](https://github.com/Ludy87/cache-the-planet/compare/v1.2.7...v1.3.0) (2026-09-05)
+
+
+### 🎉 Features
+
+* configure cache repository and manifest branch ([#68](https://github.com/Ludy87/cache-the-planet/issues/68)) ([d8096a8](https://github.com/Ludy87/cache-the-planet/commit/d8096a8de75a681eeec5940838d6b8a83ec937e1))
+
+## [1.2.7](https://github.com/Ludy87/cache-the-planet/compare/v1.2.6...v1.2.7) (2026-09-05)
+
+
+### Bug Fixes
+
+* **ci:** use action for floating release tags ([#66](https://github.com/Ludy87/cache-the-planet/issues/66)) ([de6b11c](https://github.com/Ludy87/cache-the-planet/commit/de6b11c61913db4cc3d617087da178c38bbf62d7))
+
+## [1.2.6](https://github.com/Ludy87/cache-the-planet/compare/v1.2.5...v1.2.6) (2026-09-05)
+
+
+### Bug Fixes
+
+* **ci:** stabilize archive fuzz test and add uncached test job ([#65](https://github.com/Ludy87/cache-the-planet/issues/65)) ([f3909df](https://github.com/Ludy87/cache-the-planet/commit/f3909df7d6a48212d9687f6666799cee1c4997af))
+
+
+### Security
+
+* add dependency audit and SBOM checks ([#63](https://github.com/Ludy87/cache-the-planet/issues/63)) ([aea21d3](https://github.com/Ludy87/cache-the-planet/commit/aea21d366d2f1291534b03021200c6e26c835b97))
+
 ## [1.2.5](https://github.com/Ludy87/cache-the-planet/compare/v1.2.4...v1.2.5) (2026-09-05)
 
 
