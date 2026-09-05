@@ -19,10 +19,6 @@ on:
         required: false
   workflow_dispatch:
 
-env:
-  CACHE_REPOSITORY: Ludy87/cache-the-planet
-  CACHE_MANIFEST_BRANCH: cache-data
-
 permissions:
   contents: read
 
@@ -62,11 +58,11 @@ jobs:
         id: npm-cache
         uses: ./
         with:
-          repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
           key: ${{ hashFiles('package-lock.json') }}
           path: .cache/npm
           strict: false
+          allow-shared-restore: true
         continue-on-error: true
 
       - run: npm ci --no-audit --no-fund ${{ inputs.dry-run && '--dry-run' || '' }}
@@ -75,13 +71,13 @@ jobs:
         if: ${{ !inputs.dry-run && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && success() && steps.npm-cache.outputs.cache-hit != 'true' }}
         uses: ./save
         with:
-          repository: ${{ env.CACHE_REPOSITORY }}
           cache-name: npm
           key: ${{ hashFiles('package-lock.json') }}
+          scope: shared
           path: .cache/npm
           strict: false
           token: ${{ steps.bot-token.outputs.token }}
-          allow-pr-cache: false
+          allow-pr-cache: true
         continue-on-error: true
 
       - name: Commit generated dist
