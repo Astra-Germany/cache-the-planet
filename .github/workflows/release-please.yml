@@ -2,6 +2,9 @@ name: Release Please
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 concurrency:
   # Release Please creates/updates release metadata and must not race with
@@ -53,19 +56,18 @@ jobs:
         env:
           RELEASE_MAJOR: ${{ steps.release.outputs.major }}
           RELEASE_MINOR: ${{ steps.release.outputs.minor }}
+          TOKEN: ${{ steps.bot-token.outputs.token || github.token }}
         run: |
           set -euo pipefail
 
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          if git show-ref --verify --quiet "refs/tags/v$RELEASE_MAJOR"; then
-            git tag -d "v$RELEASE_MAJOR"
-          fi
+          git config user.name "AstraGermany-Bot[bot]"
+          git config user.email "AstraGermany-Bot[bot]@users.noreply.github.com"
+          git remote add gh-token "https://$TOKEN@github.com/Ludy87/cache-the-planet.git"
+          git tag -d "v$RELEASE_MAJOR" || true
+          git tag -d "v$RELEASE_MAJOR.$RELEASE_MINOR" || true
+          git push origin ":v$RELEASE_MAJOR" || true
+          git push origin ":v$RELEASE_MAJOR.$RELEASE_MINOR" || true
           git tag -a "v$RELEASE_MAJOR" -m "Release v$RELEASE_MAJOR"
-          git push --force origin "v$RELEASE_MAJOR"
-
-          if git show-ref --verify --quiet "refs/tags/v$RELEASE_MAJOR.$RELEASE_MINOR"; then
-            git tag -d "v$RELEASE_MAJOR.$RELEASE_MINOR"
-          fi
           git tag -a "v$RELEASE_MAJOR.$RELEASE_MINOR" -m "Release v$RELEASE_MAJOR.$RELEASE_MINOR"
-          git push --force origin "v$RELEASE_MAJOR.$RELEASE_MINOR"
+          git push origin "v$RELEASE_MAJOR"
+          git push origin "v$RELEASE_MAJOR.$RELEASE_MINOR"
