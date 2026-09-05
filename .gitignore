@@ -60,6 +60,10 @@ test-results/
 # Keep the GitHub Action distribution and dependency lockfile tracked.
 !package-lock.json
 
+# Local agent instructions and skills (never commit or push).
+AGENTS.md
+.codex/
+
 dist/
 !dist/
 !dist/*.js
