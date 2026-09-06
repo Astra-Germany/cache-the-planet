@@ -21,6 +21,7 @@ env:
   UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
   FILES_TO_HASH: |
     examples/uv-cache/requirements.txt
+  VERSION: 3
 
 permissions:
   contents: read
@@ -97,7 +98,7 @@ jobs:
           token: ${{ steps.bot-token.outputs.token || github.token }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
           allow-shared-restore: true
-          version: 3
+          version: ${{ env.VERSION }}
           path: .cache/uv
           strict: true
 
@@ -164,7 +165,7 @@ jobs:
         uses: ./
         with:
           cache-name: uv
-          version: 3
+          version: ${{ env.VERSION }}
           scope: ${{ matrix.scope-matrix.scope }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/uv
