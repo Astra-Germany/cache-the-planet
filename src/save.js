@@ -105,8 +105,10 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
       isPullRequest &&
       String(c.input("allow-pr-cache")).toLowerCase() !== "true"
     ) {
-      saveSummary("SKIPPED", { Reason: "Pull request cache saving is disabled" });
-      c.log("untrusted pull request: save skipped");
+      const reason =
+        "Pull request cache saving is disabled; set allow-pr-cache: true to enable it";
+      saveSummary("SKIPPED", { Reason: reason });
+      c.log(`untrusted pull request: save skipped (${reason})`);
       return;
     }
     if (isPullRequest) {
