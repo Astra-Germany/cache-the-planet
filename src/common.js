@@ -12,6 +12,7 @@ let githubClientPromise;
 let configurationCache;
 const releaseCache = new Map();
 const assetsCache = new Map();
+const manifestCache = new Map();
 const manifestLocks = new Map();
 
 function parsePositiveSafeInteger(value, name, fallback) {
@@ -267,24 +268,43 @@ function defaultBranch() {
 }
 
 function isCompleteCacheKey(key) {
-  if (typeof key !== "string" || key.length > defaultLogicalKeyLength) return false;
+  if (typeof key !== "string" || key.length > defaultLogicalKeyLength)
+    return false;
   const parts = key.split("/");
   const safePart = (value) => /^[A-Za-z0-9._-]+$/.test(value);
   if (parts.some((part) => !safePart(part))) return false;
   if (!/^v\d+$/.test(parts.at(-1))) return false;
   if (parts[0] === "trusted") {
-    return parts.length >= 8 && safePart(parts[1]) && safePart(parts[2]) &&
-      safePart(parts[3]) && safePart(parts[4]) && safePart(parts[5]) &&
-      parts.slice(6, -1).length <= defaultLogicalKeyComponents;
+    return (
+      parts.length >= 8 &&
+      safePart(parts[1]) &&
+      safePart(parts[2]) &&
+      safePart(parts[3]) &&
+      safePart(parts[4]) &&
+      safePart(parts[5]) &&
+      parts.slice(6, -1).length <= defaultLogicalKeyComponents
+    );
   }
   if (parts[0] === "untrusted") {
-    return parts.length >= 8 && safePart(parts[1]) && safePart(parts[2]) &&
-      /^pr-[1-9]\d*$/.test(parts[3]) && safePart(parts[4]) && safePart(parts[5]) &&
-      parts.slice(6, -1).length <= defaultLogicalKeyComponents;
+    return (
+      parts.length >= 8 &&
+      safePart(parts[1]) &&
+      safePart(parts[2]) &&
+      /^pr-[1-9]\d*$/.test(parts[3]) &&
+      safePart(parts[4]) &&
+      safePart(parts[5]) &&
+      parts.slice(6, -1).length <= defaultLogicalKeyComponents
+    );
   }
-  return parts[0] === "shared" && parts.length >= 7 && safePart(parts[1]) &&
-    safePart(parts[2]) && safePart(parts[3]) && safePart(parts[4]) &&
-    parts.slice(5, -1).length <= defaultLogicalKeyComponents;
+  return (
+    parts[0] === "shared" &&
+    parts.length >= 7 &&
+    safePart(parts[1]) &&
+    safePart(parts[2]) &&
+    safePart(parts[3]) &&
+    safePart(parts[4]) &&
+    parts.slice(5, -1).length <= defaultLogicalKeyComponents
+  );
 }
 
 function cacheName() {
@@ -501,9 +521,8 @@ function scopedKey(key) {
   const selectedScope =
     scope === "auto" ? (pullRequest ? "untrusted" : "trusted") : scope;
   if (selectedScope === "shared") {
-    if (pullRequest)
-      log("scope=shared is mapped to an isolated untrusted PR cache");
     if (pullRequest) {
+      log("scope=shared is mapped to an isolated untrusted PR cache");
       const number = pullRequestNumber();
       if (!number)
         throw new Error(
@@ -951,6 +970,10 @@ function encryptionKey() {
   if (!value) return null;
   if (/^[0-9a-f]{64}$/i.test(value)) return Buffer.from(value, "hex");
   return crypto.createHash("sha256").update(value, "utf8").digest();
+}
+
+function encryptionEnabled() {
+  return Boolean(encryptionKey());
 }
 
 function encryptFile(file) {
@@ -1436,20 +1459,40 @@ async function manifest(repository) {
   };
 }
 
-async function refs(repository) {
-  try {
-    return await manifest(repository);
-  } catch (error) {
-    if (error.status !== 404) throw error;
-    return { json: { schema_version: 1, references: {} }, sha: null };
+async function refs(repository, { fresh = false } = {}) {
+  if (!fresh && manifestCache.has(repository)) {
+    return manifestCache.get(repository);
   }
+  const pending = (async () => {
+    try {
+      return await manifest(repository);
+    } catch (error) {
+      if (error.status !== 404) throw error;
+      return { json: { schema_version: 1, references: {} }, sha: null };
+    }
+  })();
+  manifestCache.set(repository, pending);
+  try {
+    return await pending;
+  } catch (error) {
+    if (manifestCache.get(repository) === pending)
+      manifestCache.delete(repository);
+    throw error;
+  }
+}
+
+function invalidateManifestCache(repository) {
+  manifestCache.delete(repository);
 }
 
 async function updateManifestUnlocked(repository, message, update) {
   const maxAttempts = 12;
   const branch = manifestBranch();
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const current = await refs(repository);
+    // A compare-and-swap update must never use the read cache. This also
+    // ensures a retry observes the version that caused the conflict.
+    invalidateManifestCache(repository);
+    const current = await refs(repository, { fresh: true });
     if (!update(current.json)) return current.json;
     try {
       await gh(`/repos/${repository}/contents/manifests/references-v1.json`, {
@@ -1464,6 +1507,7 @@ async function updateManifestUnlocked(repository, message, update) {
           branch,
         }),
       });
+      invalidateManifestCache(repository);
       return current.json;
     } catch (error) {
       // GitHub also uses 409 for protected-branch/ruleset violations. Those
@@ -1472,6 +1516,7 @@ async function updateManifestUnlocked(repository, message, update) {
       const isManifestConflict =
         error.status === 409 && /\bconflict\b/i.test(error.message || "");
       if (!isManifestConflict || attempt === maxAttempts - 1) throw error;
+      invalidateManifestCache(repository);
       const delay =
         Math.min(1000 * 2 ** attempt, 10000) + Math.floor(Math.random() * 250);
       log(
@@ -1747,6 +1792,7 @@ module.exports = {
   decompressZstd,
   validateArchiveFile,
   removeTemporaryFile,
+  encryptionEnabled,
   encryptFile,
   decryptFile,
   release,

@@ -1,6 +1,13 @@
 const fs = require("fs");
 const c = require("./common");
 
+function saveSummary(status, fields = {}) {
+  c.summary("Cache Save", {
+    Status: status,
+    ...fields,
+  });
+}
+
 async function cleanupDuplicateAssets(repository, key, keepHash, manifest) {
   if (!key.startsWith("shared/") && !key.startsWith("trusted/")) return;
   const liveHashes = new Set(
@@ -9,18 +16,20 @@ async function cleanupDuplicateAssets(repository, key, keepHash, manifest) {
       .filter(Boolean),
   );
   const { assets } = await c.assets(repository);
+  let deleted = false;
   for (const asset of assets) {
     if (!c.assetMatchesKeyCombination(asset.name, key)) continue;
     const hash = c.hashFromAssetName(asset.name);
     if (!hash || hash === keepHash || liveHashes.has(hash)) continue;
     try {
       await c.deleteObject(repository, hash, false);
+      deleted = true;
       c.log(`removed duplicate cache asset: key=${key}; content-hash=${hash}`);
     } catch (error) {
       c.log(`duplicate cache asset could not be deleted: ${error.message}`);
     }
   }
-  c.invalidateRepositoryCache(repository);
+  if (deleted) c.invalidateRepositoryCache(repository);
 }
 
 async function replaceOlderReferences(repository, key) {
@@ -85,6 +94,7 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
         Status: "SKIPPED",
         Reason: "Fork pull request is read-only",
         "Is fork": "true",
+        Encryption: c.encryptionEnabled() ? "enabled" : "disabled",
       });
       c.log(
         "fork pull request: save skipped because write-capable secrets are unavailable",
@@ -95,7 +105,10 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
       isPullRequest &&
       String(c.input("allow-pr-cache")).toLowerCase() !== "true"
     ) {
-      c.log("untrusted pull request: save skipped");
+      const reason =
+        "Pull request cache saving is disabled; set allow-pr-cache: true to enable it";
+      saveSummary("SKIPPED", { Reason: reason });
+      c.log(`untrusted pull request: save skipped (${reason})`);
       return;
     }
     if (isPullRequest) {
@@ -152,6 +165,10 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
         current.json.references[sharedEquivalent].object,
       );
       if (sharedAsset) {
+        saveSummary("SKIPPED", {
+          Reason: "Shared cache already exists",
+          "Matched key": sharedEquivalent,
+        });
         c.log(
           `shared cache already exists; isolated PR cache publish skipped: key=${sharedEquivalent}`,
         );
@@ -172,6 +189,10 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
           `orphaned cache reference detected for key=${key}; recreating asset`,
         );
       } else {
+        saveSummary("SKIPPED", {
+          Reason: "Cache already exists",
+          "Matched key": key,
+        });
         if (sharedCounterpart && !current.json.references[sharedCounterpart]) {
           const updated = await c.setRef(
             repository,
@@ -282,6 +303,11 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
         console.log(
           `Cache saved: key=${key}; asset=${existing?.name || name}; content-hash=${hash}`,
         );
+        saveSummary("SAVED", {
+          Key: key,
+          "Asset name": existing?.name || name,
+          "Content hash": hash,
+        });
         return;
       }
     }
@@ -317,6 +343,12 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
           setOutput("content-hash", relatedReference.object);
           setOutput("asset-name", relatedAsset.name);
         }
+        saveSummary("SAVED", {
+          Key: key,
+          "Asset name": relatedAsset.name,
+          "Content hash": relatedReference.object,
+          "Linked from": relatedKey,
+        });
         return;
       }
       c.log(
@@ -385,6 +417,11 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
     console.log(
       `Cache saved: key=${key}; asset=${existing?.name || name}; content-hash=${hash}`,
     );
+    saveSummary("SAVED", {
+      Key: key,
+      "Asset name": existing?.name || name,
+      "Content hash": hash,
+    });
   } catch (error) {
     // Pull-request jobs may receive a valid token without write access to the
     // central cache repository. Saving is optional there, including for
@@ -396,6 +433,9 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
       if (process.env.GITHUB_OUTPUT) {
         c.setOutput("read_only", "true");
       }
+      saveSummary("SKIPPED", {
+        Reason: `Repository access denied (${error.status})`,
+      });
       c.log(
         `pull request cache save skipped: repository access denied (${error.status})`,
       );

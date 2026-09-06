@@ -15,7 +15,7 @@ const os = require('os');
 const path = require('path');
 const cp = require('child_process');
 const { securityScan: sourceSecurityScan } = require('./src/common');
-const { scopedKey, scopeCounterpartKey, pullRequestCacheCombination, sharedEquivalentKey, expiredUntrustedReferences, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, assetNamePrefix, assetMatchesKeyCombination, hashFromAssetName, manifestWriteGuard, excludePatterns, isForkPullRequest, summary } = require('./src/common');
+const { scopedKey, scopeCounterpartKey, pullRequestCacheCombination, sharedEquivalentKey, expiredUntrustedReferences, scopedRestorePrefix, sharedRestorePrefix, assertTrustedRestoreAllowed, assetName, assetNamePrefix, assetMatchesKeyCombination, hashFromAssetName, manifestWriteGuard, excludePatterns, isForkPullRequest, summary, encryptionEnabled } = require('./src/common');
 const { inspectTar } = require('./src/common');
 const { securityScan: distSecurityScan } = require('./dist/common');
 const { encryptFile, decryptFile } = require('./src/common');
@@ -99,7 +99,14 @@ try {
   if (!fs.readFileSync(summaryFile, 'utf8').includes('| Status | HIT |')) {
     throw new Error('cache step summary was not generated correctly');
   }
+  if (!encryptionEnabled()) {
+    throw new Error('encryption status should be enabled when encryption-key is set');
+  }
   delete process.env.GITHUB_STEP_SUMMARY;
+  delete process.env['INPUT_ENCRYPTION-KEY'];
+  if (encryptionEnabled()) {
+    throw new Error('encryption status should be disabled without encryption-key');
+  }
   fs.mkdirSync(path.join(root, '.ssh'));
   fs.writeFileSync(path.join(root, '.ssh', 'config'), 'Host example\n');
   rejected = false;
@@ -161,6 +168,28 @@ try {
   const forkOutputs = fs.readFileSync(forkOutput, 'utf8');
   if (!forkOutputs.includes('is_fork=true\n') || !forkOutputs.includes('read_only=true\n')) {
     throw new Error('fork save outputs were not generated correctly');
+  }
+  fs.writeFileSync(eventFile, JSON.stringify({
+    repository: { full_name: 'example/project' },
+    pull_request: {
+      number: 7,
+      head: { repo: { full_name: 'example/project' } },
+    },
+  }));
+  const disabledPrSave = cp.spawnSync(process.execPath, [path.join(process.cwd(), 'src', 'save.js')], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      INPUT_REPOSITORY: 'example/project',
+      INPUT_KEY: 'hash/v1',
+      'INPUT_CACHE-NAME': 'npm',
+      INPUT_SCOPE: 'auto',
+      'INPUT_ALLOW-PR-CACHE': 'false',
+      GITHUB_TOKEN: '',
+    },
+  });
+  if (disabledPrSave.status !== 0 || !`${disabledPrSave.stdout}\n${disabledPrSave.stderr}`.includes('allow-pr-cache: true')) {
+    throw new Error('disabled PR save did not explain how to enable allow-pr-cache');
   }
   process.env.GITHUB_EVENT_NAME = 'push';
   delete process.env.GITHUB_REF;
