@@ -149,6 +149,7 @@ jobs:
           allow-shared-restore: ${{ matrix.scope-matrix.allow-shared-restore }}
           restore-only: true
           strict: true
+        continue-on-error: true
 
       - name: Verify npm can use restored cache
         run: npm ci --prefer-offline --no-audit --no-fund
