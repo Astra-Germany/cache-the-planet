@@ -91,7 +91,7 @@ jobs:
           allow-shared-restore: true
           restore-keys: |
             linux-x64/
-          version: 4
+          version: 5
           path: .cache/uv
 
       - name: Install managed Python
@@ -197,7 +197,7 @@ jobs:
           token: ${{ github.token }}
           scope: trusted
           key: ${{ needs.hash_pr.outputs.files_hash }}
-          version: 4
+          version: 5
           restore-keys: |
             linux-x64/
           path: .cache/uv
@@ -223,7 +223,7 @@ jobs:
           token: ${{ github.token }}
           scope: shared
           key: ${{ needs.hash_pr.outputs.files_hash }}
-          version: 4
+          version: 5
           restore-keys: |
             linux-x64/
           path: .cache/uv
@@ -249,7 +249,7 @@ jobs:
           token: ${{ github.token }}
           scope: untrusted
           key: ${{ needs.hash_pr.outputs.files_hash }}
-          version: 4
+          version: 5
           restore-keys: |
             linux-x64/
           path: .cache/uv
