@@ -15,6 +15,10 @@ inputs:
     description: "Cache scope: auto, shared, trusted, or untrusted"
     required: false
     default: auto
+  save-scope:
+    description: "Scope for saving; defaults to scope"
+    required: false
+    default: ""
   os:
     description: "Operating system component of the cache key; defaults to RUNNER_OS"
     required: false
@@ -76,6 +80,10 @@ outputs:
     description: "Release asset filename for the cached object"
   cache-size:
     description: "Compressed object size in bytes"
+branding:
+  icon: archive
+  color: blue
+
 runs:
   using: node24
   main: ../dist/save.js
