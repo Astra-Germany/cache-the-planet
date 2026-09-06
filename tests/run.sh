@@ -169,6 +169,21 @@ try {
   if (!forkOutputs.includes('is_fork=true\n') || !forkOutputs.includes('read_only=true\n')) {
     throw new Error('fork save outputs were not generated correctly');
   }
+  const disabledPrSave = cp.spawnSync(process.execPath, [path.join(process.cwd(), 'src', 'save.js')], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      INPUT_REPOSITORY: 'example/project',
+      INPUT_KEY: 'hash/v1',
+      'INPUT_CACHE-NAME': 'npm',
+      INPUT_SCOPE: 'auto',
+      INPUT_ALLOW_PR_CACHE: 'false',
+      GITHUB_TOKEN: '',
+    },
+  });
+  if (disabledPrSave.status !== 0 || !`${disabledPrSave.stdout}\n${disabledPrSave.stderr}`.includes('allow-pr-cache: true')) {
+    throw new Error('disabled PR save did not explain how to enable allow-pr-cache');
+  }
   process.env.GITHUB_EVENT_NAME = 'push';
   delete process.env.GITHUB_REF;
   fs.writeFileSync(eventFile, JSON.stringify({ repository: { default_branch: 'main' } }));
