@@ -97,6 +97,7 @@ jobs:
           key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/npm
           strict: false
+          allow-pr-cache: true
 
       - name: Upload npm cache artifact for trusted publisher
         if: ${{ (steps.save.outputs.is_fork == 'true' || steps.save.outputs.read_only == 'true') && success() }}
