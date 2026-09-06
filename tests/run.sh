@@ -169,6 +169,13 @@ try {
   if (!forkOutputs.includes('is_fork=true\n') || !forkOutputs.includes('read_only=true\n')) {
     throw new Error('fork save outputs were not generated correctly');
   }
+  fs.writeFileSync(eventFile, JSON.stringify({
+    repository: { full_name: 'example/project' },
+    pull_request: {
+      number: 7,
+      head: { repo: { full_name: 'example/project' } },
+    },
+  }));
   const disabledPrSave = cp.spawnSync(process.execPath, [path.join(process.cwd(), 'src', 'save.js')], {
     encoding: 'utf8',
     env: {
