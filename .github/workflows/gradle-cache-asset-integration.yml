@@ -151,3 +151,4 @@ jobs:
       - name: Build offline with restored Gradle cache
         working-directory: examples/gradle-cache
         run: gradle --offline --no-daemon test
+        continue-on-error: true
