@@ -93,9 +93,9 @@ jobs:
           path: .cache/uv
 
       - run: |
-          echo ${{ steps.cache.outputs.cache-hit }}
-          echo ${{ steps.cache.outputs.is-fork }}
-          echo ${{ steps.cache.outputs.is-read-only }}
+          echo Cache hit: ${{ steps.cache.outputs.cache-hit }}
+          echo Is fork: ${{ steps.cache.outputs.is-fork }}
+          echo Is read-only: ${{ steps.cache.outputs.is-read-only }}
 
       - name: Install managed Python
         run: |
