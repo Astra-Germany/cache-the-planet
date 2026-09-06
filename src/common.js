@@ -48,7 +48,11 @@ const maxArchiveEntries = positiveEnvironmentLimit(
   200000,
   "max_entries",
 );
-const maxArchivePathLength = 4096;
+const maxArchivePathLength = positiveEnvironmentLimit(
+  "CACHE_MAX_ARCHIVE_PATH_LENGTH",
+  4096,
+  "max_archive_path_length",
+);
 const defaultManifestReferenceLimit = 100000;
 const defaultManifestWritesPerHour = 1000;
 const defaultLogicalKeyLength = 512;
@@ -325,9 +329,12 @@ function cacheName() {
 
 function cacheScope(inputName = "scope", fallbackInputName = null) {
   const configured = input(inputName).trim();
+  const configuredScope = String(configuration().scope ?? "").trim();
   const value = (
     configured ||
-    (fallbackInputName ? input(fallbackInputName, "auto") : "auto")
+    (fallbackInputName
+      ? input(fallbackInputName) || configuredScope || "auto"
+      : configuredScope || "auto")
   )
     .trim()
     .toLowerCase();
@@ -400,7 +407,10 @@ function logicalCacheKey(value, name, includeVersion = true) {
     throw new Error(`cache key must not exceed ${maxLength} characters`);
   }
   if (!includeVersion) return withPlatform;
-  const version = input("version", "1").trim() || "1";
+  const version =
+    input("version").trim() ||
+    String(configuration().version ?? "").trim() ||
+    "1";
   if (!/^\d+$/.test(version))
     throw new Error("version must contain numbers only");
   const complete = /\/v[A-Za-z0-9._-]+$/.test(withPlatform)
@@ -982,6 +992,19 @@ function encryptionEnabled() {
   return Boolean(encryptionKey());
 }
 
+function compressionLevel() {
+  const configured =
+    input("compression-level") ||
+    process.env.CACHE_COMPRESSION_LEVEL ||
+    configuration().compression_level ||
+    "3";
+  const value = String(configured).trim();
+  if (!/^-?\d+$/.test(value) || !Number.isSafeInteger(Number(value))) {
+    throw new Error("compression-level must be an integer");
+  }
+  return value;
+}
+
 function encryptFile(file) {
   const key = encryptionKey();
   if (!key) return file;
@@ -1192,7 +1215,7 @@ async function makeArchive() {
   );
   const zstd = cp.spawn(
     "zstd",
-    ["-q", `-${input("compression-level", "3")}`, "-o", output],
+    ["-q", `-${compressionLevel()}`, "-o", output],
     {
       stdio: ["pipe", "inherit", "inherit"],
     },
@@ -1833,6 +1856,7 @@ module.exports = {
   validateArchiveFile,
   removeTemporaryFile,
   encryptionEnabled,
+  compressionLevel,
   encryptFile,
   decryptFile,
   release,
