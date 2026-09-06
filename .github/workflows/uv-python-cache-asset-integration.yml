@@ -92,6 +92,11 @@ jobs:
           version: 5
           path: .cache/uv
 
+      - run: |
+          echo ${{ steps.cache.outputs.cache-hit }}
+          echo ${{ steps.cache.outputs.is-fork }}
+          echo ${{ steps.cache.outputs.is-read-only }}
+
       - name: Install managed Python
         run: |
           rm -rf "$UV_PYTHON_INSTALL_DIR"
