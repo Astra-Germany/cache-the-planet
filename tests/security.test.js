@@ -15,6 +15,8 @@ function runCacheNameWithConfig(config, cacheName = "npm", extraEnv = {}) {
   const script = `
     process.env.GITHUB_WORKSPACE = ${JSON.stringify(workspace)};
     process.env["INPUT_CONFIG-FILE"] = ".cache-the-planet.json";
+    process.env.RUNNER_OS = "Linux";
+    process.env.RUNNER_ARCH = "X64";
     process.env["INPUT_CACHE-NAME"] = ${JSON.stringify(cacheName)};
     const { cacheName } = require(${JSON.stringify(path.join(__dirname, "..", "src", "common.js"))});
     process.stdout.write(cacheName());
@@ -42,6 +44,83 @@ function runManifestBranchWithConfig(config, extraEnv = {}) {
   const result = childProcess.spawnSync(process.execPath, ["-e", script], {
     cwd: workspace,
     env,
+    encoding: "utf8",
+  });
+  fs.rmSync(workspace, { recursive: true, force: true });
+  return result;
+}
+
+function runCompressionLevelWithConfig(config, extraEnv = {}) {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cache-compression-test-"));
+  fs.writeFileSync(
+    path.join(workspace, ".cache-the-planet.json"),
+    JSON.stringify(config),
+  );
+  const script = `
+    process.env.GITHUB_WORKSPACE = ${JSON.stringify(workspace)};
+    process.env["INPUT_CONFIG-FILE"] = ".cache-the-planet.json";
+    const { compressionLevel } = require(${JSON.stringify(path.join(__dirname, "..", "src", "common.js"))});
+    process.stdout.write(compressionLevel());
+  `;
+  const result = childProcess.spawnSync(process.execPath, ["-e", script], {
+    cwd: workspace,
+    env: { ...process.env, ...extraEnv },
+    encoding: "utf8",
+  });
+  fs.rmSync(workspace, { recursive: true, force: true });
+  return result;
+}
+
+function runConfiguredDefaults(config, extraEnv = {}) {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cache-defaults-test-"));
+  fs.writeFileSync(
+    path.join(workspace, ".cache-the-planet.json"),
+    JSON.stringify(config),
+  );
+  const script = `
+    process.env.GITHUB_WORKSPACE = ${JSON.stringify(workspace)};
+    process.env["INPUT_CONFIG-FILE"] = ".cache-the-planet.json";
+    process.env.RUNNER_OS = "Linux";
+    process.env.RUNNER_ARCH = "X64";
+    process.env["INPUT_CACHE-NAME"] = "npm";
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    process.env.GITHUB_DEFAULT_BRANCH = "main";
+    process.env.GITHUB_REF = "refs/heads/main";
+    process.env.GITHUB_EVENT_NAME = "push";
+    const common = require(${JSON.stringify(path.join(__dirname, "..", "src", "common.js"))});
+    process.stdout.write(common.cacheScope() + "|" + common.scopedKey("hash"));
+  `;
+  const result = childProcess.spawnSync(process.execPath, ["-e", script], {
+    cwd: workspace,
+    env: { ...process.env, ...extraEnv },
+    encoding: "utf8",
+  });
+  fs.rmSync(workspace, { recursive: true, force: true });
+  return result;
+}
+
+function runCommonExpression(config, expression) {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cache-limits-test-"));
+  fs.writeFileSync(
+    path.join(workspace, ".cache-the-planet.json"),
+    JSON.stringify(config),
+  );
+  const script = `
+    process.env.GITHUB_WORKSPACE = ${JSON.stringify(workspace)};
+    process.env["INPUT_CONFIG-FILE"] = ".cache-the-planet.json";
+    process.env.RUNNER_OS = "Linux";
+    process.env.RUNNER_ARCH = "X64";
+    process.env["INPUT_CACHE-NAME"] = "npm";
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    process.env.GITHUB_DEFAULT_BRANCH = "main";
+    process.env.GITHUB_REF = "refs/heads/main";
+    process.env.GITHUB_EVENT_NAME = "push";
+    const common = require(${JSON.stringify(path.join(__dirname, "..", "src", "common.js"))});
+    ${expression}
+  `;
+  const result = childProcess.spawnSync(process.execPath, ["-e", script], {
+    cwd: workspace,
+    env: { ...process.env },
     encoding: "utf8",
   });
   fs.rmSync(workspace, { recursive: true, force: true });
@@ -84,6 +163,99 @@ test("positive limits accept safe integers and reject unsafe values", () => {
     assert.throws(
       () => common.parsePositiveSafeInteger(value, "LIMIT"),
       /positive safe integer/,
+    );
+  }
+});
+
+test("compression level uses the documented configuration precedence", () => {
+  assert.equal(
+    runCompressionLevelWithConfig({ compression_level: 7 }).stdout,
+    "7",
+  );
+  assert.equal(
+    runCompressionLevelWithConfig(
+      { compression_level: 7 },
+      { CACHE_COMPRESSION_LEVEL: "9" },
+    ).stdout,
+    "9",
+  );
+  assert.equal(
+    runCompressionLevelWithConfig(
+      { compression_level: 7 },
+      { CACHE_COMPRESSION_LEVEL: "9", "INPUT_COMPRESSION-LEVEL": "11" },
+    ).stdout,
+    "11",
+  );
+  assert.notEqual(
+    runCompressionLevelWithConfig({ compression_level: "invalid" }).status,
+    0,
+  );
+});
+
+test("scope and version use JSON defaults without overriding explicit inputs", () => {
+  assert.equal(
+    runConfiguredDefaults({ scope: "shared", version: "7" }).stdout,
+    "shared|shared/owner/repo/npm/linux-x64/hash/v7",
+  );
+  assert.equal(
+    runConfiguredDefaults(
+      { scope: "shared", version: "7" },
+      { INPUT_SCOPE: "trusted", INPUT_VERSION: "9" },
+    ).stdout,
+    "trusted|trusted/owner/repo/main/npm/linux-x64/hash/v9",
+  );
+  assert.notEqual(
+    runConfiguredDefaults({ scope: "invalid", version: "7" }).status,
+    0,
+  );
+  assert.notEqual(
+    runConfiguredDefaults({ scope: "shared", version: "v7" }).status,
+    0,
+  );
+});
+
+test("all max_* JSON limits reject invalid values", () => {
+  const eagerlyValidated = [
+    "max_compressed_bytes",
+    "max_tar_bytes",
+    "max_entries",
+    "max_archive_path_length",
+  ];
+  for (const name of eagerlyValidated) {
+    assert.notEqual(
+      runCommonExpression({ security: { [name]: 0 } }, "").status,
+      0,
+      `${name} accepted zero`,
+    );
+  }
+
+  assert.notEqual(
+    runCommonExpression(
+      { security: { max_logical_key_length: 0 } },
+      'common.scopedKey("hash");',
+    ).status,
+    0,
+    "max_logical_key_length accepted zero",
+  );
+  assert.notEqual(
+    runCommonExpression(
+      { security: { max_logical_key_components: 0 } },
+      'common.scopedKey("hash");',
+    ).status,
+    0,
+    "max_logical_key_components accepted zero",
+  );
+  for (const name of [
+    "max_manifest_references",
+    "max_manifest_writes_per_hour",
+  ]) {
+    assert.notEqual(
+      runCommonExpression(
+        { monitoring: { [name]: 0 } },
+        "common.manifestWriteGuard({ references: {}, monitoring: {} });",
+      ).status,
+      0,
+      `${name} accepted zero`,
     );
   }
 });
