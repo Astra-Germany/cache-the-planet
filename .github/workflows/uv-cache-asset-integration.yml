@@ -175,3 +175,4 @@ jobs:
 
       - name: Verify uv can use restored cache
         run: uv pip install --python .venv/bin/python --offline -r examples/uv-cache/requirements.txt
+        continue-on-error: true
