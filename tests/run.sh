@@ -177,7 +177,7 @@ try {
       INPUT_KEY: 'hash/v1',
       'INPUT_CACHE-NAME': 'npm',
       INPUT_SCOPE: 'auto',
-      INPUT_ALLOW_PR_CACHE: 'false',
+      'INPUT_ALLOW-PR-CACHE': 'false',
       GITHUB_TOKEN: '',
     },
   });
