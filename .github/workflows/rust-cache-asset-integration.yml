@@ -21,6 +21,7 @@ env:
   FILES_TO_HASH: |
     examples/rust-cache/Cargo.toml
     examples/rust-cache/Cargo.lock
+  VERSION: 1
 
 permissions:
   contents: read
@@ -96,11 +97,23 @@ jobs:
         working-directory: examples/rust-cache
         run: cargo fetch --locked
 
+      - name: ls Cargo cache
+        run: ls -la .cache/cargo
+
+      - name: ls Cargo cache registry
+        run: ls -la .cache/cargo/registry
+
+      - name: ls Cargo cache git
+        run: ls -la .cache/cargo/git
+
+      - name: ls cargo home
+        run: ls -la $CARGO_HOME
+
       - name: Upload PR cache artifact
         if: ${{ (steps.cache.outputs.is-fork == 'true' || steps.cache.outputs.read-only == 'true') && success() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: cache-the-planet-pr-${{ github.event.pull_request.number }}-cargo-${{ needs.hash_pr.outputs.files_hash }}-v1
+          name: cache-the-planet-pr-${{ github.event.pull_request.number }}-cargo-${{ needs.hash_pr.outputs.files_hash }}-v${{ env.VERSION }}
           path: .cache/cargo
           if-no-files-found: error
           retention-days: 1
