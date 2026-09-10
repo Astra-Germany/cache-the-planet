@@ -99,15 +99,19 @@ jobs:
 
       - name: ls Cargo cache
         run: ls -la .cache/cargo
+        continue-on-error: true
 
       - name: ls Cargo cache registry
         run: ls -la .cache/cargo/registry
+        continue-on-error: true
 
       - name: ls Cargo cache git
         run: ls -la .cache/cargo/git
+        continue-on-error: true
 
       - name: ls cargo home
-        run: ls -la $CARGO_HOME
+        run: ls -la "$CARGO_HOME"
+        continue-on-error: true
 
       - name: Upload PR cache artifact
         if: ${{ (steps.cache.outputs.is-fork == 'true' || steps.cache.outputs.read-only == 'true') && success() }}
