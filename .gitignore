@@ -18,6 +18,7 @@ validation.tar
 .cache/
 **/.cache/
 examples/**/.cache/
+examples/**/target
 docker-cache/
 buildkit-cache/
 **/.gradle/
