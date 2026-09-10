@@ -97,14 +97,6 @@ jobs:
         working-directory: examples/rust-cache
         run: cargo fetch --locked
 
-      - name: Inspect Cargo cache
-        run: find "$CARGO_HOME" -maxdepth 4 -print
-        continue-on-error: true
-
-      - name: ls Cargo cache
-        run: ls -la .cache/cargo
-        continue-on-error: true
-
       - name: Upload PR cache artifact
         if: ${{ (steps.cache.outputs.is-fork == 'true' || steps.cache.outputs.read-only == 'true') && success() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
