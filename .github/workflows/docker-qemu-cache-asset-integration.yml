@@ -22,7 +22,7 @@ env:
   FILES_TO_HASH: |
     examples/docker-cache/Dockerfile
     examples/docker-cache/hello.txt
-  VERSION: 1
+  VERSION: 2
   QEMU_IMAGE: docker.io/tonistiigi/binfmt:latest
   QEMU_IMAGE_TAR: examples/docker-cache/.cache/qemu-binfmt.tar
 
@@ -34,6 +34,8 @@ jobs:
     name: Hash PR Docker files
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     outputs:
       files_hash: ${{ steps.hash.outputs.files_hash }}
     steps:
@@ -46,14 +48,16 @@ jobs:
         id: hash
         env:
           FILES_HASH: ${{ hashFiles(env.FILES_TO_HASH) }}
-        run: echo "files_hash=$FILES_HASH" >> "$GITHUB_OUTPUT"
+        run: |
+          HASH="$FILES_HASH"
+          echo "files_hash=$HASH" >> "$GITHUB_OUTPUT"
 
   save-cache:
     if: ${{ inputs.save-cache }}
     name: Build and save Docker QEMU cache asset
     needs: hash_pr
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
