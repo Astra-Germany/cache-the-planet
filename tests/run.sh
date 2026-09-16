@@ -329,7 +329,7 @@ try {
       INPUT_KEY: 'Linux-X64/hash/v1',
       INPUT_PATH: root,
       INPUT_TOKEN: 'test-token',
-      INPUT_STRICT: 'true',
+      INPUT_STRICT_SAVE: 'true',
       GITHUB_EVENT_NAME: 'push',
       GITHUB_REF: 'refs/heads/feature',
       GITHUB_DEFAULT_BRANCH: 'main',
@@ -496,6 +496,10 @@ try {
   if (assetNamePrefix('trusted/Ludy87/cache-the-planet/main/npm/linux-x64/key/v1')
     !== 'trusted-Ludy87-cache-the-planet-main-npm-linux-x64-key-v1--') {
     throw new Error('trusted asset name prefix was not generated correctly');
+  }
+  if (assetNamePrefix('shared/Ludy87/cache-the-planet/npm/linux-x64/key-cache-0123456789abcdef/v1')
+    !== 'shared-Ludy87-cache-the-planet-npm-linux-x64-key-v1--') {
+    throw new Error('cache identity leaked into asset name prefix');
   }
   if (!assetMatchesKeyCombination(
     assetName('shared/Ludy87/cache-the-planet/uv/linux-x64/old-key/v2', `sha256:${'b'.repeat(64)}`),

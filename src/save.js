@@ -195,7 +195,7 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
         return;
       }
     }
-    if (existingReference?.object) {
+    if (existingReference?.object && !untrustedKey) {
       const existingAsset = await c.object(
         repository,
         existingReference.object,
@@ -267,7 +267,11 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
             c.pullRequestCacheCombination(referenceKey) === combination,
         );
       if (conflictingKey) {
-        const strict = String(c.input(INPUTS.STRICT)).toLowerCase() === "true";
+        const strictSaveInput = c.input(INPUTS.STRICT_SAVE).trim();
+        const strict =
+          String(
+            strictSaveInput === "" ? c.input(INPUTS.STRICT) : strictSaveInput,
+          ).toLowerCase() === "true";
         if (strict) {
           throw new Error(
             `pull request cache limit reached: only one cache is allowed for ${combination}; existing key=${conflictingKey}`,
@@ -457,6 +461,6 @@ async function deleteUnreferencedObjects(repository, hashes, manifest) {
       );
       return;
     }
-    c.fail(error);
+    c.fail(error, INPUTS.STRICT_SAVE);
   }
 })();

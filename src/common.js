@@ -66,7 +66,7 @@ function inputEnvironmentNames(name) {
     throw new TypeError("input name must be a non-empty string");
   }
   const exact = `INPUT_${name.toUpperCase()}`;
-  const normalized = `INPUT_${name.replace(/ /g, "_").toUpperCase()}`;
+  const normalized = `INPUT_${name.replace(/[- ]/g, "_").toUpperCase()}`;
   return exact === normalized ? [exact] : [exact, normalized];
 }
 
@@ -412,6 +412,24 @@ function runnerPlatform() {
   return `${safe(osName)}-${safe(architecture)}`;
 }
 
+const cacheIdentityFormat = "archive-v1|restore-safety-v1";
+
+function cacheIdentitySignature() {
+  const paths = entries().map((value) => value.replace(/\\/g, "/").trim());
+  const excludes = excludePatterns();
+  if (!paths.length && !excludes.length) return "";
+  const identity = JSON.stringify({
+    format: cacheIdentityFormat,
+    paths,
+    excludes,
+  });
+  return crypto
+    .createHash("sha256")
+    .update(identity, "utf8")
+    .digest("hex")
+    .slice(0, 16);
+}
+
 function logicalCacheKey(value, name, includeVersion = true) {
   const maxLength = configuredLimit(
     "CACHE_MAX_LOGICAL_KEY_LENGTH",
@@ -448,19 +466,23 @@ function logicalCacheKey(value, name, includeVersion = true) {
     (/^[A-Za-z0-9._-]+-[A-Za-z0-9._-]+$/.test(firstPart) &&
       withoutName.split("/").length > 1);
   const withPlatform = hasPlatform ? key : `${name}/${platform}/${withoutName}`;
-  if (withPlatform.length > maxLength) {
+  const identity = cacheIdentitySignature();
+  const withIdentity = identity
+    ? `${withPlatform}-cache-${identity}`
+    : withPlatform;
+  if (withIdentity.length > maxLength) {
     throw new Error(`cache key must not exceed ${maxLength} characters`);
   }
-  if (!includeVersion) return withPlatform;
+  if (!includeVersion) return withIdentity;
   const version =
     input(INPUTS.VERSION).trim() ||
     String(configuration().version ?? "").trim() ||
     "1";
   if (!/^\d+$/.test(version))
     throw new Error("version must contain numbers only");
-  const complete = /\/v[A-Za-z0-9._-]+$/.test(withPlatform)
-    ? withPlatform
-    : `${withPlatform}/v${version}`;
+  const complete = /\/v[A-Za-z0-9._-]+$/.test(withIdentity)
+    ? withIdentity
+    : `${withIdentity}/v${version}`;
   if (complete.length > maxLength) {
     throw new Error(`cache key must not exceed ${maxLength} characters`);
   }
@@ -783,12 +805,12 @@ function summary(title, fields) {
   );
 }
 
-function fail(error) {
+function fail(error, strictInput = INPUTS.STRICT) {
   const message = error?.message || String(error);
   const debug =
     process.env.ACTIONS_STEP_DEBUG === "true" ||
     process.env.RUNNER_DEBUG === "1";
-  if (String(input(INPUTS.STRICT)).toLowerCase() !== "true") {
+  if (String(input(strictInput)).toLowerCase() !== "true") {
     console.log(`::warning::cache ignored: ${message}`);
     if (debug && error?.stack) console.error(error.stack);
     return false;
@@ -1489,7 +1511,8 @@ function isSafeAsset(asset) {
 }
 
 function assetNamePrefix(key) {
-  const slug = key
+  const displayKey = key.replace(/-cache-[0-9a-f]{16}(?=\/|$)/gi, "");
+  const slug = displayKey
     .replace(/[^A-Za-z0-9._-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 120);
@@ -1509,6 +1532,7 @@ function assetMatchesKeyCombination(name, key) {
   const prefix = parts
     .slice(0, baseLength)
     .join("/")
+    .replace(/-cache-[0-9a-f]{16}(?=\/|$)/gi, "")
     .replace(/[^A-Za-z0-9._-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 120);
