@@ -17,7 +17,11 @@ const manifestCache = new Map();
 const manifestLocks = new Map();
 
 function manifestPathForKey(key) {
-  if (typeof key !== "string") throw new Error("manifest key is required");
+  // Read-only callers that explicitly request the default manifest do not
+  // have a cache key. Writes always pass a key or an explicit file path.
+  if (key === undefined || key === null || key === "")
+    return "manifests/v1/trusted.json";
+  if (typeof key !== "string") throw new Error("manifest key must be a string");
   if (key.startsWith("trusted/")) return "manifests/v1/trusted.json";
   if (key.startsWith("shared/")) return "manifests/v1/shared.json";
   const match = key.match(/^untrusted\/[^/]+\/[^/]+\/pr-([1-9]\d*)\//);
@@ -1760,27 +1764,32 @@ function manifestWriteGuard(manifest, replacingKey = null) {
 
 async function setRef(repository, key, hash, metadata = {}) {
   let locked = false;
-  return updateManifest(repository, `cache: update ${key}`, (manifest) => {
-    if (manifest.references[key]?.object === hash) return false;
-    if (!manifestWriteGuard(manifest)) {
-      locked = true;
+  return updateManifest(
+    repository,
+    `cache: update ${key}`,
+    (manifest) => {
+      if (manifest.references[key]?.object === hash) return false;
+      if (!manifestWriteGuard(manifest)) {
+        locked = true;
+        return true;
+      }
+      manifest.references[key] = {
+        object: hash,
+        updated_at: new Date().toISOString(),
+        source: process.env.GITHUB_REPOSITORY || null,
+        created_by: process.env.GITHUB_ACTOR || null,
+        size: Number.isFinite(metadata.size) ? metadata.size : null,
+      };
       return true;
-    }
-    manifest.references[key] = {
-      object: hash,
-      updated_at: new Date().toISOString(),
-      source: process.env.GITHUB_REPOSITORY || null,
-      created_by: process.env.GITHUB_ACTOR || null,
-      size: Number.isFinite(metadata.size) ? metadata.size : null,
-    };
-    return true;
-  }).then((result) => {
+    },
+    { key },
+  ).then((result) => {
     if (locked)
       throw new Error(
         "cache writes are temporarily locked: manifest write rate limit exceeded",
       );
     return result;
-  }, { key });
+  });
 }
 
 async function replaceRef(repository, key, hash, removeKey, metadata = {}) {
