@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: 
+        platform:
           - ubuntu-latest
           # - windows-latest
           # - windows-11-arm
@@ -80,7 +80,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || 'main' }}
           persist-credentials: false
-          
+
       - name: Use GNU tar on Windows
         if: runner.os == 'Windows'
         shell: pwsh
@@ -115,7 +115,7 @@ jobs:
         uses: $/
         with:
           cache-name: npm
-          storage: github-branch
+          storage: github-artifact
           save-scope: shared
           token: ${{ steps.bot-token.outputs.token || github.token }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
@@ -133,7 +133,7 @@ jobs:
               path: .cache/npm
             frontend-node-modules:
               path: node_modules
-          storage: github-branch
+          storage: github-artifact
           save-scope: shared
           token: ${{ steps.bot-token.outputs.token || github.token }}
           key: |
@@ -208,7 +208,7 @@ jobs:
         uses: $/
         with:
           cache-name: npm
-          storage: github-branch
+          storage: github-artifact
           scope: ${{ matrix.scope-matrix.scope }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
           path: .cache/npm

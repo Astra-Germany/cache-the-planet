@@ -85,7 +85,7 @@ jobs:
         uses: $/
         with:
           cache-name: gradle-java${{ needs.hash_pr.outputs.java_version }}
-          storage: github-branch
+          storage: github-artifact
           save-scope: shared
           token: ${{ steps.bot-token.outputs.token || github.token }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
@@ -163,7 +163,7 @@ jobs:
         uses: $/
         with:
           cache-name: gradle-java${{ needs.hash_pr.outputs.java_version }}
-          storage: github-branch
+          storage: github-artifact
           scope: ${{ matrix.scope-matrix.scope }}
           key: ${{ needs.hash_pr.outputs.files_hash }}
           path: |

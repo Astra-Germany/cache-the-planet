@@ -133,23 +133,23 @@ Für die allgemeinen Einstellungen gilt diese Reihenfolge (höchste Priorität
 zuerst): Action-Input, passende Umgebungsvariable, JSON-Konfiguration,
 Standardwert.
 
-| JSON-Feld | Umgebungsvariable | Zweck | Standard |
-| --- | --- | --- | --- |
-| `cache_repository` | `CACHE_REPOSITORY` | Ziel-Repository für Manifest und gegebenenfalls Release-Assets | `GITHUB_REPOSITORY` |
-| `manifest_branch` | `CACHE_MANIFEST_BRANCH` | Branch der Manifestdatei | `cache-data` |
-| `manifest_path` | `CACHE_MANIFEST_PATH` | Relativer Unterordner der Manifestdatei | `manifests` |
-| `scope` | — | Standard-Namespace für Restore und Save | `auto` |
-| `version` | — | Cache-Formatversion | `1` |
-| `compression_level` | `CACHE_COMPRESSION_LEVEL` | zstd-Kompressionsstufe | `3` |
-| `security.max_compressed_bytes` | `CACHE_MAX_COMPRESSED_BYTES` | Maximale komprimierte Objektgröße | konfigurationsabhängig |
-| `security.max_tar_bytes` | `CACHE_MAX_TAR_BYTES` | Maximale dekomprimierte Tar-Größe | konfigurationsabhängig |
-| `security.max_entries` | `CACHE_MAX_ENTRIES` | Maximale Anzahl von Archiv-Einträgen | konfigurationsabhängig |
-| `security.max_archive_path_length` | `CACHE_MAX_ARCHIVE_PATH_LENGTH` | Maximale Länge eines Archivpfads | `4096` |
-| `security.allowed_cache_names` | `CACHE_ALLOWED_CACHE_NAMES` | Kommagetrennte Cache-Namen-Allowlist | leer = alle gültigen Namen |
-| `security.max_logical_key_length` | `CACHE_MAX_LOGICAL_KEY_LENGTH` | Maximale Länge des logischen Keys | `512` |
-| `security.max_logical_key_components` | `CACHE_MAX_LOGICAL_KEY_COMPONENTS` | Maximale Anzahl von Key-Komponenten | `16` |
-| `security.max_manifest_references` | `CACHE_MAX_MANIFEST_REFERENCES` | Maximale Manifest-Referenzen | `100000` |
-| `security.max_manifest_writes_per_hour` | `CACHE_MAX_MANIFEST_WRITES_PER_HOUR` | Maximale Manifest-Schreibvorgänge pro Stunde | `1000` |
+| JSON-Feld                               | Umgebungsvariable                    | Zweck                                                          | Standard                   |
+| --------------------------------------- | ------------------------------------ | -------------------------------------------------------------- | -------------------------- |
+| `cache_repository`                      | `CACHE_REPOSITORY`                   | Ziel-Repository für Manifest und gegebenenfalls Release-Assets | `GITHUB_REPOSITORY`        |
+| `manifest_branch`                       | `CACHE_MANIFEST_BRANCH`              | Branch der Manifestdatei                                       | `cache-data`               |
+| `manifest_path`                         | `CACHE_MANIFEST_PATH`                | Relativer Unterordner der Manifestdatei                        | `manifests`                |
+| `scope`                                 | —                                    | Standard-Namespace für Restore und Save                        | `auto`                     |
+| `version`                               | —                                    | Cache-Formatversion                                            | `1`                        |
+| `compression_level`                     | `CACHE_COMPRESSION_LEVEL`            | zstd-Kompressionsstufe                                         | `3`                        |
+| `security.max_compressed_bytes`         | `CACHE_MAX_COMPRESSED_BYTES`         | Maximale komprimierte Objektgröße                              | konfigurationsabhängig     |
+| `security.max_tar_bytes`                | `CACHE_MAX_TAR_BYTES`                | Maximale dekomprimierte Tar-Größe                              | konfigurationsabhängig     |
+| `security.max_entries`                  | `CACHE_MAX_ENTRIES`                  | Maximale Anzahl von Archiv-Einträgen                           | konfigurationsabhängig     |
+| `security.max_archive_path_length`      | `CACHE_MAX_ARCHIVE_PATH_LENGTH`      | Maximale Länge eines Archivpfads                               | `4096`                     |
+| `security.allowed_cache_names`          | `CACHE_ALLOWED_CACHE_NAMES`          | Kommagetrennte Cache-Namen-Allowlist                           | leer = alle gültigen Namen |
+| `security.max_logical_key_length`       | `CACHE_MAX_LOGICAL_KEY_LENGTH`       | Maximale Länge des logischen Keys                              | `512`                      |
+| `security.max_logical_key_components`   | `CACHE_MAX_LOGICAL_KEY_COMPONENTS`   | Maximale Anzahl von Key-Komponenten                            | `16`                       |
+| `security.max_manifest_references`      | `CACHE_MAX_MANIFEST_REFERENCES`      | Maximale Manifest-Referenzen                                   | `100000`                   |
+| `security.max_manifest_writes_per_hour` | `CACHE_MAX_MANIFEST_WRITES_PER_HOUR` | Maximale Manifest-Schreibvorgänge pro Stunde                   | `1000`                     |
 
 Alle Größen-, Zähler- und Längenlimits müssen positive sichere Ganzzahlen
 sein. Ungültige, negative oder übergroße Werte werden abgelehnt. Ein leerer

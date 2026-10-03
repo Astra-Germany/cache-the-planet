@@ -61,7 +61,7 @@ jobs:
         uses: $/
         with:
           cache-name: npm
-          storage: github-branch
+          storage: github-artifact
           key: ${{ hashFiles('package-lock.json') }}
           path: .cache/npm
           allow-shared-restore: true
